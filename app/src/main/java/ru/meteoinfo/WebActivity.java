@@ -12,11 +12,15 @@ import android.app.ProgressDialog;
 import java.lang.System;
 import android.content.DialogInterface;
 import android.app.AlertDialog;
+import android.net.TrafficStats;
+
 import static ru.meteoinfo.WeatherActivity.*;
 
 public class WebActivity extends AppCompatActivity {
+
+    static private final String TAG = "meteoinfo.ru"; 
     private WebView webview;
-    static long time;
+    static long time, bytes;
 
     Handler hdl = new Handler() {
 	@Override
@@ -42,8 +46,10 @@ public class WebActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_web);
-	time = 0;
 
+      try {
+
+	time = 0;
         Intent intent = getIntent();
         final String url = intent.getStringExtra("action");
 
@@ -53,8 +59,11 @@ public class WebActivity extends AppCompatActivity {
                                         getString(R.string.op_in_progress));
 	locDlg.setCancelable(true);
 
+
 	webview.getSettings().setJavaScriptEnabled(true);
+	webview.getSettings().setDomStorageEnabled(true);
 	webview.getSettings().setBuiltInZoomControls(true);
+
 	webview.setWebViewClient(new WebViewClient() {
 	    @Override 
 	    public boolean shouldOverrideUrlLoading(WebView view, String u) {
@@ -64,14 +73,18 @@ public class WebActivity extends AppCompatActivity {
 	    @Override 
 	    public void onPageStarted(WebView view, String u, Bitmap favicon) {
 		super.onPageStarted(view, u, favicon);
-		logUI(COLOUR_DBG, "web: onPageStarted");
 		time = System.currentTimeMillis();	
+		bytes = TrafficStats.getTotalRxBytes();
+		logUI(COLOUR_DBG, "web: onPageStarted");
 	    }	
 	    @Override 
 	    public void onPageFinished(WebView view, String u) {
 		super.onPageFinished(view, u);
 		String s = "web: onPageFinished";
-		if(time != 0) s += ": " + (System.currentTimeMillis() - time)  + "ms";
+		long rx = TrafficStats.getTotalRxBytes();
+		if(time != 0) s += ": " + (System.currentTimeMillis() - time)  + " ms";
+		if(rx - bytes > 0) s += " bytes=" + (rx - bytes);
+		else s += " (cached)";
 		logUI(COLOUR_DBG, s);
 	    }	
 	    @Override 
@@ -101,9 +114,12 @@ public class WebActivity extends AppCompatActivity {
 	    }
 	}); 
 
-        webview.loadUrl(url);
+	webview.loadUrl(url);
 
-
+	} catch (Exception e) {
+	    logUI(COLOUR_ERR, getString(R.string.conn_slow));
+	    e.printStackTrace();		
+	}
     }
     @Override
     public void onBackPressed() {

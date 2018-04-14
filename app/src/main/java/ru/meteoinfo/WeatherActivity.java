@@ -126,8 +126,8 @@ public class WeatherActivity extends AppCompatActivity
     // all means all, not only the four defined above.
     static private int verbose = 1;
      
-    private final int GOOGLE_TIMEOUT = 5000;	
-    private final int SERVER_TIMEOUT = 2000;	
+    private final int GOOGLE_TIMEOUT = 60000;	// let's take a minute	
+    private final int SERVER_TIMEOUT = 20000;	// on very slow connections
 
     private final long LOC_UPDATE_INTERVAL = 20 * 1000;
     private final long LOC_FASTEST_UPDATE_INTERVAL = 2000; /* 2 sec */
@@ -362,6 +362,10 @@ public class WeatherActivity extends AppCompatActivity
 	    logUI(COLOUR_INFO, s); 		
 
 	    ok = true;	
+
+	} catch (java.net.ConnectException c) {
+	    logUI(COLOUR_ERR, R.string.no_server_conn);
+	    return false;	
 	} catch(java.net.SocketTimeoutException je) {
 	    logUI(COLOUR_ERR, URL_STA_LIST + ": " + getString(R.string.read_timeout));
 	    return false;		
@@ -998,7 +1002,11 @@ public class WeatherActivity extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 curStation = curStationList.get(i);
-                aas.clear();
+		if(curStation == null) {
+		    logUI(COLOUR_ERR, R.string.no_cur_sta);
+		    return;	
+		}
+	        aas.clear();
 		final Runnable fgr = new Runnable() {
  	            @Override
 		    public void run() {
@@ -1053,6 +1061,10 @@ public class WeatherActivity extends AppCompatActivity
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 curStation = getStation(fstr0.get(i));
+		if(curStation == null) {
+		    logUI(COLOUR_ERR, R.string.no_cur_sta);
+		    return;	
+		}
                 ff.clear();
 		final Runnable fgr = new Runnable() {
  	            @Override
@@ -1135,7 +1147,14 @@ public class WeatherActivity extends AppCompatActivity
     }
 
     public Dialog do_launch() {
+
+	if(curStation == null) {
+	    logUI(COLOUR_ERR, "do_launch -> null");
+	    return null;
+	}
         final Dialog dialog = new Dialog(this);
+
+
 
 	dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.launch_layout);
@@ -1155,12 +1174,10 @@ public class WeatherActivity extends AppCompatActivity
 	
         launch_msg.setText(s);
 
-//        final Intent i = new Intent(getApplicationContext(), GetDataActivity.class);
-
         act_btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View arg0) {
                 Intent ii = new Intent(getApplicationContext(),WebActivity.class);
-		logUI(COLOUR_DBG, R.string.launch_webpage);
+//		logUI(COLOUR_DBG, R.string.launch_webpage);
                 String url;
 		if(curStation == null) {
 	    	    logUI(COLOUR_DBG, getString(R.string.err_in) + " do_launch");	
@@ -1227,6 +1244,10 @@ public class WeatherActivity extends AppCompatActivity
                             return;
                         }
 			curStation = getNearestStation(lat,lon);
+			if(curStation == null) {
+			    logUI(COLOUR_ERR, R.string.no_cur_sta);
+			    return;	
+			}
 			requestedLat = lat;
 			requestedLon = lon; 	
                         final Runnable fgr = new Runnable() {

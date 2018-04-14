@@ -86,6 +86,8 @@
     <string name="launch_webpage">Переход на web-страницу</string>               
     <string name="add_new_fav">Сохранение в избранное</string>               
     <string name="launch_gmaps">Запуск Google Maps</string>               
-    <string name="read_timeout">таймаут на чтение</string>               
+    <string name="read_timeout">время ожидания истекло</string>               
+    <string name="no_cur_sta">Станция неизвестна</string>               
+    <string name="conn_slow">Слишком медленное соединение</string>               
 
 </resources>
