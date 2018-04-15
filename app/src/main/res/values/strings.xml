@@ -34,10 +34,11 @@
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
-    <string name="todo">Посмотреть на карте</string>
+    <string name="map_google">Посмотреть на картах Google</string>
+    <string name="map_osm">Посмотреть на картах OSM</string>
     <string name="inv_coords">Недопустимые координаты</string>
     <string name="try_find_coords">Поиск ближайшей станции...</string>
-    <string name="try_google">Получение расширенной информации...</string>
+    <string name="try_google">Дополнительные данные от Google...</string>
     <string name="station">Станция</string>
     <string name="country">Страна</string>
     <string name="name">Название</string>
@@ -87,6 +88,7 @@
     <string name="launch_webpage">Переход на web-страницу</string>               
     <string name="add_new_fav">Сохранение в избранное</string>               
     <string name="launch_gmaps">Запуск Google Maps</string>               
+    <string name="launch_osmaps">Запуск OSM</string>               
     <string name="read_timeout">время ожидания истекло</string>               
     <string name="no_cur_sta">Станция неизвестна</string>               
     <string name="conn_slow">Слишком медленное соединение</string>               

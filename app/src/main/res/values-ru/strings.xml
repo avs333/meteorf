@@ -3,6 +3,7 @@
     <string name="action_settings">Hacтройки</string>
     <string name="greetings">Вас приветствует Гидрометцентр РФ!</string>
     <string name="check_server_conn">Соединение с сервером</string>
+    <string name="no_server_conn">Нет связи с сервером</string>
     <string name="checking_server_conn">Соединение...</string>
     <string name="read_alerts">Последние тревожные оповещения</string>
     <string name="read_bulletin">Последние публикации о погоде</string>
@@ -33,10 +34,11 @@
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
-    <string name="todo">Посмотреть на карте</string>
+    <string name="map_google">Посмотреть на картах Google</string>
+    <string name="map_osm">Посмотреть на картах OSM</string>
     <string name="inv_coords">Недопустимые координаты</string>
     <string name="try_find_coords">Поиск ближайшей станции...</string>
-    <string name="try_google">Получение расширенной информации...</string>
+    <string name="try_google">Дополнительные данные от Google...</string>
     <string name="station">Станция</string>
     <string name="country">Страна</string>
     <string name="name">Название</string>

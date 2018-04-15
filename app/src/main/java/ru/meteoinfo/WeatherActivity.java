@@ -46,6 +46,7 @@ import android.text.Html;
 import android.text.method.ScrollingMovementMethod; 
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
@@ -1165,7 +1166,8 @@ public class WeatherActivity extends AppCompatActivity
         EditText launch_msg = dialog.findViewById(R.id.launch_msg);
         Button act_btn = dialog.findViewById(R.id.act_btn);
         Button add_btn = dialog.findViewById(R.id.add_to_fav);
-        Button test_btn = dialog.findViewById(R.id.test_btn);
+        Button view_google = dialog.findViewById(R.id.view_google);
+        Button view_osm = dialog.findViewById(R.id.view_osm);
 
 
         launch_msg.setKeyListener(null);
@@ -1207,14 +1209,15 @@ public class WeatherActivity extends AppCompatActivity
         	Toast.makeText(getApplicationContext(),getString(R.string.added), Toast.LENGTH_SHORT).show();
             }
         });
+
         if(maps_avail) {
             final double lat, lon, sta_lat, sta_lon;
-            test_btn.setEnabled(true);
+            view_google.setEnabled(true);
 	    lat = requestedLat;
 	    lon = requestedLon;	
             sta_lat = curStation.latitude;
             sta_lon = curStation.longitude;
-            test_btn.setOnClickListener(new View.OnClickListener() {
+            view_google.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View arg0) {
                     Intent i = new Intent(getApplicationContext(), MapsActivity.class);
                     logUI(COLOUR_DBG, R.string.launch_gmaps);
@@ -1225,7 +1228,27 @@ public class WeatherActivity extends AppCompatActivity
                     startActivity(i);
                 }
             });
-        } else test_btn.setEnabled(false);
+        } else view_google.setEnabled(false);
+
+	if(true) {
+	    final double lat, lon, sta_lat, sta_lon;	
+	    lat = requestedLat;
+	    lon = requestedLon;	
+            sta_lat = curStation.latitude;
+            sta_lon = curStation.longitude;
+            view_osm.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View arg0) {
+                    Intent i = new Intent(getApplicationContext(), OpenmapsActivity.class);
+                    logUI(COLOUR_DBG, R.string.launch_osmaps);
+                    i.putExtra("lat", lat);
+                    i.putExtra("lon", lon);
+                    i.putExtra("sta_lat", sta_lat);
+                    i.putExtra("sta_lon", sta_lon);
+                    startActivity(i);
+                }
+            });
+	}
+
 
         return dialog;
     }
