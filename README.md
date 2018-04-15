@@ -1,2 +1,2 @@
 # meteorf
-A backend for Sasha's meteoinfo.ru scripts
+A frontend for Sasha's meteoinfo.ru scripts
