@@ -36,6 +36,7 @@
     <string name="longitude">Долгота:</string>
     <string name="map_google">Посмотреть на картах Google</string>
     <string name="map_osm">Посмотреть на картах OSM</string>
+    <string name="map_forge">Посмотреть на картах MapsForge</string>
     <string name="inv_coords">Недопустимые координаты</string>
     <string name="try_find_coords">Поиск ближайшей станции...</string>
     <string name="try_google">Дополнительные данные от Google...</string>
@@ -50,6 +51,9 @@
     <string name="pref_verbose">Детальность вывода в главное окно</string>
     <string name="pref_base_settings">Основные настройки</string>
     <string name="pref_use_google_info">Данные Google о местонахождении</string>
+    <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
+    <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>
+    <string name="using_offline_maps">Переключение на офлайн-карты</string>
     <string name="no_station">Ошибка: станция не найдена</string>
     <string name="using_cached">Данные о ближайшей станции взяты из кеша</string>
     <string name="select_fav">Для сохраненных станций</string>

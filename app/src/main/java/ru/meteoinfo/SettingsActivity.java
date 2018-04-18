@@ -45,6 +45,11 @@ public class SettingsActivity extends PreferenceActivity {
         use_google_info.setKey("use_google_info");
         launchPrefCat.addPreference(use_google_info);
 
+        CheckBoxPreference use_offline_maps = new CheckBoxPreference(this);
+        use_offline_maps.setTitle(R.string.pref_use_offline_maps);
+        use_offline_maps.setKey("use_offline_maps");
+        launchPrefCat.addPreference(use_offline_maps);
+
 	ListPreference verbose = new ListPreference(this);
 	verbose.setTitle(R.string.pref_verbose);
 	verbose.setEntryValues(verbs);

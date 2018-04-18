@@ -1,162 +1,209 @@
 package ru.meteoinfo;
 
+import java.util.List;
+import java.util.ArrayList;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream; 
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.preference.PreferenceManager;
 
-
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.views.MapView;
-import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.util.GeoPoint;
 import org.osmdroid.api.IMapController;
+import org.osmdroid.util.GeoPoint;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.mapsforge.MapsForgeTileSource;
+import org.osmdroid.mapsforge.MapsForgeTileProvider;
+import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
+
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
+import org.mapsforge.map.android.rendertheme.AssetsRenderTheme;
+import org.mapsforge.map.rendertheme.XmlRenderTheme;
+
+import android.util.Log;
 
 import static ru.meteoinfo.WeatherActivity.*;
-
-
 
 public class OpenmapsActivity extends Activity {
 
     private double lat, lon, sta_lat, sta_lon;
-    private MapView map = null;
+    private MapView mapview = null;
+
+    private MapsForgeTileProvider forge = null;
+    private MapsForgeTileSource msrc = null;
+
+    final String MAP_FILES_DIR = "/sdcard/osmdroid/";	
+
+    private double getCoord(byte [] b, int offs) {
+	int val = b[offs] << 24 | (b[offs+1] & 0xff) << 16 | (b[offs+2] & 0xff) << 8 | (b[offs+3] & 0xff);
+	return ((double) val)/1000000.0;      	
+    }
+	
+    private boolean checkFileForRange(File file, double lat, double lon) {
+	FileInputStream fin = null;
+	try {
+	    // See mapforge/docs/Specification-Binary-Map-File.md
+	    final int s_idx = 20+4+4+8+8;
+	    final int r_sz = s_idx + 16;
+	    byte [] hdr = new byte[r_sz];
+	    fin = new FileInputStream(file);
+	    if(fin.read(hdr) != r_sz) {
+		// failed to read header
+		return false;
+	    }
+	    String s = new String(hdr);
+	    if(!s.startsWith("mapsforge binary OSM")) {
+		// bad file magic
+		return false;
+	    }	
+	    double min_lat = getCoord(hdr, s_idx + 0);
+	    double min_lon = getCoord(hdr, s_idx + 4);
+	    double max_lat = getCoord(hdr, s_idx + 8);
+	    double max_lon = getCoord(hdr, s_idx + 12);
+	    if(min_lat < lat && lat < max_lat && min_lon < lon && lon < max_lon) return true;
+
+	    Log.d("meteoinfo.ru", "Lat: min: " + min_lat + " req: " + lat + " max: " + max_lat); 
+	    Log.d("meteoinfo.ru", "Lon: min: " + min_lon + " req: " + lon + " max: " + max_lon); 
+
+	} catch(Exception e) {
+	    e.printStackTrace();
+	    return false;	
+	} finally {
+	    try {	
+		if(fin != null) fin.close();
+	    } catch(Exception e) {}	
+	}
+	// no data for lat/lon
+	return false;	
+    }
+	
+    private File[] getMatchingMaps(double lat, double lon) {
+	File maps_dir = new File(MAP_FILES_DIR);
+	if(!maps_dir.exists()) return null;
+	final double _lat = lat, _lon = lon;        
+	return maps_dir.listFiles(new FileFilter() {
+	    @Override
+	    public boolean accept(File file) {
+		return file.getName().endsWith(".map") && checkFileForRange(file, _lat, _lon);
+	    }	
+	});
+    }
 
     @Override public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
-	logUI(COLOUR_DBG, "openmaps: init");
+	
+	setContentView(R.layout.activity_osm);
+        mapview = (MapView) findViewById(R.id.osmmap);
 
         Context ctx = getApplicationContext();
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
-        setContentView(R.layout.activity_osm);
 
-        map = (MapView) findViewById(R.id.osmmap);
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setBuiltInZoomControls(true);
-        map.setMultiTouchControls(true);
+	// Important!
+	AndroidGraphicFactory.createInstance(getApplication());	
 
 
         Intent intent = getIntent();
-
-        IMapController mapController = map.getController();
-        mapController.setZoom(17);
-
         lat = intent.getDoubleExtra("lat", inval_coord);
         lon = intent.getDoubleExtra("lon", inval_coord);
         sta_lat = intent.getDoubleExtra("sta_lat", inval_coord);
         sta_lon = intent.getDoubleExtra("sta_lon", inval_coord);
 
-	GeoPoint pt;
+	if(use_offline_maps) {
+	    File [] map_files = (lat == inval_coord || lon == inval_coord) ?
+			 getMatchingMaps(sta_lat, sta_lon) : getMatchingMaps(lat, lon);
+	    XmlRenderTheme theme = null;
+	    if(map_files != null && map_files.length > 0) {
+		try {
+		    theme = new AssetsRenderTheme(ctx, "renderthemes/", "rendertheme-v4.xml");
+		    msrc = MapsForgeTileSource.createFromFiles(map_files, theme, "rendertheme-v4");
+		//  msrc = MapsForgeTileSource.createFromFiles(map_files);
+		    forge = new MapsForgeTileProvider(new SimpleRegisterReceiver(ctx), msrc, null);
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+	    } else logUI(COLOUR_DBG, getString(R.string.no_offline_maps));
+	}
+
+	if(forge != null) logUI(COLOUR_INFO, getString(R.string.using_offline_maps));
+
+	if(forge != null) mapview.setTileProvider(forge);
+	else mapview.setTileSource(TileSourceFactory.MAPNIK);
+
+        mapview.setBuiltInZoomControls(true);
+        mapview.setMultiTouchControls(true);
+
+        IMapController mapController = mapview.getController();
+        mapController.setZoom(13.0);
+
+	GeoPoint pt = null, ptc = null;
 
 	if(lat != inval_coord && lon != inval_coord) {
 	    pt = new GeoPoint(lat, lon);
-            Marker m = new Marker(map);
+            Marker m = new Marker(mapview);
 	    m.setPosition(pt);
 	    m.setSnippet(getString(R.string.cur_loc));
-	    map.getOverlayManager().add(m);
+	    mapview.getOverlayManager().add(m);
+	    ptc = new GeoPoint(sta_lat + (lat - sta_lat)/2, 
+		sta_lon + (lon - sta_lon)/2);
 	}
 
-	pt = new GeoPoint(sta_lat, sta_lon);
-	Marker m1 = new Marker(map);
-	m1.setPosition(pt);
-	m1.setSnippet(getString(R.string.sta_loc));
-	map.getOverlayManager().add(m1);
+	GeoPoint pts = new GeoPoint(sta_lat, sta_lon);
+	Marker ms = new Marker(mapview);
+	ms.setPosition(pts);
+	ms.setSnippet(getString(R.string.sta_loc));
+	mapview.getOverlayManager().add(ms);
 
-        mapController.setCenter(pt);	
+        mapController.setCenter(ptc != null ? ptc : pts);	
 
-	if(lat != inval_coord && lon != inval_coord) {
-	    Marker marker = new Marker(map);
-	    marker.setPosition(pt);
-	} 
+	if(pt != null) {
+	    Polyline line = new Polyline(mapview);
+	    line.setWidth(2.0f);
+	    List<GeoPoint> points = new ArrayList<>();
+	    points.add(pt);
+	    points.add(pts);
+	    line.setPoints(points);
+	    line.setGeodesic(true);	
+	    mapview.getOverlayManager().add(line);
+	}
+
+	mapview.setMaxZoomLevel(22.0);
 
 
     }
 
+    @Override
     public void onResume(){
         super.onResume();
-        //this will refresh the osmdroid configuration on resuming.
-        //if you make changes to the configuration, use 
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
-        map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
+        mapview.onResume(); //needed for compass, my location overlays, v6.0.0 and up
     }
 
+    @Override
     public void onPause(){
         super.onPause();
         //this will refresh the osmdroid configuration on resuming.
         //if you make changes to the configuration, use 
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         //Configuration.getInstance().save(this, prefs);
-        map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
+        mapview.onPause();  //needed for compass, my location overlays, v6.0.0 and up
     }
-}
-
-
-
-/*
-public class OpenmapsActivity extends FragmentActivity implements OnMapReadyCallback {
-
-    private GoogleMap mMap;
-    final double inval_coord = -1000.0;
-    private double lat, lon, sta_lat, sta_lon;
-    private long start_bytes;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-	start_bytes = TrafficStats.getTotalRxBytes();
-        Intent intent = getIntent();
-        lat = intent.getDoubleExtra("lat", inval_coord);
-        lon = intent.getDoubleExtra("lon", inval_coord);
-        sta_lat = intent.getDoubleExtra("sta_lat", inval_coord);
-        sta_lon = intent.getDoubleExtra("sta_lon", inval_coord);
-        setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+    public void onDestroy() {
+	super.onDestroy();
     }
+	
 
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        //mMap.setMinZoomPreference(15.0f);
-        //mMap.setMaxZoomPreference(21.0f);
-
-        // Add a marker in Sydney and move the camera
-	LatLng sta_pos;
-	if(lat != inval_coord && lon != inval_coord) {
-	    LatLng cur_pos = new LatLng(lat, lon);
-            Marker m = mMap.addMarker(new MarkerOptions().position(cur_pos).title(getString(R.string.cur_loc)));
-	    m.setVisible(true);	
-	    m.showInfoWindow();
-	    long rx = TrafficStats.getTotalRxBytes();
-	    rx -= start_bytes;
-	    if(rx > 0) logUI(COLOUR_DBG, String.format("%d bytes", rx, " bytes"));
-	}
-
-	sta_pos = new LatLng(sta_lat, sta_lon);
-        Marker m1 = mMap.addMarker(new MarkerOptions().position(sta_pos).title(getString(R.string.sta_loc)));
-        m1.setVisible(true);	
-        m1.showInfoWindow();
-
-        CameraUpdate update1 = CameraUpdateFactory.zoomTo(10.0f);
-        mMap.moveCamera(update1);
-
-        CameraUpdate update = CameraUpdateFactory.newLatLng(sta_pos);
-        mMap.moveCamera(update);
-
-    }
 }
-
-*/
-
 
 

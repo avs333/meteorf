@@ -179,11 +179,14 @@ public class WeatherActivity extends AppCompatActivity
 
     public static boolean use_russian = true;
     public static boolean use_google_info = true;
+    public static boolean use_offline_maps = true;
     public static String last_md5;
 
     // public static LocationManager locationManager;
 
-
+    private static void log_err(String msg) {
+	Log.e("meteoinfo.ru:", msg);	
+    }	
     private void fatal_err(String msg) {
         Log.e("meteoinfo:" + getClass().getSimpleName(), msg);
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
@@ -1210,13 +1213,11 @@ public class WeatherActivity extends AppCompatActivity
             }
         });
 
+	final double lat = requestedLat, lon = requestedLon, 
+		sta_lat = curStation.latitude, sta_lon = curStation.longitude;
+
         if(maps_avail) {
-            final double lat, lon, sta_lat, sta_lon;
             view_google.setEnabled(true);
-	    lat = requestedLat;
-	    lon = requestedLon;	
-            sta_lat = curStation.latitude;
-            sta_lon = curStation.longitude;
             view_google.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View arg0) {
                     Intent i = new Intent(getApplicationContext(), MapsActivity.class);
@@ -1231,11 +1232,6 @@ public class WeatherActivity extends AppCompatActivity
         } else view_google.setEnabled(false);
 
 	if(true) {
-	    final double lat, lon, sta_lat, sta_lon;	
-	    lat = requestedLat;
-	    lon = requestedLon;	
-            sta_lat = curStation.latitude;
-            sta_lon = curStation.longitude;
             view_osm.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View arg0) {
                     Intent i = new Intent(getApplicationContext(), OpenmapsActivity.class);
@@ -1248,7 +1244,6 @@ public class WeatherActivity extends AppCompatActivity
                 }
             });
 	}
-
 
         return dialog;
     }
@@ -1312,21 +1307,21 @@ public class WeatherActivity extends AppCompatActivity
 
         Prefs() {
             settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-            use_russian = settings.getBoolean("use_russian", true);
-            use_google_info = settings.getBoolean("use_google_info", true);
+	    load(); 
 	    favs = settings.getStringSet("favs", null);
 	    last_md5 = settings.getString("last_md5", null);
-	    verbose = settings.getInt("verbose", 1);
         }
 	public void load() {
             use_russian = settings.getBoolean("use_russian", true);
             use_google_info = settings.getBoolean("use_google_info", true);
+            use_offline_maps = settings.getBoolean("use_offline_maps", true);
 	    verbose = settings.getInt("verbose", 1);
 	}
         public void save() {
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("use_russian", use_russian);
             editor.putBoolean("use_google_info", use_google_info);
+            editor.putBoolean("use_offline_maps", use_offline_maps);
 	    editor.putStringSet("favs", favs);
 	    editor.putInt("verbose", verbose);	
 	    editor.commit();

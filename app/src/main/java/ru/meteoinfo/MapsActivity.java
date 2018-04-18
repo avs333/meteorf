@@ -13,6 +13,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.UiSettings;
 
 import static ru.meteoinfo.WeatherActivity.*;
 
@@ -22,6 +23,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     final double inval_coord = -1000.0;
     private double lat, lon, sta_lat, sta_lon;
     private long start_bytes;
+    private UiSettings uis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +52,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
+	uis = mMap.getUiSettings();
 
         //mMap.setMinZoomPreference(15.0f);
         //mMap.setMaxZoomPreference(21.0f);
@@ -72,11 +76,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         m1.setVisible(true);	
         m1.showInfoWindow();
 
-        CameraUpdate update1 = CameraUpdateFactory.zoomTo(10.0f);
+        CameraUpdate update1 = CameraUpdateFactory.zoomTo(14.0f);
         mMap.moveCamera(update1);
 
         CameraUpdate update = CameraUpdateFactory.newLatLng(sta_pos);
         mMap.moveCamera(update);
+
+	uis.setZoomControlsEnabled(true);
 
     }
 }

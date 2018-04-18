@@ -48,17 +48,18 @@ dependencies {
 //    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'com.google.android.gms:play-services-maps:11.8.0'
     implementation 'com.google.android.gms:play-services-location:11.8.0'
+
 // sucks.
 //    implementation 'com.yandex.android:mapkit:3.0.0'
 
     implementation 'org.osmdroid:osmdroid-android:6.0.1'
-	
+    implementation 'org.osmdroid:osmdroid-mapsforge:6.0.1'
 
-//    implementation 'org.mapsforge:mapsforge-core:0.9.1'
-//    implementation 'org.mapsforge:mapsforge-map:0.9.1'
-//    implementation 'org.mapsforge:mapsforge-map-reader:0.9.1'
-//    implementation 'org.mapsforge:mapsforge-map-android:0.9.1'
-//    implementation 'org.mapsforge:mapsforge-themes:0.9.1'
+    implementation 'org.mapsforge:mapsforge-core:0.9.1'
+    implementation 'org.mapsforge:mapsforge-map:0.9.1'
+    implementation 'org.mapsforge:mapsforge-themes:0.9.1'
+    implementation 'org.mapsforge:mapsforge-map-reader:0.9.1'
+    implementation 'org.mapsforge:mapsforge-map-android:0.9.1'
 //    implementation 'net.sf.kxml:kxml2:2.3.0'
 
 }
