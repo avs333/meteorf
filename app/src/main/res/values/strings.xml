@@ -23,6 +23,7 @@
     <string name="sel_coord">Введите координаты места:</string>
     <string name="short_patt">Слишком мало букв для поиска</string>
     <string name="okey">Далее</string>
+    <string name="ok">OK</string>
     <string name="patt_no_match">Для введенной строки станций не найдено</string>
     <string name="cancel">Отмена</string>
     <string name="receiving_stl">Получение списка станций</string>
@@ -50,7 +51,7 @@
     <string name="pref_use_russian">Русский язык</string>
     <string name="pref_verbose">Детальность вывода в главное окно</string>
     <string name="pref_base_settings">Основные настройки</string>
-    <string name="pref_use_google_info">Данные Google о местонахождении</string>
+    <string name="pref_addr_source">Доп. данные о местонахождении</string>
     <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
     <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>
     <string name="using_offline_maps">Переключение на офлайн-карты</string>

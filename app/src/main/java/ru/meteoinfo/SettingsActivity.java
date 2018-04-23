@@ -14,13 +14,15 @@ import android.util.Log;
 
 public class SettingsActivity extends PreferenceActivity {
 
-    private String[] verbs = {"0", "1", "2"};
-    private String[] entries = {"Err", "Err+Info", "All"};
+    private String[] vals = {"0", "1", "2"};
+    private String[] entries_verb = {"Err", "Err+Info", "All"};
+    private String[] entries_addr = {"None", "Google", "OMS"};
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setPreferenceScreen(createPreferenceHierarchy());
     }
     private static String verb = null;
+    private static String asrc = null;
     private static final String TAG = "ru.meteoinfo";	
     private static SharedPreferences settings;
 
@@ -40,11 +42,6 @@ public class SettingsActivity extends PreferenceActivity {
         use_russian.setKey("use_russian");
         launchPrefCat.addPreference(use_russian);
 
-        CheckBoxPreference use_google_info = new CheckBoxPreference(this);
-        use_google_info.setTitle(R.string.pref_use_google_info);
-        use_google_info.setKey("use_google_info");
-        launchPrefCat.addPreference(use_google_info);
-
         CheckBoxPreference use_offline_maps = new CheckBoxPreference(this);
         use_offline_maps.setTitle(R.string.pref_use_offline_maps);
         use_offline_maps.setKey("use_offline_maps");
@@ -52,8 +49,8 @@ public class SettingsActivity extends PreferenceActivity {
 
 	ListPreference verbose = new ListPreference(this);
 	verbose.setTitle(R.string.pref_verbose);
-	verbose.setEntryValues(verbs);
-	verbose.setEntries(entries);
+	verbose.setEntryValues(vals);
+	verbose.setEntries(entries_verb);
 	verbose.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
 	    @Override
 	    public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -63,12 +60,32 @@ public class SettingsActivity extends PreferenceActivity {
 		    editor.putInt("verbose", Integer.parseInt(verb));  
 		    editor.commit();
 		}
-		Log.d(TAG, "preference changed to " + verb);
+		Log.d(TAG, "preference for verbose changed to " + verb);
 		return true;
     	    }
 	});
 	verbose.setValueIndex(settings.getInt("verbose", 1));
         launchPrefCat.addPreference(verbose);
+
+	ListPreference addr_source = new ListPreference(this);
+	addr_source.setTitle(R.string.pref_addr_source);
+	addr_source.setEntryValues(vals);
+	addr_source.setEntries(entries_addr);
+	addr_source.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+	    @Override
+	    public boolean onPreferenceChange(Preference preference, Object newValue) {
+		asrc = (String) newValue;
+		if(asrc != null) {
+		    SharedPreferences.Editor editor = settings.edit();
+		    editor.putInt("addr_source", Integer.parseInt(asrc));  
+		    editor.commit();
+		}
+		Log.d(TAG, "preference for addr_source changed to " + asrc);
+		return true;
+    	    }
+	});
+	addr_source.setValueIndex(settings.getInt("addr_source", 0));
+        launchPrefCat.addPreference(addr_source);
 
         return root;
     }

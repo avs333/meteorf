@@ -85,7 +85,7 @@ public class WeatherActivity extends AppCompatActivity
     static {
 	System.loadLibrary("bz2_jni");
     } 	
-    public native int unBzip2(byte [] b, String outfile);
+    public static native int unBzip2(byte [] b, String outfile);
     
 //    public static final String URL_STA_LIST = "https://meteoinfo.ru/tmp/1/mobile/mobile_stan.php";
 //    public static final String URL_SRV_DATA = "https://meteoinfo.ru/tmp/1/mobile/mobile_data.php"; //?p=station
@@ -126,21 +126,25 @@ public class WeatherActivity extends AppCompatActivity
     // 2 -> all
     // all means all, not only the four defined above.
     static private int verbose = 1;
-     
-    private final int GOOGLE_TIMEOUT = 60000;	// let's take a minute	
-    private final int SERVER_TIMEOUT = 20000;	// on very slow connections
+
+    // 0 -> none
+    // 1 -> google
+    // 2 -> OMS (always used by widget)
+    static private int addr_source = 0;      	    
+ 
+    private static final int GOOGLE_TIMEOUT = 60000;	// let's take a minute	
+    private static final int SERVER_TIMEOUT = 20000;	// on very slow connections
 
     private final long LOC_UPDATE_INTERVAL = 20 * 1000;
     private final long LOC_FASTEST_UPDATE_INTERVAL = 2000; /* 2 sec */
 //    private final int locPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;	
     private final int locPriority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;	
 
-
     public static String formattedLocString = null;
 
     public static AppCompatActivity mainAct;    // this activity
 
-    public class Station {
+    public static class Station {
             String name = null;
             String country = null;
             String name_p = null;
@@ -153,13 +157,13 @@ public class WeatherActivity extends AppCompatActivity
                 return name_p;
             }
             public String getInfo() {
-                String info = getString(R.string.station) + ": " + code;
+                String info = App.get_string(R.string.station) + ": " + code;
                 if(wmo != -1) info += "\n" + "WMO id: " + wmo;
-                if(name != null) info += "\n" + getString(R.string.name) + ": " + name;
-                if(country != null) info += "\n" + getString(R.string.country) + ": " + country;
+                if(name != null) info += "\n" + App.get_string(R.string.name) + ": " + name;
+                if(country != null) info += "\n" + App.get_string(R.string.country) + ": " + country;
                 if(name_p != null) info += "\n[" + name_p + "]";
-                if(latitude != inval_coord) info += "\n" + getString(R.string.latitude) + " " + latitude;
-                if(longitude != inval_coord) info += "\n" + getString(R.string.longitude) + " " + longitude;
+                if(latitude != inval_coord) info += "\n" + App.get_string(R.string.latitude) + " " + latitude;
+                if(longitude != inval_coord) info += "\n" + App.get_string(R.string.longitude) + " " + longitude;
                 return info;
             }
     }
@@ -169,6 +173,7 @@ public class WeatherActivity extends AppCompatActivity
 
     public static Station curStation = null;
     public static Location curLocation = null;
+
     // either coordinates of curLocation, or explicitly entered ones
     public static double requestedLon = inval_coord;
     public static double requestedLat = inval_coord;
@@ -178,7 +183,6 @@ public class WeatherActivity extends AppCompatActivity
     public static ArrayList<String> bulletinList = null;
 
     public static boolean use_russian = true;
-    public static boolean use_google_info = true;
     public static boolean use_offline_maps = true;
     public static String last_md5;
 
@@ -201,10 +205,10 @@ public class WeatherActivity extends AppCompatActivity
         ).show();
     }
 
-    private Prefs prefs;
-    private Set<String> favs;
+    private static Prefs prefs = null;
+    private static Set<String> favs;
 
-    byte[] appendTo(byte[] dest, byte[] src, int add_len) {
+    public static byte[] appendTo(byte[] dest, byte[] src, int add_len) {
         int i, old_len = (dest == null) ? 0 : dest.length;
         byte[] new_b = new byte[old_len + add_len];
         for(i = 0; i < old_len; i++) new_b[i] = dest[i];
@@ -212,7 +216,7 @@ public class WeatherActivity extends AppCompatActivity
 	return new_b;
     }
 
-    private boolean getStations() {
+    synchronized public static boolean getStations(boolean show_log) {
 
 	boolean ok = false;
         InputStream in = null;
@@ -227,7 +231,7 @@ public class WeatherActivity extends AppCompatActivity
 
 	    File stations = new File(sta_file);
 
-	    logUI(COLOUR_DBG, R.string.query_md5);
+	    if(show_log) logUI(COLOUR_DBG, R.string.query_md5);
             URL url = new URL(URL_STA_LIST + STA_LIST_QUERY_MD5);
     	
             urlConnection = (HttpsURLConnection) url.openConnection();
@@ -236,7 +240,7 @@ public class WeatherActivity extends AppCompatActivity
 	    in = new BufferedInputStream(urlConnection.getInputStream());
 	    len = in.read(b, 0, bufsz);
 	    if(len <= 0) {	
-		logUI(COLOUR_ERR, R.string.conn_bad);
+		if(show_log) logUI(COLOUR_ERR, R.string.conn_bad);
 		return false;
 	    }	
 	    urlConnection.disconnect();
@@ -250,7 +254,7 @@ public class WeatherActivity extends AppCompatActivity
 
 	    if(last_md5 == null || !md5.equals(last_md5) || !stations.exists()) {	
 		stations = null;
-		logUI(COLOUR_INFO, R.string.retr_sta_list);
+		if(show_log) logUI(COLOUR_INFO, R.string.retr_sta_list);
 
 		url = new URL(URL_STA_LIST + STA_LIST_QUERY_BZIP2);
             	urlConnection = (HttpsURLConnection) url.openConnection();
@@ -271,30 +275,33 @@ public class WeatherActivity extends AppCompatActivity
 		in = null;
 
 		if(result == null) {
-		    logUI(COLOUR_ERR, R.string.bzip2_rec_failure);		    
+		    if(show_log) logUI(COLOUR_ERR, R.string.bzip2_rec_failure);		    
 		    return false; 	
 		}	
 
 		float kbs = (end_time > start_time) ? ((float) result.length)/((float) (end_time - start_time)) : 0;
-		String s = String.format(getString(R.string.bzip2_rec_ok), kbs);
-		logUI(COLOUR_INFO, s);
+		String s = String.format(App.get_string(R.string.bzip2_rec_ok), kbs);
+		if(show_log) logUI(COLOUR_INFO, s);
 
 		int unzipped_size = unBzip2(result, sta_file);
 
 		if(unzipped_size <= 0) {
-		    logUI(COLOUR_ERR, R.string.bzip2_dec_failure);		    
+		    if(show_log) logUI(COLOUR_ERR, R.string.bzip2_dec_failure);		    
 		    return false;	
 		}
 
-		s = String.format(getString(R.string.bzip2_dec_ok), result.length, unzipped_size);
-		logUI(COLOUR_DBG, s);
+		s = String.format(App.get_string(R.string.bzip2_dec_ok), result.length, unzipped_size);
+		if(show_log) logUI(COLOUR_DBG, s);
 
 		last_md5 = md5;
+		if(prefs == null) {
+		    prefs = new Prefs();
+		}
 		prefs.save_md5();
 
 		stations = new File(sta_file);
 
-	    } else logUI(COLOUR_INFO, R.string.sta_unchanged);
+	    } else if(show_log) logUI(COLOUR_INFO, R.string.sta_unchanged);
 	   
 
 	    // Here, sta_file should be a text file with stations.
@@ -307,7 +314,7 @@ public class WeatherActivity extends AppCompatActivity
 	    inf = null; 	
 
 	    if(result == null) {
-		logUI(COLOUR_ERR, R.string.err_read_sta);
+		if(show_log) logUI(COLOUR_ERR, R.string.err_read_sta);
 	    	return false;
 	    }  	
 
@@ -320,24 +327,24 @@ public class WeatherActivity extends AppCompatActivity
 	    String[] std, stans;
  	    stans = s.split("\n");
 	    if(stans.length < 1) {
-		logUI(COLOUR_ERR, R.string.empty_sta_list);
+		if(show_log) logUI(COLOUR_ERR, R.string.empty_sta_list);
 		return false;
 	    }
 
 	    // And finally, parse stations in these lines
 
-	    logUI(COLOUR_DBG, R.string.parse_list);
+	    if(show_log) logUI(COLOUR_DBG, R.string.parse_list);
 
 	    fullStationList = new ArrayList<>();	
 	
 	    for(i = 0; i < stans.length; i++) {
 		if(stans[i].startsWith("16169")) {
-	    	    logUI(COLOUR_DBG, R.string.skip_kiev);
+	    	    if(show_log) logUI(COLOUR_DBG, R.string.skip_kiev);
 		    continue;
 	        }
 		std = stans[i].split(";");
 		if(std.length < 5) {
-		    logUI(COLOUR_DBG, getString(R.string.inv_sta_data) + i);
+		    if(show_log) logUI(COLOUR_DBG, App.get_string(R.string.inv_sta_data) + i);
 		    continue;
 		}
 		Station sta = new Station();	
@@ -347,7 +354,7 @@ public class WeatherActivity extends AppCompatActivity
 		    sta.latitude = Double.parseDouble(std[2]);	
 		    sta.longitude = Double.parseDouble(std[3]);
 		} catch(java.lang.NumberFormatException nfe) {
-		    logUI(COLOUR_DBG, getString(R.string.inv_sta_data) + i);
+		    if(show_log) logUI(COLOUR_DBG, App.get_string(R.string.inv_sta_data) + i);
 		    continue;
 		}		
 		sta.name = std[4];
@@ -362,20 +369,20 @@ public class WeatherActivity extends AppCompatActivity
 		fullStationList.add(sta);
 	    }
 	    
-	    s = String.format(getString(R.string.good_read_sta), fullStationList.size());
-	    logUI(COLOUR_INFO, s); 		
+	    s = String.format(App.get_string(R.string.good_read_sta), fullStationList.size());
+	    if(show_log) logUI(COLOUR_INFO, s); 		
 
 	    ok = true;	
 
 	} catch (java.net.ConnectException c) {
-	    logUI(COLOUR_ERR, R.string.no_server_conn);
+	    if(show_log) logUI(COLOUR_ERR, R.string.no_server_conn);
 	    return false;	
 	} catch(java.net.SocketTimeoutException je) {
-	    logUI(COLOUR_ERR, URL_STA_LIST + ": " + getString(R.string.read_timeout));
+	    if(show_log) logUI(COLOUR_ERR, URL_STA_LIST + ": " + App.get_string(R.string.read_timeout));
 	    return false;		
 	
         } catch (Exception e) {
-	    logUI(COLOUR_ERR, R.string.err_exception);	
+	    if(show_log) logUI(COLOUR_ERR, R.string.err_exception);	
             e.printStackTrace();
             return false;
         } finally {
@@ -384,7 +391,7 @@ public class WeatherActivity extends AppCompatActivity
                 if(inf != null) in.close();
                 if(urlConnection != null) urlConnection.disconnect();
             } catch(Exception e) {
-	    	logUI(COLOUR_ERR, R.string.err_exception);	
+	    	if(show_log) logUI(COLOUR_ERR, R.string.err_exception);	
 		e.printStackTrace();
                 ok = false;
             }
@@ -392,7 +399,7 @@ public class WeatherActivity extends AppCompatActivity
         return ok;
     }
 
-    Station getNearestStation(double latitude, double longitude) {
+    public static Station getNearestStation(double latitude, double longitude) {
 	if(fullStationList == null) return null;
 	double last_diff = Long.MAX_VALUE; 
 	int i, result = -1;      
@@ -495,13 +502,13 @@ public class WeatherActivity extends AppCompatActivity
 
 
     private String get_formatted_address(double lat, double lon) {
-	if(!use_google_info) return null;
+	if(addr_source == 0) return null;
+	else if(addr_source == 2) return getAddress(lat, lon);
         InputStream in = null;
         HttpURLConnection urlConnection = null;
         JsonReader reader = null;
         String addr = null;
         try {
-	    if(!use_google_info) return null;	
 	    String url_str = GOOGLE_LL + lat + "," + lon + "&sensor=false&language=" + (use_russian ? "ru" : "en");
 //	    url_str += "&key=" + "AIzaSyAReLe7a8eqNswzVxIaVlj0n-EEYl0PN38";	
 
@@ -560,6 +567,51 @@ public class WeatherActivity extends AppCompatActivity
         }
         return addr;
     }
+
+    public static String OSM_GEOCODING_URL = "https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru,en"; 
+
+    public static String getAddress(double lat, double lon) {
+        HttpsURLConnection urlConnection = null;
+        InputStream in = null;
+        JsonReader reader = null;
+        String addr = null;
+        try {
+            URL url = new URL(OSM_GEOCODING_URL +  // lat + "," + lon); 
+			"&lat=" + lat + "&lon=" + lon);
+            urlConnection = (HttpsURLConnection) url.openConnection();
+            urlConnection.setReadTimeout(30*1000);
+	    urlConnection.setRequestMethod("GET");
+            urlConnection.setConnectTimeout(15000);
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(false);
+	    // Required for their server!!
+	    urlConnection.setRequestProperty("User-Agent", "android/ru.meteoinfo");	
+	    urlConnection.connect();
+	    int response = urlConnection.getResponseCode();
+	//  Log.d("meteoinfo.ru", url.toString() + " response=" + response);	
+            in = new BufferedInputStream(urlConnection.getInputStream());
+            reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
+            reader.beginObject();
+            while(reader.hasNext()) {
+                String name = reader.nextName();
+                if(name.equals("display_name")) {
+                    addr = reader.nextString();
+                    break;
+                } else reader.skipValue();
+            }
+        } catch (Exception e) {
+            Log.e("meteoinfo.ru", "exception in getAdderss()");
+            e.printStackTrace();
+        } finally {
+            try {
+                if(reader != null) reader.close();
+                if(in != null) in.close();
+                if(urlConnection != null) urlConnection.disconnect();
+            } catch (Exception e) {}
+        }
+        return addr;
+    }
+
 
     protected void startLocationUpdates() {
 
@@ -669,12 +721,12 @@ public class WeatherActivity extends AppCompatActivity
     };
 
 
-    private void logUI(int colour, int res_id) {
-	String str = getString(res_id);
+    public static void logUI(int colour, int res_id) {
+	String str = App.get_string(res_id);
 	logUI(colour, str);
     }	
 
-    static public void logUI(int colour, String str) {
+    public static void logUI(int colour, String str) {
 	if(str == null) return;
 	if(verbose == 0 && colour != COLOUR_ERR) return;
 	else if(verbose == 1 && colour == COLOUR_DBG) return;
@@ -749,7 +801,7 @@ public class WeatherActivity extends AppCompatActivity
 	    @Override
 	    public void run() {
 		logUI(COLOUR_INFO, R.string.checking_server_conn);
-		serverAvail = getStations();
+		serverAvail = getStations(true);
 		if(serverAvail) {
 		    logUI(COLOUR_GOOD, R.string.conn_ok);	
 		    ui_update.post(new Runnable() {	
@@ -1025,7 +1077,7 @@ public class WeatherActivity extends AppCompatActivity
 	                showDialog(ST_LAUNCH_DLG);
 		    }
 		};
-		if(use_google_info) {
+		if(addr_source > 0) {
 		    final Runnable bgr = new Runnable() {
        		        @Override
 			public void run() {
@@ -1084,7 +1136,7 @@ public class WeatherActivity extends AppCompatActivity
         		showDialog(ST_LAUNCH_DLG);
 		    }
 		};
-		if(use_google_info) {
+		if(addr_source > 0) {
 		    final Runnable bgr = new Runnable() {
        		        @Override
 			public void run() {
@@ -1279,7 +1331,7 @@ public class WeatherActivity extends AppCompatActivity
                                 showDialog(ST_LAUNCH_DLG);
                             }
                         };
-			if(use_google_info) {
+			if(addr_source > 0) {
 			    final Runnable bgr = new Runnable() {
                         	@Override
 				public void run() {
@@ -1302,28 +1354,29 @@ public class WeatherActivity extends AppCompatActivity
     }
 
 
-    class Prefs {
+    public static class Prefs {
         private SharedPreferences settings;
 
         Prefs() {
-            settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
+            //settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 	    load(); 
 	    favs = settings.getStringSet("favs", null);
 	    last_md5 = settings.getString("last_md5", null);
         }
 	public void load() {
             use_russian = settings.getBoolean("use_russian", true);
-            use_google_info = settings.getBoolean("use_google_info", true);
             use_offline_maps = settings.getBoolean("use_offline_maps", true);
 	    verbose = settings.getInt("verbose", 1);
+	    addr_source = settings.getInt("addr_source", 0);
 	}
         public void save() {
             SharedPreferences.Editor editor = settings.edit();
             editor.putBoolean("use_russian", use_russian);
-            editor.putBoolean("use_google_info", use_google_info);
             editor.putBoolean("use_offline_maps", use_offline_maps);
 	    editor.putStringSet("favs", favs);
 	    editor.putInt("verbose", verbose);	
+	    editor.putInt("addr_source", addr_source);	
 	    editor.commit();
         }
         public void save_md5() {

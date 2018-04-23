@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp" >
+
+    <ImageView
+        android:id="@+id/imageView00"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+	android:layout_alignParentLeft="true"
+        android:src="@drawable/btn_star_big_on_selected" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+	android:layout_toRightOf="@id/imageView00" >
+
+        <TextView
+            android:id="@+id/w_addr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Address"
+	    android:clickable="true"
+            android:textSize="12sp" />
+<!--
+        <TextView
+            android:id="@+id/w_latitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Latitude"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/w_longitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Longitude"
+            android:textSize="16sp" /> -->
+
+     </LinearLayout>
+
+
+
+</RelativeLayout>
+
+<!--
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/imageView00"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="left"
+        android:src="@drawable/btn_star_big_on_selected" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/w_latitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Latitude"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/w_longitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Longitude"
+            android:textSize="16sp" />
+
+     </LinearLayout>
+
+</LinearLayout>
+
+-->
+

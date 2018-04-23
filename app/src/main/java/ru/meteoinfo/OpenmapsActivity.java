@@ -185,7 +185,7 @@ public class OpenmapsActivity extends Activity {
     @Override
     public void onResume(){
         super.onResume();
-        mapview.onResume(); //needed for compass, my location overlays, v6.0.0 and up
+        if(mapview != null) mapview.onResume(); //needed for compass, my location overlays, v6.0.0 and up
     }
 
     @Override
@@ -195,7 +195,7 @@ public class OpenmapsActivity extends Activity {
         //if you make changes to the configuration, use 
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         //Configuration.getInstance().save(this, prefs);
-        mapview.onPause();  //needed for compass, my location overlays, v6.0.0 and up
+        if(mapview != null) mapview.onPause();  //needed for compass, my location overlays, v6.0.0 and up
     }
 
     @Override
