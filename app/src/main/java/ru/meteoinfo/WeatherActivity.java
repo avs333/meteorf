@@ -129,7 +129,7 @@ public class WeatherActivity extends AppCompatActivity
 
     // 0 -> none
     // 1 -> google
-    // 2 -> OMS (always used by widget)
+    // 2 -> OSM (always used by widget)
     static private int addr_source = 0;      	    
  
     private static final int GOOGLE_TIMEOUT = 60000;	// let's take a minute	

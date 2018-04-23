@@ -16,7 +16,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     private String[] vals = {"0", "1", "2"};
     private String[] entries_verb = {"Err", "Err+Info", "All"};
-    private String[] entries_addr = {"None", "Google", "OMS"};
+    private String[] entries_addr = {"None", "Google", "OSM"};
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setPreferenceScreen(createPreferenceHierarchy());
