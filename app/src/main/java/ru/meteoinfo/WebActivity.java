@@ -20,7 +20,8 @@ public class WebActivity extends AppCompatActivity {
 
     static private final String TAG = "meteoinfo.ru"; 
     private WebView webview;
-    static long time, bytes;
+    private static long time, bytes;
+    private static boolean show_ui = true;
 
     Handler hdl = new Handler() {
 	@Override
@@ -52,6 +53,7 @@ public class WebActivity extends AppCompatActivity {
 	time = 0;
         Intent intent = getIntent();
         final String url = intent.getStringExtra("action");
+	show_ui = intent.getBooleanExtra("show_ui", true);
 
         webview = (WebView) findViewById(R.id.webview);
 
@@ -75,7 +77,7 @@ public class WebActivity extends AppCompatActivity {
 		super.onPageStarted(view, u, favicon);
 		time = System.currentTimeMillis();	
 		bytes = TrafficStats.getTotalRxBytes();
-		logUI(COLOUR_DBG, "web: onPageStarted");
+		if(show_ui) logUI(COLOUR_DBG, "web: onPageStarted");
 	    }	
 	    @Override 
 	    public void onPageFinished(WebView view, String u) {
@@ -85,7 +87,7 @@ public class WebActivity extends AppCompatActivity {
 		if(time != 0) s += ": " + (System.currentTimeMillis() - time)  + " ms";
 		if(rx - bytes > 0) s += " bytes=" + (rx - bytes);
 		else s += " (cached)";
-		logUI(COLOUR_DBG, s);
+		if(show_ui) logUI(COLOUR_DBG, s);
 	    }	
 	    @Override 
 	    public void onLoadResource(WebView view, String u) {
@@ -96,7 +98,7 @@ public class WebActivity extends AppCompatActivity {
 	    }
 	    @Override
 	    public void onReceivedError(WebView view, int errorCode, String description, String failedUrl) {
-		logUI(COLOUR_ERR, "web: (" + failedUrl + ")" + description);		    
+		if(show_ui) logUI(COLOUR_ERR, "web: (" + failedUrl + ")" + description);		    
 		try {
 		    view.stopLoading();
 		    view.clearView();
@@ -117,7 +119,7 @@ public class WebActivity extends AppCompatActivity {
 	webview.loadUrl(url);
 
 	} catch (Exception e) {
-	    logUI(COLOUR_ERR, getString(R.string.conn_slow));
+	    if(show_ui) logUI(COLOUR_ERR, getString(R.string.conn_slow));
 	    e.printStackTrace();		
 	}
     }

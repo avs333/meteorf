@@ -15,7 +15,7 @@
 
 void bz_internal_error ( int errcode ) { /* java callback required */ }
 
-JNIEXPORT jint Java_ru_meteoinfo_WeatherActivity_unBzip2(JNIEnv *env, jobject obj, jbyteArray jb, jstring jfile)
+JNIEXPORT jint Java_ru_meteoinfo_Util_unBzip2(JNIEnv *env, jobject obj, jbyteArray jb, jstring jfile)
 {
     const char *file = 0;
     int  count, fd, i, k, to_write, ret = 0;

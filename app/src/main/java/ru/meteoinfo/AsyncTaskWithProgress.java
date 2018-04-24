@@ -42,14 +42,14 @@ public class AsyncTaskWithProgress extends AsyncTask<Void,Void,Void> {
             boolean showing = pr.isShowing();
             if (showing) pr.dismiss();
         } catch(Exception e) {
-	    logUI(COLOUR_ERR, mainAct.getString(R.string.err_exception));
+//	    logUI(COLOUR_ERR, mainAct.getString(R.string.err_exception));
             e.printStackTrace();
         }
         pr = null;
         if(fgr != null) fgr.run();
     }
-    protected void onCancelled(Void result) {
-        logUI(COLOUR_DBG, "AsyncTask: onCancelled");
-    }
+//    protected void onCancelled(Void result) {
+//        logUI(COLOUR_DBG, "AsyncTask: onCancelled");
+//    }
 }
 

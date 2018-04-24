@@ -29,18 +29,23 @@ import android.os.AsyncTask;
 import com.google.android.gms.location.*;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import static ru.meteoinfo.WeatherActivity.*;
+import static ru.meteoinfo.Util.*;
 
 public class WidgetProvider extends AppWidgetProvider {
 
     public static final String LOCATION_CHANGED_BROADCAST = "location_changed";
     public static final long LOC_UPDATE_INTERVAL = 20 * 1000;
     public static final long LOC_FASTEST_UPDATE_INTERVAL = 2000; /* 2 sec */
-//    public static final int locPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;	
+
+// Lazy todo is a setting to select one of:
+// public static final int locPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;	
     public static final int locPriority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;	
+
     private static final String TAG = "meteoinfo:WidgetProvider";
     private static PendingIntent pint = null;
-//    private GoogleApiClient cli = null;    
+
+// https://wiki.openstreetmap.org/wiki/Nominatim -- takes lat/lon coordinates, returns some human-readable
+// address in the proximity. NB: user-agent +must+ be specified (no permission otherwise), see getAddress() in Utils.
     public static String OSM_GEOCODING_URL = "https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru,en"; // &lat=...&lon=...	
 
     @Override
@@ -53,7 +58,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	final int N = appWidgetIds.length;
         for (int i=0; i<N; i++) {
             int appWidgetId = appWidgetIds[i];
-            updateAppWidget(context, appWidgetManager, appWidgetId, "Location unknown yet");
+            updateAppWidget(context, appWidgetManager, appWidgetId, App.get_string(R.string.loc_unk_yet));
         }
     }
     
@@ -74,13 +79,16 @@ public class WidgetProvider extends AppWidgetProvider {
         Log.d(TAG, "onEnabled");
 	try {
 
-/*	    PackageManager pm = context.getPackageManager();
+/*
+	    Just in case:	
+	    PackageManager pm = context.getPackageManager();
 	    pm.setComponentEnabledSetting(
                 new ComponentName(context, "ru.meteoinfo.WidgetBroadcastReceiver"),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP); */
 
 	    Log.d(TAG, "startLocationUpdates");
 /*
+	    Just in case:
 	    Intent intent = new Intent(LOCATION_CHANGED_BROADCAST);
 	    pint = PendingIntent.getBroadcast(context, 0, intent, 0);	
 	    LocationRequest loc_req = new LocationRequest();
@@ -122,27 +130,41 @@ public class WidgetProvider extends AppWidgetProvider {
 		        new AsyncTask<Void, Void, String>() {
 			    @Override
 			    protected String doInBackground(Void... params) {
+				// Log.i(TAG, "background task");
 				double lat = location.getLatitude(), lon = location.getLongitude();
 				if(fullStationList == null) {
 				    Log.i(TAG, "null station list, calling server");	
-				    if(!WeatherActivity.getStations(false)) Log.e(TAG, "getStations() returned error");
-				}	
+				    boolean bb = getStations(false);
+				    Log.i(TAG, "getStations() returned " + bb);
+				} else Log.i(TAG, "fullStationList known already");
 				if(fullStationList != null) {
 				    Station st = getNearestStation(lat, lon);
 				    if(st != null) {
 					cur_station_code = st.code;
 					pint = null;
 				    }
-				    Log.d(TAG, "cur_station_code=" + cur_station_code);	
+				//    Log.d(TAG, "cur_station_code=" + cur_station_code);	
 				}
-				return WeatherActivity.getAddress(lat, lon);
+				String s = getAddress(lat, lon);
+				Log.d(TAG, "getAddress returned " + (s != null));	
+				return s;
 			    }
 			    @Override
 			    protected void onPostExecute(String addr) {
-				int [] bound_widgets = gm.getAppWidgetIds(
+				Log.i(TAG, "foreground task");
+				if(addr == null) {
+				    Log.e(TAG, "Null addres on input, exiting");	
+				    return;
+				}
+				try {
+				    int [] bound_widgets = gm.getAppWidgetIds(
 					new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
-			        for(int i = 0; i < bound_widgets.length; i++)
-				    updateAppWidget(ctx, gm, bound_widgets[i], addr);
+				    for(int i = 0; i < bound_widgets.length; i++)
+					updateAppWidget(ctx, gm, bound_widgets[i], addr);
+				} catch (Exception e) {
+				    Log.e(TAG, "exception in foreground task");
+				}
+				Log.i(TAG, "done with foreground task");
 			    }
 			}.execute();
 		    } catch (Exception e) {
@@ -176,41 +198,6 @@ public class WidgetProvider extends AppWidgetProvider {
 	}
     }
 
-/*
-    String getAddress(Location location) {
-	if(location == null) return null;
-	HttpsURLConnection urlConnection = null;
-	InputStream in = null;
-	JsonReader reader = null;
-	String addr = null;
-	try {
-	    URL url = new URL(OSM_GEOCODING_URL + "&lat=" + location.getLatitude() + "&lon=" + location.getLongitude());	
-	    urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(30*1000);
-            in = new BufferedInputStream(urlConnection.getInputStream());
-            reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
-            reader.beginArray();
-	    while(reader.hasNext()) {
-		String name = reader.nextName();
-		if(name.equals("display_name")) {
-		    addr = reader.nextString();
-		    break;		
-		}
-	    }
-	} catch (Exception e) {
-	    Log.e(TAG, "exception in getAdderss()");
-	    e.printStackTrace();		
-	} finally {
-	    try {
-		if(reader != null) reader.close();
-		if(in != null) in.close();
-		if(urlConnection != null) urlConnection.disconnect();
-	    } catch (Exception e) {}		
-	}
-	return addr;
-    }	
-*/
-
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
             int appWidgetId, String addr) {
 
@@ -218,25 +205,17 @@ public class WidgetProvider extends AppWidgetProvider {
 	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 	views.setTextViewText(R.id.w_addr, addr);
 
+	// Listen, and display a webpage when the widget is clicked
 	if(pint == null && cur_station_code != -1) {
-	    String url =  URL_SRV_DATA + "?p=" + curStation.code;	
-	    Log.d(TAG, "onClick -> " + url);	
+	    String url =  URL_SRV_DATA + "?p=" + cur_station_code;	
 	    Intent intent = new Intent(context, WebActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    intent.putExtra("action", url);
+	    intent.putExtra("show_ui", false);
 	    pint = PendingIntent.getActivity(context, 0, intent, 0); 	
 	}
-	// "If the pendingIntent is null, we clear the onClickListener"
+	// "If the pendingIntent is null, we clear the onClickListener" -> (C) Android Oreo
 	views.setOnClickPendingIntent(R.id.w_addr, pint);	    		
-
-
-/*	String s;
-	if(loc == null) s = "Latitude: <unknown>"; else s = "Latitude: " + loc.getLatitude();
-        views.setTextViewText(R.id.w_latitude, s);
-	if(loc == null) s = "Longitude: <unknown>"; else s = "Longitude: " + loc.getLongitude();
-        views.setTextViewText(R.id.w_longitude, s); */
-	
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 }
