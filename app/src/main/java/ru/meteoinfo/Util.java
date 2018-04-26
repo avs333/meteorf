@@ -45,13 +45,16 @@ import android.util.Log;
 import static ru.meteoinfo.WeatherActivity.*;
 
 public class Util {
+
     static {
 	System.loadLibrary("bz2_jni");
     } 	
 
     public static native int unBzip2(byte [] b, String outfile);
 
-    private static String TAG = "ru.meteoinfo";   
+    private static String TAG = "ru.meteoinfo:Util";   
+
+    public static final double inval_coord = -1000.0;
 
     public static final String URL_STA_LIST = "https://meteoinfo.ru/hmc-output/mobile/st_list.php";  // + query
     public static final String URL_SRV_DATA = "https://meteoinfo.ru/hmc-output/mobile/st_fc.php";    //?p=station
@@ -61,6 +64,10 @@ public class Util {
     public static final String STA_LIST_QUERY_SHA256 =	"?p=30"; // sha256 hash of    
     public static final String STA_LIST_QUERY_ZLIB =	"?p=40"; // libz compressed list    
     public static final String STA_LIST_QUERY_BZIP2 =	"?p=50"; // bzip2 compressed list
+
+    public static final int GOOGLE_TIMEOUT = 60000;	// let's take a minute for RKN	
+    public static final int OMS_TIMEOUT = 20000;	// on very slow connections
+    public static final int SERVER_TIMEOUT = 20000;	// on very slow connections
 
     public static class Station {
             String name = null;
@@ -87,6 +94,7 @@ public class Util {
     }
 
     public static ArrayList<Station> fullStationList = null;
+
     public static byte[] appendTo(byte[] dest, byte[] src, int add_len) {
         int i, old_len = (dest == null) ? 0 : dest.length;
         byte[] new_b = new byte[old_len + add_len];
@@ -107,21 +115,19 @@ public class Util {
 	log(show_ui, colour, App.get_string(res_id));
     }
 
-    synchronized public static boolean getStations(boolean show_ui) {
+    private static File getStationsFile(boolean show_ui) {
 
-	boolean ok = false;
         InputStream in = null;
         HttpsURLConnection urlConnection = null;
-	FileInputStream inf = null;
 	String sta_file = App.getContext().getFilesDir().toString() + "/station.list";
 	final int bufsz = 8*1024;
 	byte [] b = new byte[bufsz], result = null;
-	int len, i;
+	int len;
 
         try {
 
-	    File stations = new File(sta_file);
-
+	    // query md5 of the station list currently stored on the server
+	
 	    log(show_ui, COLOUR_DBG, R.string.query_md5);
             URL url = new URL(URL_STA_LIST + STA_LIST_QUERY_MD5);
     	
@@ -132,21 +138,24 @@ public class Util {
 	    len = in.read(b, 0, bufsz);
 	    if(len <= 0) {	
 		log(show_ui, COLOUR_ERR, R.string.conn_bad);
-		return false;
+		return null;
 	    }	
 	    urlConnection.disconnect();
 	    in.close();
 	    urlConnection = null;
 	    in = null;	
-		
+
+	    // check md5 against last_md5 saved in preferences before
+
 	    String md5 = new String(b);	
 	    md5 = md5.substring(0, len);
 	    if(md5.startsWith("Rez "))	md5 = md5.substring(5);
    	    SharedPreferences settings =  PreferenceManager.getDefaultSharedPreferences(App.getContext());
 	    String last_md5 = settings.getString("last_md5", null); 
 
-	    if(last_md5 == null || !md5.equals(last_md5) || !stations.exists()) {	
-		stations = null;
+	    if(last_md5 == null || !md5.equals(last_md5) || !(new File(sta_file)).exists()) {	
+
+		// md5 mismatch or no station file yet, obtain its bz2 file
 		log(show_ui, COLOUR_INFO, R.string.retr_sta_list);
 
 		url = new URL(URL_STA_LIST + STA_LIST_QUERY_BZIP2);
@@ -169,33 +178,73 @@ public class Util {
 
 		if(result == null) {
 		    log(show_ui, COLOUR_ERR, R.string.bzip2_rec_failure);		    
-		    return false; 	
+		    return null; 	
 		}	
 
 		float kbs = (end_time > start_time) ? ((float) result.length)/((float) (end_time - start_time)) : 0;
 		String s = String.format(App.get_string(R.string.bzip2_rec_ok), kbs);
 		log(show_ui, COLOUR_INFO, s);
 
+		// unbzip the station file
+
 		int unzipped_size = unBzip2(result, sta_file);
 
 		if(unzipped_size <= 0) {
 		    log(show_ui, COLOUR_ERR, R.string.bzip2_dec_failure);		    
-		    return false;	
+		    return null;	
 		}
 
 		s = String.format(App.get_string(R.string.bzip2_dec_ok), result.length, unzipped_size);
 		log(show_ui, COLOUR_DBG, s);
 
+		// save md5 in preferences
+
 		last_md5 = md5;
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString("last_md5", last_md5);	
 		editor.commit();
-		stations = new File(sta_file);
 
-	    } else log(show_ui, COLOUR_INFO, R.string.sta_unchanged);
-	   
+	    } else {
+		// No need to do anything. sta_file exists and its md5 matches with the server's
+		log(show_ui, COLOUR_INFO, R.string.sta_unchanged);
+	    }	
 
-	    // Here, sta_file should be a text file with stations.
+	    return new File(sta_file);
+
+	} catch (java.net.ConnectException c) {
+	    log(show_ui, COLOUR_ERR, R.string.no_server_conn);
+	    return null;	
+	} catch(java.net.SocketTimeoutException je) {
+	    log(show_ui, COLOUR_ERR, URL_STA_LIST + ": " + App.get_string(R.string.read_timeout));
+	    return null;		
+        } catch (Exception e) {
+	    log(show_ui, COLOUR_ERR, R.string.err_exception);	
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                if(in != null) in.close();
+                if(urlConnection != null) urlConnection.disconnect();
+            } catch(Exception e) {
+	    	log(show_ui, COLOUR_ERR, R.string.err_exception);	
+		e.printStackTrace();
+            }
+        }
+    } 
+
+    synchronized public static boolean getStations(boolean show_ui) {
+
+	boolean ok = false;
+	FileInputStream inf = null;
+	final int bufsz = 8*1024;
+	byte [] b = new byte[bufsz], result = null;
+	int len, i;
+
+        try {
+
+	    File stations = getStationsFile(show_ui);
+	    if(stations == null) return false;	   
+
 	    // First, read it to array
 
 	    inf = new FileInputStream(stations);
@@ -209,7 +258,7 @@ public class Util {
 	    	return false;
 	    }  	
 
-	    // Then, convert its contents in from byte array to string
+	    // Convert file contents from byte array to string
 
 	    String s = new String(result);	
 
@@ -222,14 +271,14 @@ public class Util {
 		return false;
 	    }
 
-	    // And finally, parse stations in these lines
+	    // Parse and add each station to fullStationList
 
 	    log(show_ui, COLOUR_DBG, R.string.parse_list);
 
 	    fullStationList = new ArrayList<>();	
 	
 	    for(i = 0; i < stans.length; i++) {
-		if(stans[i].startsWith("16169")) {
+		if(stans[i].startsWith("16169")) {  // known dead station next to Kievsky vokzal
 	    	    log(show_ui, COLOUR_DBG, R.string.skip_kiev);
 		    continue;
 	        }
@@ -265,22 +314,13 @@ public class Util {
 
 	    ok = true;	
 
-	} catch (java.net.ConnectException c) {
-	    log(show_ui, COLOUR_ERR, R.string.no_server_conn);
-	    return false;	
-	} catch(java.net.SocketTimeoutException je) {
-	    log(show_ui, COLOUR_ERR, URL_STA_LIST + ": " + App.get_string(R.string.read_timeout));
-	    return false;		
-	
         } catch (Exception e) {
 	    log(show_ui, COLOUR_ERR, R.string.err_exception);	
             e.printStackTrace();
             return false;
         } finally {
             try {
-                if(in != null) in.close();
-                if(inf != null) in.close();
-                if(urlConnection != null) urlConnection.disconnect();
+                if(inf != null) inf.close();
             } catch(Exception e) {
 	    	log(show_ui, COLOUR_ERR, R.string.err_exception);	
 		e.printStackTrace();
@@ -294,7 +334,6 @@ public class Util {
 	if(fullStationList == null) return null;
 	double last_diff = Long.MAX_VALUE; 
 	int i, result = -1;      
-
 	for(i = 0; i < fullStationList.size(); i++) {
 	    Station st = fullStationList.get(i);
 	    double diff = (st.longitude - longitude) * (st.longitude - longitude)
@@ -307,8 +346,24 @@ public class Util {
 	return (result >= 0) ? fullStationList.get(result) : null;
     }	
 
-    public static String OSM_GEOCODING_URL = "https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru,en"; 
+    public static ArrayList<Station> getMatchingStationsList(String pattern) {
+        ArrayList<Station> stations = new ArrayList<>();
+	int i;
+	String pat = pattern.toLowerCase();
+	for(i = 0; i < fullStationList.size(); i++) {
+	   Station st = fullStationList.get(i);		    	
+	   String s1 = st.name.toLowerCase();
+	   if(s1.startsWith(pat)) {
+		stations.add(st);
+	   } 		
+	}
+	return stations;
+    }
 
+// https://wiki.openstreetmap.org/wiki/Nominatim -- takes lat/lon coordinates, returns some human-readable
+// address in the proximity. NB: user-agent +must+ be specified (no permission otherwise), see getAddress() in Utils.
+
+    public static String OSM_GEOCODING_URL = "https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru,en"; // &lat=...&lon=...	
     public static String getAddress(double lat, double lon) {
         HttpsURLConnection urlConnection = null;
         InputStream in = null;
@@ -320,14 +375,16 @@ public class Util {
             urlConnection = (HttpsURLConnection) url.openConnection();
             urlConnection.setReadTimeout(30*1000);
 	    urlConnection.setRequestMethod("GET");
-            urlConnection.setConnectTimeout(15000);
+            urlConnection.setConnectTimeout(OMS_TIMEOUT);
             urlConnection.setDoInput(true);
             urlConnection.setDoOutput(false);
-	    // Required for their server!!
+	    // Required for their server, see https://operations.osmfoundation.org/policies/nominatim/ !!
+	    // If unspecified, the server will respond with HTTP/400 "permission denied" 	
 	    urlConnection.setRequestProperty("User-Agent", "android/ru.meteoinfo");	
 	    urlConnection.connect();
 	    int response = urlConnection.getResponseCode();
 	//  Log.d("meteoinfo.ru", url.toString() + " response=" + response);	
+	    if (response != HttpsURLConnection.HTTP_OK) return null;
             in = new BufferedInputStream(urlConnection.getInputStream());
             reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
             reader.beginObject();

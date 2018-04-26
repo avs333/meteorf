@@ -15,7 +15,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.UiSettings;
 
-import static ru.meteoinfo.WeatherActivity.*;
+import static ru.meteoinfo.WeatherActivity.*;	// for logUI
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 

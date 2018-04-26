@@ -32,8 +32,6 @@ import org.mapsforge.map.rendertheme.XmlRenderTheme;
 
 import android.util.Log;
 
-import static ru.meteoinfo.WeatherActivity.*;
-
 public class OpenmapsActivity extends Activity {
 
     private double lat, lon, sta_lat, sta_lon;
@@ -114,13 +112,13 @@ public class OpenmapsActivity extends Activity {
 
 
         Intent intent = getIntent();
-        lat = intent.getDoubleExtra("lat", inval_coord);
-        lon = intent.getDoubleExtra("lon", inval_coord);
-        sta_lat = intent.getDoubleExtra("sta_lat", inval_coord);
-        sta_lon = intent.getDoubleExtra("sta_lon", inval_coord);
+        lat = intent.getDoubleExtra("lat", Util.inval_coord);
+        lon = intent.getDoubleExtra("lon", Util.inval_coord);
+        sta_lat = intent.getDoubleExtra("sta_lat", Util.inval_coord);
+        sta_lon = intent.getDoubleExtra("sta_lon", Util.inval_coord);
 
-	if(use_offline_maps) {
-	    File [] map_files = (lat == inval_coord || lon == inval_coord) ?
+	if(WeatherActivity.use_offline_maps) {
+	    File [] map_files = (lat == Util.inval_coord || lon == Util.inval_coord) ?
 			 getMatchingMaps(sta_lat, sta_lon) : getMatchingMaps(lat, lon);
 	    XmlRenderTheme theme = null;
 	    if(map_files != null && map_files.length > 0) {
@@ -132,10 +130,10 @@ public class OpenmapsActivity extends Activity {
 		} catch (Exception e) {
                     e.printStackTrace();
 		}
-	    } else logUI(COLOUR_DBG, getString(R.string.no_offline_maps));
+	    } else WeatherActivity.logUI(WeatherActivity.COLOUR_DBG, getString(R.string.no_offline_maps));
 	}
 
-	if(forge != null) logUI(COLOUR_INFO, getString(R.string.using_offline_maps));
+	if(forge != null) WeatherActivity.logUI(WeatherActivity.COLOUR_INFO, getString(R.string.using_offline_maps));
 
 	if(forge != null) mapview.setTileProvider(forge);
 	else mapview.setTileSource(TileSourceFactory.MAPNIK);
@@ -148,7 +146,7 @@ public class OpenmapsActivity extends Activity {
 
 	GeoPoint pt = null, ptc = null;
 
-	if(lat != inval_coord && lon != inval_coord) {
+	if(lat != Util.inval_coord && lon != Util.inval_coord) {
 	    pt = new GeoPoint(lat, lon);
             Marker m = new Marker(mapview);
 	    m.setPosition(pt);

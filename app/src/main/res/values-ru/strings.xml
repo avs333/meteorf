@@ -98,6 +98,6 @@
     <string name="no_cur_sta">Станция неизвестна</string>               
     <string name="conn_slow">Слишком медленное соединение</string>               
     <string name="loc_unk_yet">Местонахождение еще не определено...</string>               
-    <string name="init_already">Список станций известен.</string>               
+    <string name="init_already">Список станций получен.</string>               
 
 </resources>

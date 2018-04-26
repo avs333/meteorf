@@ -6,6 +6,7 @@ import android.content.Context;
 public class App extends Application {
 
     private static Context context;
+    public static boolean activity_visible = false;
 
     @Override
     public void onCreate() {
@@ -20,4 +21,5 @@ public class App extends Application {
     public static String get_string(int res_id) {
 	return context.getResources().getString(res_id);
     }
+
 }

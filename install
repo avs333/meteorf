@@ -1,0 +1,12 @@
+#!/bin/bash
+
+./gradlew assembleDebug || exit 0
+
+cp app/build/outputs/apk/debug/app-debug.apk . 
+
+adb shell cmd package uninstall -k ru.meteoinfo
+
+adb install app-debug.apk
+
+adb shell am start -n ru.meteoinfo/.WeatherActivity
+

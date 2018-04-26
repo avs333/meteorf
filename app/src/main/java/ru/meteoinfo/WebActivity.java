@@ -14,11 +14,11 @@ import android.content.DialogInterface;
 import android.app.AlertDialog;
 import android.net.TrafficStats;
 
-import static ru.meteoinfo.WeatherActivity.*;
+import static ru.meteoinfo.WeatherActivity.*;  // for logUI
 
 public class WebActivity extends AppCompatActivity {
 
-    static private final String TAG = "meteoinfo.ru"; 
+    static private final String TAG = "meteoinfo.ru:WebActivity"; 
     private WebView webview;
     private static long time, bytes;
     private static boolean show_ui = true;

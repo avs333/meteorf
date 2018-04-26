@@ -4,10 +4,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
-
 import java.lang.ref.WeakReference;
-import static ru.meteoinfo.WeatherActivity.*;
-
 
 public class AsyncTaskWithProgress extends AsyncTask<Void,Void,Void> {
     private ProgressDialog pr;
@@ -42,7 +39,6 @@ public class AsyncTaskWithProgress extends AsyncTask<Void,Void,Void> {
             boolean showing = pr.isShowing();
             if (showing) pr.dismiss();
         } catch(Exception e) {
-//	    logUI(COLOUR_ERR, mainAct.getString(R.string.err_exception));
             e.printStackTrace();
         }
         pr = null;
