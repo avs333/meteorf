@@ -56,7 +56,8 @@ public class WidgetProvider extends AppWidgetProvider {
 	    if(!loc_update_in_progress) {
 		loc_update_in_progress = true;	
 	        LocationResult result = LocationResult.extractResult(intent);
-	        onLocationUpdate(context, result);
+		if(result == null) Log.e(TAG, "null LocationResult");
+		else onLocationUpdate(context, result);
 	    } else Log.d(TAG, "location update in progress");
 	}
 	super.onReceive(context, intent);
@@ -97,19 +98,6 @@ public class WidgetProvider extends AppWidgetProvider {
                 new ComponentName(context, "ru.meteoinfo.WidgetBroadcastReceiver"),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP); */
 
-	    if(Util.fullStationList == null) {	
-		Log.d(TAG, "null station list, updating");
-		new Thread (new Runnable() {
-		    @Override
-		    public void run() {
-			Log.i(TAG, "null station list, calling server");	
-			boolean result = Util.getStations(false);
-			Log.i(TAG, "getStations returned " + result);	
-		    }
-		}).start();
-            } Log.d(TAG, "station list available already"); 
-
-
 	    Intent intent = new Intent(context, WidgetProvider.class);
 	    intent.setAction(LOCATION_CHANGED_BROADCAST);
 
@@ -126,30 +114,6 @@ public class WidgetProvider extends AppWidgetProvider {
 	    sett_client.checkLocationSettings(loc_set_request);
 
 	    LocationServices.getFusedLocationProviderClient(context).requestLocationUpdates(loc_req, pint_loc);
-/*
-	    LocationRequest loc_request = new LocationRequest();
-	    loc_request.setPriority(locPriority);
-	    loc_request.setInterval(LOC_UPDATE_INTERVAL);
-	    loc_request.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
-
- 	    LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-	    builder.addLocationRequest(loc_request);
-	    LocationSettingsRequest loc_set_request = builder.build();
-	    SettingsClient sett_client = LocationServices.getSettingsClient(context);
-	    sett_client.checkLocationSettings(loc_set_request);
-
-	    final Context ctx = context;
-
-	    LocationCallback loc_callback = new LocationCallback() {
-		@Override
-		public void onLocationResult(LocationResult result) {
-		    Log.d(TAG, "location changed, updating widget");
-		    onLocationUpdate(ctx, result);
-		}   
-	    };
-	    LocationServices.getFusedLocationProviderClient(context).requestLocationUpdates(
-		loc_request, loc_callback, Looper.myLooper()); 
-*/
 
 	} catch (Exception e) {
 	    Log.e(TAG, "exception in onEnabled()");
@@ -164,6 +128,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	final Location location = result.getLastLocation();
 	if(location == null) {
 	    Log.d(TAG, "location is null");
+	    loc_update_in_progress = false;
 	    return;
 	}		
 	final Context ctx = context;
@@ -174,6 +139,11 @@ public class WidgetProvider extends AppWidgetProvider {
 	    protected String doInBackground(Void... params) {
 		Log.i(TAG, "background task");
 		double lat = location.getLatitude(), lon = location.getLongitude();
+		if(Util.fullStationList == null) {
+		    Log.d(TAG, "null station list, updating");
+		    boolean result = Util.getStations(false);
+		    Log.i(TAG, "getStations returned " + result);	
+		}
 		Station st = Util.getNearestStation(lat, lon);
 		if(st != null) {
 		    cur_station_code = st.code;
@@ -188,15 +158,13 @@ public class WidgetProvider extends AppWidgetProvider {
 	    @Override
 	    protected void onPostExecute(String addr) {
 		Log.i(TAG, "foreground task");
-		if(addr == null) {
-		    Log.e(TAG, "Null address, won't touch the widget");	
-		    return;
-		}
 		try {
-		    int [] bound_widgets = gm.getAppWidgetIds(
-			new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
-		    for(int i = 0; i < bound_widgets.length; i++)
-			updateAppWidget(ctx, gm, bound_widgets[i], addr);
+		    if(addr != null) {	
+			int [] bound_widgets = gm.getAppWidgetIds(
+			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
+			for(int i = 0; i < bound_widgets.length; i++)
+			    updateAppWidget(ctx, gm, bound_widgets[i], addr);
+		    } else Log.e(TAG, "Null address, won't touch the widget");
 		} catch (Exception e) {
 		    Log.e(TAG, "exception in foreground task");
 		}
