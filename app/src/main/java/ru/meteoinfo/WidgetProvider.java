@@ -36,6 +36,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
     private static final long LOC_UPDATE_INTERVAL = 20 * 1000;		/* 20 sec should be enough */
     private static final long LOC_FASTEST_UPDATE_INTERVAL = 2 * 1000;
+    private static final float LOC_MIN_DISPLACEMENT = 0.0f; // <- in metres. 0.0 debug only!! 500.0f; will be ok for release
 
 // Should be a setting to select one of:
 // private static final int locPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;	
@@ -45,23 +46,31 @@ public class WidgetProvider extends AppWidgetProvider {
     private static PendingIntent pint_click = null;
     private static PendingIntent pint_loc = null;
     private static long cur_station_code = -1;	
+    private static String last_loc_addr = null;
     private static boolean loc_update_in_progress = false; 
+    private final Object obj = new Object();
 
     @Override
     public void onReceive(Context context, Intent intent) {
-	Log.d(TAG, "onReceive entry");
-//	if(intent.getAction() == Intent.ACTION_BOOT_COMPLETED) Log.d(TAG, "received BOOT_COMPLETED");
 	if(intent.getAction().equals(LOCATION_CHANGED_BROADCAST)) {
-	    Log.d(TAG, "location changed");
-	    if(!loc_update_in_progress) {
-		loc_update_in_progress = true;	
-	        LocationResult result = LocationResult.extractResult(intent);
-		if(result == null) Log.e(TAG, "null LocationResult");
-		else onLocationUpdate(context, result);
-	    } else Log.d(TAG, "location update in progress");
+	    Log.d(TAG, "location change");
+	    synchronized(obj) {	
+		if(loc_update_in_progress) {
+		    Log.d(TAG, "location change: update in progress, exiting");
+		    return;
+		}	
+		loc_update_in_progress = true;
+	    }
+	    Location location = null;	
+	    LocationResult result = LocationResult.extractResult(intent);
+	    if(result != null) location = result.getLastLocation();	    	 	
+	    if(location == null) {
+		Log.e(TAG, "location change: null location, exiting");
+		loc_update_in_progress = false;
+	    } else onLocationUpdate(context, location);
+	    return;	
 	}
 	super.onReceive(context, intent);
-	Log.d(TAG, "onReceive exit");
     }
 
     @Override
@@ -76,6 +85,7 @@ public class WidgetProvider extends AppWidgetProvider {
             int appWidgetId = appWidgetIds[i];
             updateAppWidget(context, appWidgetManager, appWidgetId, App.get_string(R.string.loc_unk_yet));
         }
+        Log.d(TAG, "onUpdate complete");
     }
     
     @Override
@@ -98,6 +108,10 @@ public class WidgetProvider extends AppWidgetProvider {
                 new ComponentName(context, "ru.meteoinfo.WidgetBroadcastReceiver"),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP); */
 
+	    // previous installation may have failed!
+	    cur_station_code = -1;	
+	    last_loc_addr = null;
+
 	    Intent intent = new Intent(context, WidgetProvider.class);
 	    intent.setAction(LOCATION_CHANGED_BROADCAST);
 
@@ -106,6 +120,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	    loc_req.setPriority(locPriority);
 	    loc_req.setInterval(LOC_UPDATE_INTERVAL);
 	    loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
+	    loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
 
 	    LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
 	    builder.addLocationRequest(loc_req);
@@ -119,21 +134,14 @@ public class WidgetProvider extends AppWidgetProvider {
 	    Log.e(TAG, "exception in onEnabled()");
 	    e.printStackTrace();	
 	}
-        Log.d(TAG, "done Enabled");
+        Log.d(TAG, "onEnabled complete");
     }
 
+    void onLocationUpdate(Context context, Location loc) {
 
-    void onLocationUpdate(Context context, LocationResult result) {
-
-	final Location location = result.getLastLocation();
-	if(location == null) {
-	    Log.d(TAG, "location is null");
-	    loc_update_in_progress = false;
-	    return;
-	}		
+	final Location location = loc;
 	final Context ctx = context;
 	final AppWidgetManager gm = AppWidgetManager.getInstance(context);
-
         new AsyncTask<Void, Void, String>() {
 	    @Override
 	    protected String doInBackground(Void... params) {
@@ -141,34 +149,41 @@ public class WidgetProvider extends AppWidgetProvider {
 		double lat = location.getLatitude(), lon = location.getLongitude();
 		if(Util.fullStationList == null) {
 		    Log.d(TAG, "null station list, updating");
-		    boolean result = Util.getStations(false);
-		    Log.i(TAG, "getStations returned " + result);	
+		    Util.getStations(false);
 		}
 		Station st = Util.getNearestStation(lat, lon);
-		if(st != null) {
-		    cur_station_code = st.code;
-		    pint_click = null;
+		if(st == null) {
+		    Log.e(TAG, "background task complete: failed to update station list");	
+		    return null;
+	        }
+		String addr = Util.getAddress(lat, lon);
+		if(addr != null) {
+		    if(last_loc_addr != null && addr.equals(last_loc_addr)) {
+			Log.d(TAG, "background task complete: address unchanged");
+			return null;
+		    }
+		    last_loc_addr = addr;
+		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
+		    cur_station_code = st.code;	
+		    pint_click = null;  // must update pint_click with new station code
 		    Log.d(TAG, "cur_station_code=" + cur_station_code);	
 		}
-		String s = Util.getAddress(lat, lon);
-		Log.d(TAG, "getAddress returned " + (s != null));	
-		if(s != null && s.matches("^\\d+?.*")) s = "Дом " + s;
-		return s;
+		Log.d(TAG, "background task complete");
+		return addr;
 	    }
 	    @Override
 	    protected void onPostExecute(String addr) {
-		Log.i(TAG, "foreground task");
 		try {
 		    if(addr != null) {	
 			int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
 			for(int i = 0; i < bound_widgets.length; i++)
 			    updateAppWidget(ctx, gm, bound_widgets[i], addr);
-		    } else Log.e(TAG, "Null address, won't touch the widget");
+			Log.d(TAG, "location change: widget updated");
+		    } else Log.d(TAG, "location change: widget left untouched");
 		} catch (Exception e) {
 		    Log.e(TAG, "exception in foreground task");
 		}
-		Log.i(TAG, "done with foreground task");
 		loc_update_in_progress = false;
 	    }
 	}.execute();
