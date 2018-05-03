@@ -21,5 +21,4 @@ public class App extends Application {
     public static String get_string(int res_id) {
 	return context.getResources().getString(res_id);
     }
-
 }

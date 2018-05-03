@@ -1,15 +1,5 @@
 package ru.meteoinfo;
 
-import java.io.BufferedInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.FileInputStream; 
-import java.io.File;
-import java.net.HttpURLConnection;
-import javax.net.ssl.HttpsURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.List;
@@ -28,7 +18,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.location.Location;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -44,8 +33,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.method.ScrollingMovementMethod; 
-import android.util.JsonReader;
-import android.util.JsonToken;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,19 +52,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.GoogleApiAvailability;
-//import com.google.android.gms.location.*;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.location.*;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-//import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
 import ru.meteoinfo.Util.Station;
 
@@ -87,13 +64,6 @@ public class WeatherActivity extends AppCompatActivity
 
 
     private static String TAG = "ru.meteoinfo:WeatherActivity";   
- 
-//    public static final String URL_STA_LIST = "https://meteoinfo.ru/tmp/1/mobile/mobile_stan.php";
-//    public static final String URL_SRV_DATA = "https://meteoinfo.ru/tmp/1/mobile/mobile_data.php"; //?p=station
-
-
-    public static final String GOOGLE_LL = "http://maps.googleapis.com/maps/api/geocode/json?latlng="; // lat,lon&language=
-
 
     private final int ST_LIST_PREPARE_DLG = 1;
     private final int ST_LIST_PROCESS_DLG = 2;
@@ -132,7 +102,7 @@ public class WeatherActivity extends AppCompatActivity
     private static ArrayList<Station> matchingStationList = null;
 
     public static Station curStation = null;
-    public static Location curLocation = null;
+//  public static Location curLocation = null;
 
     // either coordinates of curLocation, or explicitly entered ones
     public static double requestedLon = Util.inval_coord;
@@ -146,140 +116,17 @@ public class WeatherActivity extends AppCompatActivity
     private static Prefs prefs = null;
     private static Set<String> favs;
 
+    private static boolean cur_sta_local = false;
 
     private String get_formatted_address(double lat, double lon) {
 	if(addr_source == 0) return null;
-	else if(addr_source == 2) return Util.getAddress(lat, lon);
-        InputStream in = null;
-        HttpURLConnection urlConnection = null;
-        JsonReader reader = null;
-        String addr = null;
-        try {
-	    String url_str = GOOGLE_LL + lat + "," + lon + "&sensor=false&language=" + (use_russian ? "ru" : "en");
-//	    url_str += "&key=" + "AIzaSyAReLe7a8eqNswzVxIaVlj0n-EEYl0PN38";	
-
-            URL url = new URL(url_str);
-
-            urlConnection = (HttpURLConnection) url.openConnection();
-	    urlConnection.setReadTimeout(Util.GOOGLE_TIMEOUT);	
-
-            in = new BufferedInputStream(urlConnection.getInputStream());
-            reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
-            reader.beginObject();
-            String name = reader.nextName();
-            if(name.equals("results")) {
-                reader.beginArray();
-                if(reader.peek() == JsonToken.BEGIN_OBJECT) {
-                    reader.beginObject();
-                    while (reader.hasNext()) {
-                        name = reader.nextName();
-                        switch (name) {
-                            case "formatted_address":
-                                addr = reader.nextString();
-				if(addr == null) logUI(COLOUR_DBG, R.string.err_google);
-                                break;
-                            default:
-                                reader.skipValue();
-                                break;
-                        }
-                        if(addr != null) break;
-                    }
-                }
-            } else if(name.equals("error_message")) {
-		String err_msg = reader.nextString();
-		logUI(COLOUR_DBG, err_msg);
-	    } else logUI(COLOUR_DBG, R.string.err_google);
-
-            if(addr != null) logUI(COLOUR_DBG, getString(R.string.found_sta_info) + " " + addr);
-	    reader.close();
-            reader = null;
-	} catch(java.net.SocketTimeoutException je) {
-	    logUI(COLOUR_ERR, "http://maps.googleapis.com: " + getString(R.string.read_timeout));
-	    return null;		
-        } catch(Exception e) {
-	    logUI(COLOUR_ERR, R.string.err_exception);	
-	    e.printStackTrace();
-            return null;
-        } finally {
-            try {
-                if(reader != null) reader.close();
-                if(in != null) in.close();
-                if(urlConnection != null) urlConnection.disconnect();
-            } catch(Exception e) {
-       		logUI(COLOUR_ERR, R.string.err_exception);	
-		e.printStackTrace();
-                addr = null;
-            }
-        }
-        return addr;
-    }
-
-
-    protected void startLocationUpdates() {
-
-	logUI(COLOUR_DBG, "startLocationUpdates");
-
-	LocationRequest loc_request = new LocationRequest();
-	loc_request.setPriority(locPriority);
-	loc_request.setInterval(LOC_UPDATE_INTERVAL);
-	loc_request.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
- 
-	LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-	builder.addLocationRequest(loc_request);
-	LocationSettingsRequest loc_set_request = builder.build();
-
-	// Check whether location settings are satisfied
-	// https://developers.google.com/android/reference/com/google/android/gms/location/SettingsClient
-	SettingsClient sett_client = LocationServices.getSettingsClient(this);
-	sett_client.checkLocationSettings(loc_set_request);
-
-        LocationCallback loc_callback = new LocationCallback() {
-	    @Override
-	    public void onLocationResult(LocationResult locationResult) {
-		onLocationChanged(locationResult.getLastLocation());
-	    }   
-	};
-	LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(
-	    loc_request, loc_callback, Looper.myLooper());
-    }
-
-    public void onLocationChanged(Location location) {
-	if(location == null) {
-	    logUI(COLOUR_ERR, R.string.null_coords);	
-	    return;		
-	}
-	curLocation = new Location(location);
-//	String s = String.format(getString(R.string.cur_coord), location.getLatitude(), location.getLongitude());
-//	logUI(COLOUR_DBG, s);
-    }
-
-    public void getLastLocation() {
-	logUI(COLOUR_DBG, "getLastLocation()");
-	FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(this);
-	locationClient.getLastLocation()
-	    .addOnSuccessListener(new OnSuccessListener<Location>() {
-		@Override
-		public void onSuccess(Location location) {
-                    if(location != null) {
-			String s = String.format(getString(R.string.cur_coord), location.getLatitude(), location.getLongitude());
-			logUI(COLOUR_DBG, s);
-			onLocationChanged(location);
-		    }	
-		}
-            })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(Exception e) {
-               	    logUI(COLOUR_ERR, R.string.inv_last_coords);	
-		    e.printStackTrace();
-                }
-            });
+	else if(addr_source == 1) return Util.getAddressFromGoogle(lat, lon);
+	return Util.getAddressFromOSM(lat, lon);
     }
 
     boolean maps_avail = false;
 
     protected  void onActivityResult(int req, int res, Intent data) {
-        logUI(COLOUR_DBG, "onActivityResult: req=" + req + ", res=" + res);
 	if(req == PREF_ACT_REQ) prefs.load();
         if(res == 0) maps_avail = true;
     }
@@ -287,17 +134,16 @@ public class WeatherActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+
         GoogleApiAvailability ga = GoogleApiAvailability.getInstance();
         int result = ga.isGooglePlayServicesAvailable(this);
-        logUI(COLOUR_DBG, "google availability=" + (result == 0 ? "ok" : "no"));
+//        logUI(COLOUR_DBG, "google availability=" + (result == 0 ? "ok" : "no"));
         if(result != 0) {
             Dialog dlg = ga.getErrorDialog(this,result,555);
             dlg.show();
         } else {
             maps_avail = true;
         }
-	getLastLocation();
-	startLocationUpdates(); 
 	App.activity_visible = true;
     }
 
@@ -307,27 +153,40 @@ public class WeatherActivity extends AppCompatActivity
 	App.activity_visible = false;
     }
 
-//    public static NavigationView navigationView;
+    @Override
+    protected void onStop() {
+        super.onStop();
+	App.activity_visible = false;
+    }
 
-    public static Menu navMenu;
+//  private static NavigationView navigationView;
+    private static Menu navMenu;
     private static int menu_size;
     private static TextView tview;
     private static int fav_menu_idx = -1;
 
-    static Handler ui_update = new Handler() {
+    public static Handler ui_update = new Handler() {
 	@Override
 	public void handleMessage(Message msg) {
 	    super.handleMessage(msg);
-	    Bundle b = msg.getData();
-	    if(b == null) return;
-	    String s = b.getString("mesg");
-	    int col = b.getInt("colour");	
-	    if(s == null) return;
-	    String ss = String.format("<font color=#%06X>%s</font><br>", col, s);		
-	    tview.append(Html.fromHtml(ss));
+	    Bundle bundle = msg.getData();
+	    if(bundle == null) return;
+	    String s = bundle.getString("mesg");
+	    if(s != null) {	
+		int col = bundle.getInt("colour");	
+		String ss = String.format("<font color=#%06X>%s</font><br>", col, s);		
+	 	tview.append(Html.fromHtml(ss));
+		return;
+	    }
+	    int result = bundle.getInt("init_complete", -1);
+	    if(result != -1) {
+		for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
+		if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
+		else navMenu.getItem(fav_menu_idx).setEnabled(false);
+		logUI(COLOUR_GOOD, R.string.conn_ok);	
+	    }		
 	}
     };
-
 
     public static void logUI(int colour, int res_id) {
 	String str = App.get_string(res_id);
@@ -360,7 +219,14 @@ public class WeatherActivity extends AppCompatActivity
 	    finish();
 	    return;
         }
- 	prefs = new Prefs();
+
+ 	prefs = new Prefs();	// calls prefs.load();
+
+	Intent intie = new Intent(this, Srv.class);
+	intie.setAction(Srv.ACTIVITY_STARTED);
+
+	if(startService(intie) == null) Log.d(TAG, "Service not started");
+	else Log.d(TAG, "Service started");
 
         Locale loc = use_russian ? new Locale("ru", "RU") : new Locale("en", "US");
         Locale.setDefault(loc);
@@ -371,6 +237,8 @@ public class WeatherActivity extends AppCompatActivity
         res.updateConfiguration(config, res.getDisplayMetrics());
 
         setContentView(R.layout.activity_weather);
+
+	App.activity_visible = true;
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -394,7 +262,6 @@ public class WeatherActivity extends AppCompatActivity
 
 	navMenu = navigationView.getMenu();
 	menu_size = navMenu.size();
-
 	
 	for(int i = 0; i < menu_size; i++) {
 	    MenuItem mi = navMenu.getItem(i);
@@ -407,41 +274,40 @@ public class WeatherActivity extends AppCompatActivity
 	    logUI(COLOUR_GOOD, R.string.init_already);	
 	    if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
 	    else navMenu.getItem(fav_menu_idx).setEnabled(false);
-	} else connect_to_server();
-    }
-
-    private void connect_to_server() {
-	Runnable rr = new Runnable() {
-	    @Override
-	    public void run() {
-		logUI(COLOUR_INFO, R.string.checking_server_conn);
-		serverAvail = Util.getStations(true);
-		if(serverAvail) {
-		    logUI(COLOUR_GOOD, R.string.conn_ok);	
-		    ui_update.post(new Runnable() {	
-			public void run() {
-			    for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
-			    if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
-			    else navMenu.getItem(fav_menu_idx).setEnabled(false);
-			}
-		    });
-                }
-	    }		
-	};
-	Thread thd = new Thread(rr);
-	thd.start();
-    }	
-
-    public static boolean urlAccessible(String url, int timeout_ms) { 
-	try {
-	    HttpURLConnection.setFollowRedirects(false);
-	    HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
-	    con.setRequestMethod("HEAD");
-	    con.setConnectTimeout(timeout_ms);
-	    return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
-	} catch (Exception e) {
-	    return false;
 	}
+
+/*
+ else {
+	    Runnable rr = new Runnable() {
+		@Override
+		public void run() {
+		    logUI(COLOUR_INFO, R.string.checking_server_conn);
+		    serverAvail = Util.getStations();
+		    if(serverAvail) {
+			logUI(COLOUR_GOOD, R.string.conn_ok);	
+			ui_update.post(new Runnable() {	
+			    public void run() {
+				for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
+				if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
+				else navMenu.getItem(fav_menu_idx).setEnabled(false);
+			    }
+			});
+		    }
+		}		
+	    };
+	    Thread thd = new Thread(rr);
+	    thd.start();
+	}
+*/
+	LocationServices.getFusedLocationProviderClient(this).getLastLocation().addOnSuccessListener(this, 
+            new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+		    if(location == null) return;
+                    if(Util.currentLocation == null) Util.currentLocation = location;                        
+		    logUI(COLOUR_GOOD, R.string.cur_loc_known);
+                }
+        });
     }
 
     @Override
@@ -466,7 +332,7 @@ public class WeatherActivity extends AppCompatActivity
 		Runnable fgr = new Runnable() {
 		    @Override
 		    public void run() {
-			if(curLocation == null) {
+			if(Util.currentLocation == null) {
 			   Toast.makeText(getApplicationContext(), getString(R.string.failed_to_find_loc), Toast.LENGTH_LONG).show();
 			   return;
 		        }
@@ -475,6 +341,7 @@ public class WeatherActivity extends AppCompatActivity
 			    Toast.makeText(getApplicationContext(), getString(R.string.no_station), Toast.LENGTH_LONG).show();
 			    return;
 			} 	
+			cur_sta_local = true;
 			logUI(COLOUR_DBG, getString(R.string.sta_loc) + ": " + curStation.name_p + " #" + curStation.code);
 			removeDialog(ST_LAUNCH_DLG);
 			showDialog(ST_LAUNCH_DLG);
@@ -483,9 +350,9 @@ public class WeatherActivity extends AppCompatActivity
 		Runnable bgr = new Runnable() {
 		    @Override
 		    public void run() {
-			if(curLocation == null) return;
-			requestedLat = curLocation.getLatitude();
-			requestedLon = curLocation.getLongitude();
+			if(Util.currentLocation == null) return;
+			requestedLat = Util.currentLocation.getLatitude();
+			requestedLon = Util.currentLocation.getLongitude();
 			formattedLocString = get_formatted_address(requestedLat, requestedLon);
 		    }
 		};
@@ -520,7 +387,6 @@ public class WeatherActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START); */
 
         return true;
-
     }
 
 
@@ -684,6 +550,7 @@ public class WeatherActivity extends AppCompatActivity
 			}
 			requestedLon = Util.inval_coord;
 			requestedLat = Util.inval_coord;
+			cur_sta_local = false;
 	                removeDialog(ST_LIST_PROCESS_DLG);
 	                removeDialog(ST_LAUNCH_DLG);
 	                showDialog(ST_LAUNCH_DLG);
@@ -758,6 +625,7 @@ public class WeatherActivity extends AppCompatActivity
 			}
        			requestedLat = Util.inval_coord;
 			requestedLon = Util.inval_coord;
+			cur_sta_local = false;
 		     	removeDialog(SEL_FAV);
 	                removeDialog(ST_LAUNCH_DLG);
         		showDialog(ST_LAUNCH_DLG);
@@ -805,8 +673,6 @@ public class WeatherActivity extends AppCompatActivity
 	}
         final Dialog dialog = new Dialog(this);
 
-
-
 	dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.launch_layout);
 	logUI(COLOUR_DBG, "do_launch()");
@@ -815,10 +681,10 @@ public class WeatherActivity extends AppCompatActivity
 
         EditText launch_msg = dialog.findViewById(R.id.launch_msg);
         Button act_btn = dialog.findViewById(R.id.act_btn);
+        Button data_btn = dialog.findViewById(R.id.data_btn);
         Button add_btn = dialog.findViewById(R.id.add_to_fav);
         Button view_google = dialog.findViewById(R.id.view_google);
         Button view_osm = dialog.findViewById(R.id.view_osm);
-
 
         launch_msg.setKeyListener(null);
         String s = curStation.getInfo();
@@ -828,15 +694,29 @@ public class WeatherActivity extends AppCompatActivity
 
         act_btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View arg0) {
-                Intent ii = new Intent(getApplicationContext(),WebActivity.class);
+                Intent ii = new Intent(getApplicationContext(), WebActivity.class);
 //		logUI(COLOUR_DBG, R.string.launch_webpage);
                 String url;
 		if(curStation == null) {
 	    	    logUI(COLOUR_DBG, getString(R.string.err_in) + " do_launch");	
 		    return;
 		}
-                url = Util.URL_SRV_DATA + "?p=" + curStation.code;
+                url = Util.URL_STA_DATA + "?p=" + curStation.code;
                 ii.putExtra("action", url);
+                startActivity(ii);
+            }
+        });
+
+        data_btn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View arg0) {
+                Intent ii = new Intent(getApplicationContext(), DataActivity.class);
+                String url;
+		if(curStation == null) {
+	    	    logUI(COLOUR_DBG, getString(R.string.err_in) + " do_launch");	
+		    return;
+		}
+                ii.putExtra("local", cur_sta_local);
+		Log.i(TAG, "STARTING DataActivity");
                 startActivity(ii);
             }
         });
@@ -922,6 +802,7 @@ public class WeatherActivity extends AppCompatActivity
                                     Toast.makeText(getApplicationContext(), getString(R.string.failed_to_find_loc), Toast.LENGTH_LONG).show();
 				    return;	
 				}
+				cur_sta_local = false;
                                 removeDialog(ST_LAUNCH_DLG);
                                 showDialog(ST_LAUNCH_DLG);
                             }

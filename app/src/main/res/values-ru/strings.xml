@@ -14,7 +14,7 @@
     <string name="conn_bad">Нет связи с сервером! Проверьте настройки Internet и попробуйте еще раз</string>
     <string name="conn_ok">Инициализация прошла успешно</string>
     <string name="no_internet">Нет подключения к Internet!</string>
-    <string name="title_get_data_activity">GetDataActivity</string>
+    <string name="title_data_activity">Подробные данные о погоде</string>
     <string name="try_find_loc">Определение текущих координат...</string>
     <string name="failed_to_find_loc">Не удалось найти текущие координаты</string>
     <string name="no_loc_srv">Сервис Location недоступен на этом устройстве!</string>
@@ -28,8 +28,10 @@
     <string name="cancel">Отмена</string>
     <string name="receiving_stl">Получение списка станций</string>
     <string name="act_data">Погода</string>
-    <string name="daily_data">Почасовой прогноз</string>
-    <string name="weekly_data">Прогноз на неделю</string>
+    <string name="all_data">Подробная информация</string>
+    <string name="observ_data">Наблюдения за последние 6 часов</string>
+    <string name="daily_data">Почасовой прогноз на 3 дня</string>
+    <string name="weekly_data">Прогноз на 7 дней</string>
     <string name="alerts_data">Последние тревожные оповещения</string>
     <string name="get_data">Получить данные для</string>
     <string name="no_data_avail">Нет данных</string>
@@ -63,6 +65,7 @@
     <string name="added">Сохранено.</string>
     <string name="sta_loc">Станция</string>         
     <string name="cur_loc">Местонахождение</string>               
+    <string name="cur_loc_known">Местонахождение известно</string>               
     <string name="dist">Расстояние: ок.</string>               
     <string name="info">Секундочку...</string>               
     <string name="nav_header_title">Гидрометцентр РФ</string>               
@@ -99,5 +102,55 @@
     <string name="conn_slow">Слишком медленное соединение</string>               
     <string name="loc_unk_yet">Местонахождение еще не определено...</string>               
     <string name="init_already">Список станций получен.</string>               
+    <string name="night">ночью</string>               
+    <string name="day">днем</string>               
+    <string name="empty_string">Пустая строка</string>               
+    <string name="query_weather_data">Опрос погодных данных для станции </string>               
+    <string name="no_weather_data">Нет данных для станции </string>               
+    <string name="weather_data_cached">Данные для станции уже в кеше</string>               
+    <string name="observed_data_okay">Данные текущих наблюдений получены</string>               
+    <string name="hourly_data_okay">Данные почасового прогноза получены</string>               
+    <string name="weekly_data_okay">Данные недельного прогноза получены</string>               
+    <string name="observed_data_bad">Нет данных текущих наблюдений</string>               
+    <string name="hourly_data_bad">Нет данных почасового прогноза</string>               
+    <string name="weekly_data_bad">Нет данных недельного прогноза</string>               
+    <string name="empty_elem_skiped">пустой элемент списка пропущен</string>               
+    <string name="wd_temperature">Температура: %s°C\n</string>
+    <string name="wd_pressure">Давление: %s мм рт.ст.\n</string>
+    <string name="wd_wind_nogusts">Ветер: %s [%s°] %s м/с\n</string>
+    <string name="wd_wind_gusts">Ветер: %s [%s°] %s м/с, порывы до %s м/с\n</string>
+    <string name="wd_precip_nd">Осадки за ночь/день: %s мм\n</string>
+    <string name="wd_precip1h">Осадки за 1 час: %s мм\n</string>
+    <string name="wd_precip3h">Осадки за 3 часа: %s мм\n</string>
+    <string name="wd_precip6h">Осадки за 6 часов: %s мм\n</string>
+    <string name="wd_precip12h">Осадки за 12 часов: %s мм\n</string>
+    <string name="wd_humidity">Относительная влажность: %s%%\n</string>
+    <string name="wd_visibility">Видимость: %s м\n</string>
+    <string name="wd_clouds">Балл общей облачности (0-10): %s\n</string>
+
+
+    <string-array name="wind_dirs">
+	<item>северный</item>
+	<item>северо-восточный</item>
+	<item>восточный</item>
+	<item>юго-восточный</item>
+	<item>южный</item>
+	<item>юго-западный</item>
+	<item>западный</item>
+	<item>северо-западный</item>
+	<item>северный</item>
+    </string-array>
+
+    <string-array name="short_wind_dirs">
+	<item>С</item>
+	<item>СВ</item>
+	<item>В</item>
+	<item>ЮВ</item>
+	<item>Ю</item>
+	<item>ЮЗ</item>
+	<item>З</item>
+	<item>СЗ</item>
+	<item>С</item>
+    </string-array>
 
 </resources>

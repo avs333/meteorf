@@ -195,10 +195,27 @@ public class Srv extends Service {
 		if(Util.localWeather != null) {
 		    ii = new Intent(this, WidgetProvider.class);
 		    ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
-		} if(Util.currentStation != null) {
 		    sendBroadcast(ii);
+		} 
+		if(Util.currentStation != null) {
 		    ii.setAction(WidgetProvider.LOCATION_CHANGED_BROADCAST);
 		    sendBroadcast(ii);
+		} else {
+		    final Intent uu = new Intent(this, WidgetProvider.class);
+		    uu.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+		    new Thread(new Runnable() {
+			@Override
+			public void run() {
+			  try {	
+			    this.wait(2000);
+			    if(Util.currentStation != null) {
+		//		ii = new ru.meteoinfo.App.getContext().Intent(this, WidgetProvider.class);
+		//		ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+				sendBroadcast(uu);
+			    }
+			  } catch(Exception e) { }	
+			}
+		    }).start();	
 		}
 		break;		
 
@@ -213,7 +230,7 @@ public class Srv extends Service {
 
 	    case ACTIVITY_STOPPED: 	
 		Log.d(TAG, "activity stopped");
-		if(!must_update_widget) stopSelf();
+		if(!must_update_widget) stopSelf();	// no widget, no activity, exiting.
 		break;
 
 	    default:
@@ -227,6 +244,7 @@ public class Srv extends Service {
 	final Intent ii = intent;
 	if(Util.currentStation == null) {
 	    Log.e(TAG, "updateLocalWeather: local station unknown yet");
+	    return;	
 	}
 	new Thread(new Runnable() {
 	    @Override

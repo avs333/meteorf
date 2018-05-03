@@ -67,7 +67,7 @@ JNIEXPORT jint Java_ru_meteoinfo_Util_unBzip2(JNIEnv *env, jobject obj, jbyteArr
 	strm->avail_in = count;
 	strm->next_in = (char *) in; 
 
-#if 1	
+#if 0	
 	if(strncmp(strm->next_in, "Rez \n", 5) == 0) {
 	    strm->avail_in -= 5;
 	    strm->next_in += 5; 	

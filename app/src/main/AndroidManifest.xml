@@ -29,15 +29,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-	<!--
+
         <activity
-            android:name=".GetDataActivity"
-            android:label="@string/title_get_data_activity"
+            android:name=".DataActivity"
+            android:label="@string/title_data_activity"
             android:theme="@style/AppTheme.NoActionBar" />
-	-->
+
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" />
+
         <activity android:name=".WebActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -61,10 +62,9 @@
             android:label="@string/title_activity_maps">
 	</activity>
 
-	<!--
-	<service android:name=".LocUpdateService"
+	<service android:name=".Srv"
 	    android:permission="android.permission.BIND_JOB_SERVICE">
-	</service> -->
+	</service>
 
 	<!-- widget stuff -->
 
@@ -75,6 +75,7 @@
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
 		<action android:name="ru.meteoinfo.WidgetProvider.LOCATION_CHANGED_BROADCAST" /> 
+		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
 	    </intent-filter>
 	</receiver>
 
