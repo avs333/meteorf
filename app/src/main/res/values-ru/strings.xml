@@ -55,6 +55,9 @@
     <string name="pref_base_settings">Основные настройки</string>
     <string name="pref_addr_source">Доп. данные о местонахождении</string>
     <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
+    <string name="pref_use_gps">Использовать GPS</string>
+    <string name="pref_loc_updates">Интервал обновления координат</string>
+    <string name="pref_wth_updates">Интервал обновления погоды</string>
     <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>
     <string name="using_offline_maps">Переключение на офлайн-карты</string>
     <string name="no_station">Ошибка: станция не найдена</string>
@@ -141,6 +144,22 @@
 	<item>северный</item>
     </string-array>
 
+    <string-array name="update_intervals">
+	<item>10 секунд</item>
+	<item>1 минута</item>
+	<item>5 минут</item>
+	<item>20 минут</item>
+	<item>1 час</item>
+    </string-array>
+
+    <string-array name="update_interval_sec">
+	<item>10</item>
+	<item>60</item>
+	<item>300</item>
+	<item>1200</item>
+	<item>3600</item>
+    </string-array>
+
     <string-array name="short_wind_dirs">
 	<item>С</item>
 	<item>СВ</item>
@@ -152,5 +171,5 @@
 	<item>СЗ</item>
 	<item>С</item>
     </string-array>
-
 </resources>
+

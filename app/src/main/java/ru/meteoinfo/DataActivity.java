@@ -83,8 +83,13 @@ public class DataActivity extends AppCompatActivity {
             @Override
             public void run() {
 		log_msg("getting weather for " + curStation.code);
-		if(local) wdata = Util.localWeather;
-		else wdata = Util.getWeather(curStation.code);
+		if(local) {
+		    wdata = Util.localWeather;
+		    if(wdata == null) {
+			log_msg("local weather not cached yet, forcing its update");
+			Util.localWeather = Util.getWeather(curStation.code);
+		    }	
+		} else wdata = Util.getWeather(curStation.code);
 		log_msg("getWeather returned " + wdata);
 		if(wdata != null) meteodata = parseWeatherData(wdata);
             }

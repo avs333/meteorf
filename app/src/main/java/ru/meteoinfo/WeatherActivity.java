@@ -127,7 +127,12 @@ public class WeatherActivity extends AppCompatActivity
     boolean maps_avail = false;
 
     protected  void onActivityResult(int req, int res, Intent data) {
-	if(req == PREF_ACT_REQ) prefs.load();
+	if(req == PREF_ACT_REQ) {
+	    Context context = App.getContext();	
+ 	    Intent i = new Intent(context, Srv.class);
+	    i.setAction(Srv.UPDATE_REQUIRED);
+            context.startService(i);
+	}
         if(res == 0) maps_avail = true;
     }
 

@@ -3,6 +3,7 @@ package ru.meteoinfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.location.Location;
 import android.app.AlarmManager;
@@ -13,6 +14,7 @@ import android.os.SystemClock;
 import android.os.Handler;
 import android.os.Bundle;
 import android.os.Message;
+import android.preference.PreferenceManager;
 
 import com.google.android.gms.location.*;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -35,11 +37,14 @@ public class Srv extends Service {
     public static final String ACTIVITY_STARTED = "activity_started";
     public static final String ACTIVITY_STOPPED = "activity_stopped";
 
-    private static final long LOC_UPDATE_INTERVAL = 20 * 1000;		/* 20 sec should be enough */
+    public static final String UPDATE_REQUIRED = "update_required";
+
+    private static long loc_update_interval = 20 * 1000;		/* 20 sec should be enough */
+    private static long wth_update_interval = 60 * 1000;
+    private static int loc_priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY; // PRIORITY_HIGH_ACCURACY;
+
     private static final long LOC_FASTEST_UPDATE_INTERVAL = 2 * 1000;
     private static final float LOC_MIN_DISPLACEMENT = 0.0f; // <- in metres. 0.0 debug only!! 500.0f; will be ok for release
-    private static final int loc_priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY; // PRIORITY_HIGH_ACCURACY;
-    private static final long WEATHER_UPDATE_INTERVAL = 2 * 60 * 1000;
 	
     private static PendingIntent pint_location = null;
     private static PendingIntent pint_weather = null;
@@ -68,9 +73,12 @@ public class Srv extends Service {
 	return null;
     }
 
+    public static Srv fuck_java = null;	
+
     @Override
     public void onCreate() {
 	super.onCreate();
+	fuck_java = this;
 
 	log(COLOUR_INFO, "creating service");
 	
@@ -99,7 +107,20 @@ public class Srv extends Service {
 	    }).start();
 	}
 
+	restart_updates();
+
+    }
+
+    public void restart_updates() {
+
 	// Start location updates
+	read_prefs();
+	
+	pint_location = null;
+	pint_weather = null;
+	
+	log(COLOUR_DBG, "starting updates, priority=" + loc_priority + ", updates: location=" 
+		+ loc_update_interval + ", weather=" + wth_update_interval);
 
 	Intent intent  = new Intent(this, Srv.class);
 	intent.setAction(LOCATION_UPDATE);
@@ -108,12 +129,12 @@ public class Srv extends Service {
 	loc_client = LocationServices.getFusedLocationProviderClient(this);
 	LocationRequest loc_req = new LocationRequest();
 	loc_req.setPriority(loc_priority);
-	loc_req.setInterval(LOC_UPDATE_INTERVAL);
+	loc_req.setInterval(loc_update_interval);
 	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
 	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
 	loc_client.requestLocationUpdates(loc_req, pint_location);
 
-	Log.d(TAG, "init: location updates started");
+	Log.d(TAG, "location updates started");
 
 	// Start weather updates
 
@@ -124,10 +145,10 @@ public class Srv extends Service {
 	AlarmManager amgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 	amgr.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
 	    SystemClock.elapsedRealtime(), // + WEATHER_UPDATE_INTERVAL,
-	    WEATHER_UPDATE_INTERVAL, pint_weather);
+	    wth_update_interval, pint_weather);
 	
-	Log.d(TAG, "init: weather updates started");
-    }
+	Log.d(TAG, "weather updates started");
+    }	
 
     @Override
     public void onDestroy() {
@@ -219,6 +240,11 @@ public class Srv extends Service {
 		}
 		break;		
 
+	    case UPDATE_REQUIRED:
+		Log.d(TAG, "restarting updates with new settings");
+		restart_updates();
+		break;
+		
 	    case WIDGET_STOPPED:
 		Log.d(TAG, "widget stopped");
 		must_update_widget = false;
@@ -255,6 +281,17 @@ public class Srv extends Service {
 	    }
 	}).start();
     }
+
+    private static SharedPreferences settings = null;
+
+    public static void read_prefs() {
+	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
+	boolean use_gps = settings.getBoolean("use_gps", false);
+	loc_priority = use_gps ? LocationRequest.PRIORITY_HIGH_ACCURACY : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+	loc_update_interval = settings.getInt("loc_update_interval", 20) * 1000;
+	wth_update_interval = settings.getInt("wth_update_interval", 60) * 1000;
+    }		
+
 
 }
 
