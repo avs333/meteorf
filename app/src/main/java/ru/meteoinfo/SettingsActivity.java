@@ -15,8 +15,8 @@ import android.util.Log;
 public class SettingsActivity extends PreferenceActivity {
 
     private String[] vals = {"0", "1", "2"};
-    private String[] entries_verb = {"Err", "Err+Info", "All"};
-    private String[] entries_addr = {"None", "Google", "OSM"};
+    private String[] entries_verb = {"Ошибки", "Ошибки и еще кое-что", "Все"};
+    private String[] entries_addr = {"Нет", "Google", "OSM"};
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setPreferenceScreen(createPreferenceHierarchy());

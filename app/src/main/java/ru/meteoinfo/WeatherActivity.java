@@ -132,6 +132,8 @@ public class WeatherActivity extends AppCompatActivity
  	    Intent i = new Intent(context, Srv.class);
 	    i.setAction(Srv.UPDATE_REQUIRED);
             context.startService(i);
+	    if(prefs != null) prefs.load();	
+	    else prefs = new Prefs();	
 	}
         if(res == 0) maps_avail = true;
     }

@@ -459,6 +459,7 @@ public class Util {
         } catch (Exception e) {
             Log.e("meteoinfo.ru", "exception in getAdderss()");
             e.printStackTrace();
+	    return null;	
         } finally {
             try {
                 if(reader != null) reader.close();

@@ -8,5 +8,7 @@ adb shell cmd package uninstall -k ru.meteoinfo
 
 adb install app-debug.apk
 
+adb logcat -c
+
 adb shell am start -n ru.meteoinfo/.WeatherActivity
 

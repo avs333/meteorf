@@ -73,12 +73,9 @@ public class Srv extends Service {
 	return null;
     }
 
-    public static Srv fuck_java = null;	
-
     @Override
     public void onCreate() {
 	super.onCreate();
-	fuck_java = this;
 
 	log(COLOUR_INFO, "creating service");
 	
@@ -166,6 +163,7 @@ public class Srv extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int id) {
+	if(intent == null) return START_STICKY;
 	Intent ii = null;
 	switch(intent.getAction()) {
 

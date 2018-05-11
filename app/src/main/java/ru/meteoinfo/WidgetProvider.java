@@ -131,17 +131,16 @@ public class WidgetProvider extends AppWidgetProvider {
 		String addr = Util.getAddressFromOSM(Util.currentLocation.getLatitude(), 
 			Util.currentLocation.getLongitude());
 		if(addr != null) {
+		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
 		    if(last_loc_addr != null && addr.equals(last_loc_addr)) {
 			Log.d(TAG, "background task complete: address unchanged");
 			return null;
 		    }
-		    last_loc_addr = addr;
-		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
 		    if(last_sta_code != Util.currentStation.code) {	
 			last_sta_code = Util.currentStation.code;
 			pint_click = null;  // must update pint_click with new station code
 		    }	
-		}
+		} else Log.d(TAG, "zero address");
 		Log.d(TAG, "background task complete");
 		return addr;
 	    }
@@ -153,7 +152,8 @@ public class WidgetProvider extends AppWidgetProvider {
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
 			for(int i = 0; i < bound_widgets.length; i++)
 			    update_widget(ctx, gm, bound_widgets[i], null, null, addr);
-			Log.d(TAG, "location change: widget updated");
+			Log.d(TAG, "location change: widget updated: " + addr);
+		    	last_loc_addr = addr;
 		    } else Log.d(TAG, "location change: widget left untouched");
 		} catch (Exception e) {
 		    Log.e(TAG, "exception in foreground task");
