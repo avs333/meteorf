@@ -7,6 +7,7 @@ public class App extends Application {
 
     private static Context context;
     public static boolean activity_visible = false;
+    public static boolean widget_visible = false;
 
     @Override
     public void onCreate() {

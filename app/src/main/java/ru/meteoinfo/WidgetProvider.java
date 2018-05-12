@@ -27,7 +27,8 @@ public class WidgetProvider extends AppWidgetProvider {
 
     private static final String TAG = "meteoinfo:WidgetProvider";
     private static PendingIntent pint_click = null;
-    private static String last_loc_addr = null;
+    private static PendingIntent pint_click2 = null;
+
     private static long last_sta_code = -1;
 
     private final Handler hdl = new Handler();
@@ -50,6 +51,7 @@ public class WidgetProvider extends AppWidgetProvider {
     @Override
     public void onEnabled(Context context) {
         Log.d(TAG, "onEnabled");
+	App.widget_visible = true;
 	ctx = context;
  	gm = AppWidgetManager.getInstance(ctx);
 	Intent i = new Intent(context, Srv.class);
@@ -91,6 +93,9 @@ public class WidgetProvider extends AppWidgetProvider {
 	Intent i = new Intent(context, Srv.class);
 	i.setAction(Srv.WIDGET_STOPPED);
 	context.startService(i);
+	App.widget_visible = false;
+	pint_click = null;
+	pint_click2 = null;
     }
 
     void weather_update() {
@@ -124,22 +129,20 @@ public class WidgetProvider extends AppWidgetProvider {
 	    @Override
 	    protected String doInBackground(Void... params) {
 		Log.i(TAG, "background task");
-		if(Util.currentLocation == null || Util.currentStation == null) {
+		if(Util.currentLocation == null) {
 		    Log.e(TAG, "background task complete: no current location yet");	
 		    return null;
 	        }
+		Station st = Util.getNearestStation(Util.currentLocation.getLatitude(), 
+			Util.currentLocation.getLongitude());
+		if(st == null) {	
+		    Log.e(TAG, "background task complete: no current station yet");	
+		    return null;
+		}
 		String addr = Util.getAddressFromOSM(Util.currentLocation.getLatitude(), 
 			Util.currentLocation.getLongitude());
 		if(addr != null) {
 		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
-		    if(last_loc_addr != null && addr.equals(last_loc_addr)) {
-			Log.d(TAG, "background task complete: address unchanged");
-			return null;
-		    }
-		    if(last_sta_code != Util.currentStation.code) {	
-			last_sta_code = Util.currentStation.code;
-			pint_click = null;  // must update pint_click with new station code
-		    }	
 		} else Log.d(TAG, "zero address");
 		Log.d(TAG, "background task complete");
 		return addr;
@@ -153,7 +156,6 @@ public class WidgetProvider extends AppWidgetProvider {
 			for(int i = 0; i < bound_widgets.length; i++)
 			    update_widget(ctx, gm, bound_widgets[i], null, null, addr);
 			Log.d(TAG, "location change: widget updated: " + addr);
-		    	last_loc_addr = addr;
 		    } else Log.d(TAG, "location change: widget left untouched");
 		} catch (Exception e) {
 		    Log.e(TAG, "exception in foreground task");
@@ -173,7 +175,7 @@ public class WidgetProvider extends AppWidgetProvider {
 //	if(data != null) views.setTextViewText(R.id.w_data, data);
 
 	// Pending intent to display a webpage when the widget is clicked
-	if(pint_click == null && Util.currentStation != null) {
+	if(Util.currentStation != null) {
 	    String url =  Util.URL_STA_DATA + "?p=" + Util.currentStation.code;	
 	    Intent intent = new Intent(context, WebActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -182,7 +184,17 @@ public class WidgetProvider extends AppWidgetProvider {
 	    pint_click = PendingIntent.getActivity(context, 0, intent, 0); 	
 	}
 	views.setOnClickPendingIntent(R.id.w_addr, pint_click);	    		
+
+
+    	if(pint_click2 == null) {
+	    Intent intent = new Intent(context, WidgetProvider.class);
+	    intent.setAction(LOCATION_CHANGED_BROADCAST);
+	    pint_click2 = PendingIntent.getBroadcast(context, 0, intent, 0); 
+	}
+	views.setOnClickPendingIntent(R.id.w_temp, pint_click2);	    		
+
         man.updateAppWidget(wid, views);
+
     }
 }
 

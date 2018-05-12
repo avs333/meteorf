@@ -50,7 +50,6 @@ public class Srv extends Service {
     private static PendingIntent pint_weather = null;
     private static final String TAG = "ru.meteoinfo:Srv";
 
-    private static boolean must_update_widget = false;
     private FusedLocationProviderClient loc_client = null;
 
     private static final int COLOUR_ERR = WeatherActivity.COLOUR_ERR;
@@ -186,13 +185,13 @@ public class Srv extends Service {
 		if(Util.currentStation == null || Util.currentStation.code != st.code) {
 		    Util.currentStation = st;
 		    Log.d(TAG, "station changed");
-		    if(must_update_widget) {
+		    if(App.widget_visible) {
 			ii = new Intent(this, WidgetProvider.class);
 			ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 		    }
 		    updateLocalWeather(ii);  // station changed: update weather right now
 	        }
-		if(must_update_widget) {
+		if(App.widget_visible) {
 		    ii = new Intent(this, WidgetProvider.class);
 		    ii.setAction(WidgetProvider.LOCATION_CHANGED_BROADCAST);
 		    sendBroadcast(ii);	
@@ -201,7 +200,7 @@ public class Srv extends Service {
 
 	    case WEATHER_UPDATE:
 		Log.d(TAG, "weather update received");
-		if(must_update_widget) {
+		if(App.widget_visible) {
 		    ii = new Intent(this, WidgetProvider.class);
 		    ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 		}
@@ -210,7 +209,6 @@ public class Srv extends Service {
 
 	    case WIDGET_STARTED:
 		Log.d(TAG, "widget started");
-		must_update_widget = true;
 		if(Util.localWeather != null) {
 		    ii = new Intent(this, WidgetProvider.class);
 		    ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
@@ -245,7 +243,6 @@ public class Srv extends Service {
 		
 	    case WIDGET_STOPPED:
 		Log.d(TAG, "widget stopped");
-		must_update_widget = false;
 		break;	
 
 	    case ACTIVITY_STARTED: 	
@@ -254,7 +251,7 @@ public class Srv extends Service {
 
 	    case ACTIVITY_STOPPED: 	
 		Log.d(TAG, "activity stopped");
-		if(!must_update_widget) stopSelf();	// no widget, no activity, exiting.
+		if(!App.widget_visible && !App.activity_visible) stopSelf();	// no widget, no activity, exiting.
 		break;
 
 	    default:
