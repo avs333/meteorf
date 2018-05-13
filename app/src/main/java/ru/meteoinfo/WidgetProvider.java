@@ -139,13 +139,18 @@ public class WidgetProvider extends AppWidgetProvider {
 		    Log.e(TAG, "background task complete: no current station yet");	
 		    return null;
 		}
-		String addr = Util.getAddressFromOSM(Util.currentLocation.getLatitude(), 
-			Util.currentLocation.getLongitude());
-		if(addr != null) {
-		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
-		} else Log.d(TAG, "zero address");
-		Log.d(TAG, "background task complete");
-		return addr;
+		try {
+		    String addr = Util.getAddressFromOSM(Util.currentLocation.getLatitude(), 
+		    	Util.currentLocation.getLongitude());
+		    if(addr != null) {
+			if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
+		    } else Log.d(TAG, "background task: zero address");
+		    Log.d(TAG, "background task complete");
+		    return addr;
+		} catch (Exception e) {
+		    Log.d(TAG, "background task: no connection");
+		    return null;
+		}
 	    }
 	    @Override
 	    protected void onPostExecute(String addr) {

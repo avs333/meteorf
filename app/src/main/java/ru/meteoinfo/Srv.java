@@ -160,6 +160,8 @@ public class Srv extends Service {
 //  @Override
 //  void onHandleIntent (Intent intent) {
 
+    static long last_update_time = 0, cur_time;	
+
     @Override
     public int onStartCommand(Intent intent, int flags, int id) {
 	if(intent == null) return START_STICKY;
@@ -167,7 +169,19 @@ public class Srv extends Service {
 	switch(intent.getAction()) {
 
 	    case LOCATION_UPDATE:	
+
 		log(COLOUR_DBG, "location update received");
+
+		if(last_update_time == 0) last_update_time = System.currentTimeMillis();
+
+		cur_time = System.currentTimeMillis();
+
+		if(cur_time - last_update_time < loc_update_interval) {
+		    Log.d(TAG, "fuck off");	
+		    return START_STICKY;
+		}		     
+
+		last_update_time = cur_time;
 
 		Location loc = null;
 		LocationResult result = LocationResult.extractResult(intent);
