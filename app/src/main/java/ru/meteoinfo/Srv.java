@@ -126,7 +126,7 @@ public class Srv extends Service {
 	LocationRequest loc_req = new LocationRequest();
 	loc_req.setPriority(loc_priority);
 	loc_req.setInterval(loc_update_interval);
-	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
+//	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
 	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
 	loc_client.requestLocationUpdates(loc_req, pint_location);
 

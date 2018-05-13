@@ -99,7 +99,7 @@ public class WidgetProvider extends AppWidgetProvider {
     }
 
     void weather_update() {
-	if(Util.localWeather == null) return;
+	if(Util.localWeather == null || Util.localWeather.for3days == null) return;
 	WeatherInfo wi = Util.localWeather.for3days.get(0);
 	String temp = null, data = null, s = wi.get_temperature();
 	if(!s.startsWith("-")) temp = "+" + s;
