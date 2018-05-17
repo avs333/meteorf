@@ -27,8 +27,8 @@
     <string name="patt_no_match">Для введенной строки станций не найдено</string>
     <string name="cancel">Отмена</string>
     <string name="receiving_stl">Получение списка станций</string>
-    <string name="act_data">Погода</string>
-    <string name="all_data">Подробная информация</string>
+    <string name="act_data">Недельный прогноз погоды</string>
+    <string name="all_data">Почасовой прогноз погоды</string>
     <string name="observ_data">Наблюдения за последние 6 часов</string>
     <string name="daily_data">Почасовой прогноз на 3 дня</string>
     <string name="weekly_data">Прогноз на 7 дней</string>

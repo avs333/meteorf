@@ -25,28 +25,20 @@ public class WidgetProvider extends AppWidgetProvider {
     public static final String WEATHER_CHANGED_BROADCAST  = "weather_changed";
     public static final String LOCATION_CHANGED_BROADCAST  = "location_changed";
 
-    private static final String TAG = "meteoinfo:WidgetProvider";
-    private static PendingIntent pint_click = null;
-    private static PendingIntent pint_click2 = null;
+    private static final String TAG = "ru.meteoinfo:WidgetProvider";
+
+    // pending intents for widget clicks	
+    private static PendingIntent pint_show_webpage = null;
+    private static PendingIntent pint_widget_update = null;
 
     private static long last_sta_code = -1;
 
-    private final Handler hdl = new Handler();
     private static Context ctx;
+
     private static AppWidgetManager gm;
 
-    private static int call_count = 0;
-
-    private final Runnable r_loc = new Runnable() {
-	public void run() { 
-	   location_update(); 
-	}
-    }; 	    	
-    private final Runnable r_wth = new Runnable() {
-	public void run() { 
-	   weather_update(); 
-	}
-    }; 	    	
+    // handler for enqueuing update requests to avoid race conditions 	
+    private final Handler hdl = new Handler();
 
     @Override
     public void onEnabled(Context context) {
@@ -62,11 +54,28 @@ public class WidgetProvider extends AppWidgetProvider {
  
     @Override
     public void onReceive(Context context, Intent intent) {	// just enqueue broadcasts
-	if(intent.getAction().equals(LOCATION_CHANGED_BROADCAST)) {
-	    hdl.post(r_loc);	
+	if(intent == null) {
+	    Log.e(TAG, "bogus intent in onReceive");
+	    return;
+	}
+	String action = intent.getAction();
+	if(action == null) {
+	    Log.e(TAG, "bogus action in onReceive");
+	    return;
+	}
+	if(action.equals(LOCATION_CHANGED_BROADCAST)) {
+	    hdl.post(new Runnable() { 
+		public void run() { 
+		    location_update(); 
+		}
+	    });	
 	    Log.d(TAG, "location change queued");
-	} else if(intent.getAction().equals(WEATHER_CHANGED_BROADCAST)) {
-	    hdl.post(r_wth);	
+	} else if(action.equals(WEATHER_CHANGED_BROADCAST)) {
+	    hdl.post(new Runnable() { 
+		public void run() { 
+		    weather_update(); 
+		}
+	    });	
 	    Log.d(TAG, "weather change queued");
 	} else {
 	    super.onReceive(context, intent);
@@ -94,37 +103,55 @@ public class WidgetProvider extends AppWidgetProvider {
 	i.setAction(Srv.WIDGET_STOPPED);
 	context.startService(i);
 	App.widget_visible = false;
-	pint_click = null;
-	pint_click2 = null;
+	pint_show_webpage = null;
+	pint_widget_update = null;
     }
 
-    void weather_update() {
-	if(Util.localWeather == null || Util.localWeather.for3days == null) return;
+//    private void weather_update(Context context) {
+    private void weather_update() {
+	if(Util.localWeather == null) {
+	    Log.d(TAG, "weather_update: localWeather unknown");
+	    return;
+	}
+ 	if(Util.localWeather.for3days == null || Util.localWeather.for3days.size() == 0) {
+	    Log.d(TAG, "weather_update: weather for 3 days unknown");
+	    return;
+	}
 	WeatherInfo wi = Util.localWeather.for3days.get(0);
-	String temp = null, data = null, s = wi.get_temperature();
-	if(!s.startsWith("-")) temp = "+" + s;
-	else temp = s;
+	if(wi == null) {
+	    Log.d(TAG, "weather_update: first weather info for 3 days unknown");
+	    return;
+	}
+	String temp = wi.get_temperature();
+	if(temp == null) {
+	    Log.d(TAG, "weather_update: null temperature string");	
+	    return;
+	}
+	if(!temp.startsWith("-")) temp = "+" + temp;
+	Log.d(TAG, "weather_update: temp=" + temp);
 	int pt = temp.indexOf(".");
-	if(pt > 0) temp = temp.substring(0, pt);
+//	if(pt > 0) temp = temp.substring(0, pt);
 //	temp += "°C";
-	s += call_count;
-	call_count++;
 
 /*
-	for(int i = 0; i < 2; i++) {
+	String s, data;
+	for(int i = 0; i < Util.localWeather.for3days.size(); i++) {
 	    wi = Util.localWeather.for3days.get(i);
 	    s = wi.get_pressure();
 	    if(s != null) {
 		data = String.format(App.get_string(R.string.wd_pressure), s);
 	    } 	  	
 	} */
+
 	int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
 	for(int i = 0; i < bound_widgets.length; i++)
 	    update_widget(ctx, gm, bound_widgets[i], temp, null, null);
     }
 
-    void location_update() {
+//    private void location_update(Context context) {
+    private void location_update() {
+//	final Context ctx = context;
         new AsyncTask<Void, Void, String>() {
 	    @Override
 	    protected String doInBackground(Void... params) {
@@ -172,31 +199,33 @@ public class WidgetProvider extends AppWidgetProvider {
     static void update_widget(Context context, AppWidgetManager man, int wid, 
 		String temp, String data, String addr) {
 
-        Log.d(TAG, "update_widget id=" + wid);
+        Log.d(TAG, "update_widget id=" + wid + ", temp=" + temp + ", addr=" + addr);
+
 	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
 	if(temp != null) views.setTextViewText(R.id.w_temp, temp);
 	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
 //	if(data != null) views.setTextViewText(R.id.w_data, data);
 
-	// Pending intent to display a webpage when the widget is clicked
-	if(Util.currentStation != null) {
+	// Pending intent to display a webpage when the right part of the widget is clicked
+	if(Util.currentStation != null && Util.currentStation.code != last_sta_code) {
+	    last_sta_code = Util.currentStation.code;
 	    String url =  Util.URL_STA_DATA + "?p=" + Util.currentStation.code;	
 	    Intent intent = new Intent(context, WebActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    intent.putExtra("action", url);
 	    intent.putExtra("show_ui", false);
-	    pint_click = PendingIntent.getActivity(context, 0, intent, 0); 	
+	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, 0); 	
 	}
-	views.setOnClickPendingIntent(R.id.w_addr, pint_click);	    		
+	if(pint_show_webpage != null) views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);	    		
 
-
-    	if(pint_click2 == null) {
+	// Pending intent to update weather when the left part of the widget is clicked
+    	if(pint_widget_update == null) {
 	    Intent intent = new Intent(context, WidgetProvider.class);
-	    intent.setAction(LOCATION_CHANGED_BROADCAST);
-	    pint_click2 = PendingIntent.getBroadcast(context, 0, intent, 0); 
+	    intent.setAction(WEATHER_CHANGED_BROADCAST);
+	    pint_widget_update = PendingIntent.getBroadcast(context, 0, intent, 0); 
 	}
-	views.setOnClickPendingIntent(R.id.w_temp, pint_click2);	    		
+	if(pint_widget_update != null) views.setOnClickPendingIntent(R.id.w_temp, pint_widget_update);	    		
 
         man.updateAppWidget(wid, views);
 

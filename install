@@ -10,5 +10,5 @@ adb install app-debug.apk
 
 adb logcat -c
 
-adb shell am start -n ru.meteoinfo/.WeatherActivity
+#adb shell am start -n ru.meteoinfo/.WeatherActivity
 

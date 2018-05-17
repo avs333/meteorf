@@ -155,33 +155,31 @@ public class Srv extends Service {
 	amgr.cancel(pint_weather);
     }
 
+//  static long last_update_time = 0, cur_time;	
+
 //  If it were IntentService:
 
 //  @Override
 //  void onHandleIntent (Intent intent) {
 
-    static long last_update_time = 0, cur_time;	
-
     @Override
     public int onStartCommand(Intent intent, int flags, int id) {
 	if(intent == null) return START_STICKY;
+	String action = intent.getAction();
+	if(action == null) return START_STICKY;
 	Intent ii = null;
-	switch(intent.getAction()) {
+	switch(action) {
 
 	    case LOCATION_UPDATE:	
 
 		log(COLOUR_DBG, "location update received");
 
-		if(last_update_time == 0) last_update_time = System.currentTimeMillis();
-
+/*		if(last_update_time == 0) last_update_time = System.currentTimeMillis();
 		cur_time = System.currentTimeMillis();
-
 		if(cur_time - last_update_time < loc_update_interval) {
-		    Log.d(TAG, "fuck off");	
 		    return START_STICKY;
-		}		     
-
-		last_update_time = cur_time;
+		} 		     
+		last_update_time = cur_time; */
 
 		Location loc = null;
 		LocationResult result = LocationResult.extractResult(intent);
@@ -198,7 +196,7 @@ public class Srv extends Service {
 		}
 		if(Util.currentStation == null || Util.currentStation.code != st.code) {
 		    Util.currentStation = st;
-		    Log.d(TAG, "station changed");
+		    Log.d(TAG, "station changed to " + st.code);
 		    if(App.widget_visible) {
 			ii = new Intent(this, WidgetProvider.class);
 			ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);

@@ -88,7 +88,8 @@ public class DataActivity extends AppCompatActivity {
 		    if(wdata == null) {
 			log_msg("local weather not cached yet, forcing its update");
 			Util.localWeather = Util.getWeather(curStation.code);
-		    }	
+		    }
+		    wdata = Util.localWeather;	
 		} else wdata = Util.getWeather(curStation.code);
 		log_msg("getWeather returned " + wdata);
 		if(wdata != null) meteodata = parseWeatherData(wdata);
@@ -199,6 +200,7 @@ public class DataActivity extends AppCompatActivity {
 	    s += separator;
 	}
 
+/*
 	if(wd.for7days != null) {
 	    s += getString(R.string.weekly_data) + "\n";	
 	    for(int i = 0; i < wd.for7days.size(); i++) {
@@ -211,7 +213,7 @@ public class DataActivity extends AppCompatActivity {
 	    }
 	    s += separator;
 	}
-
+*/
 	if(wd.for3days != null) {
 	    s += getString(R.string.daily_data) + "\n";	
 	    for(int i = 0; i < wd.for3days.size(); i++) {
