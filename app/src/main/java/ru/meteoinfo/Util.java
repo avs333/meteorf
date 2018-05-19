@@ -80,23 +80,19 @@ public class Util {
     public static final int OMS_TIMEOUT = 20000;	// on very slow connections
     public static final int SERVER_TIMEOUT = 20000;	// on very slow connections
 
+
 /*  No class declarations in java, here's what we define:
     class Station;
     class WeatherInfo;
     class WeatherData; */
 
-    // Main exported globals. 
-    // Should make them private, and return from get*'s synchronised with their updates
-
-    public static Location currentLocation = null;
-    public static Station currentStation = null;
-    public static ArrayList<Station> fullStationList = null;
-    public static WeatherData localWeather = null;
+    private static ArrayList<Station> fullStationList = null;
 
     public static class Station {
         String name = null;
         String country = null;
         String name_p = null;
+	String shortname = null;
         long code = -1;
 	long wmo = -1;	
         double latitude  = inval_coord;
@@ -295,6 +291,8 @@ public class Util {
 
     synchronized public static boolean getStations() {
 
+	if(fullStationList != null && fullStationList.size() > 0) return true;
+
 	boolean ok = false;
 	FileInputStream inf = null;
 	final int bufsz = 8*1024;
@@ -371,6 +369,12 @@ public class Util {
 		if(std.length > 6 && std[6] != null && !std[6].equals(" ") && !std[6].equals("")) {
 		    sta.name_p += ", " + std[6];
 		}		
+		switch(std.length) {
+		    case 7: sta.shortname = std[6]; break;
+		    case 6: sta.shortname = std[4] + " " + std[5]; break;
+		    default: sta.shortname = std[4]; break;
+		}
+		if(sta.shortname == null) sta.shortname = std[4];
 		fullStationList.add(sta);
 	    }
 	    
@@ -393,6 +397,10 @@ public class Util {
             }
         }
         return ok;
+    }
+
+    public static boolean stationListKnown() {
+	return fullStationList != null && fullStationList.size() != 0;
     }
 
     public static Station getNearestStation(double latitude, double longitude) {
@@ -423,6 +431,21 @@ public class Util {
 	   } 		
 	}
 	return stations;
+    }
+
+    public static Station getFavStation(String fav) {
+        try {
+            long k = Long.parseLong(fav);
+            for(int i = 0; i < Util.fullStationList.size(); i++) {
+                Station st = Util.fullStationList.get(i);
+                if(k == st.code) return st;
+            }
+        } catch (Exception e) {
+            log(COLOUR_ERR, App.get_string(R.string.err_exception) + " " + fav);
+            e.printStackTrace();
+            return null;
+        }
+        return null;
     }
 
     public static String getAddressFromOSM(double lat, double lon) {
@@ -680,7 +703,7 @@ public class Util {
     public static class WeatherData {
 	long sta_code = -1;
 	WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
-        ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
+    //    ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
         ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
     }
 
@@ -689,10 +712,10 @@ public class Util {
 	log(COLOUR_DBG, App.get_string(R.string.query_weather_data) + " " + station_code);
 
 	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station_code);
-	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station_code);
+//	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station_code);
 	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station_code);
 
-	if(so == null && s7 == null && s3 == null) {
+	if(so == null /* && s7 == null */ && s3 == null) {
 	    log(COLOUR_ERR, App.get_string(R.string.no_weather_data) + " " + station_code);
 	    return null;
 	}
@@ -706,7 +729,7 @@ public class Util {
 		log(COLOUR_DBG, R.string.observed_data_okay);
 	    } else log(COLOUR_ERR, R.string.observed_data_bad);	
 	} else log(COLOUR_ERR, R.string.observed_data_bad);
-	if(s7 != null && !s7.isEmpty()) {
+/*	if(s7 != null && !s7.isEmpty()) {
 	    String[] ws = s7.split(" \n");
 	    ret.for7days = new ArrayList<>();	    		     
 	    for(int i = 0; i < ws.length; i++) {		
@@ -717,7 +740,7 @@ public class Util {
 	    }	
 	    if(ret.for7days.size() > 0) log(COLOUR_DBG, R.string.weekly_data_okay);
 	    else log(COLOUR_ERR, R.string.weekly_data_bad);	
-	} else log(COLOUR_ERR, R.string.weekly_data_bad);
+	} else log(COLOUR_ERR, R.string.weekly_data_bad); */
 	if(s3 != null && !s3.isEmpty()) {
 	    String[] ws = s3.split(" \n");
 	    ret.for3days = new ArrayList<>();	    		     

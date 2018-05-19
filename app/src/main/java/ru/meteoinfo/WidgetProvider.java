@@ -20,6 +20,8 @@ import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
 
+
+		
 public class WidgetProvider extends AppWidgetProvider {
 
     public static final String WEATHER_CHANGED_BROADCAST  = "weather_changed";
@@ -53,6 +55,18 @@ public class WidgetProvider extends AppWidgetProvider {
     }
  
     @Override
+    public void onUpdate(Context context, AppWidgetManager man, int[] wids) {
+        Log.d(TAG, "onUpdate");
+/*
+        for(int i = 0; i < wids.length; i++) 
+	    update_widget(context, man, wids[i], App.get_string(R.string.loc_unk_yet));
+	    update_widget(context, man, wids[i], "");
+*/
+	weather_update();
+        Log.d(TAG, "onUpdate complete");
+    }
+
+    @Override
     public void onReceive(Context context, Intent intent) {	// just enqueue broadcasts
 	if(intent == null) {
 	    Log.e(TAG, "bogus intent in onReceive");
@@ -84,14 +98,6 @@ public class WidgetProvider extends AppWidgetProvider {
     }
 
     @Override
-    public void onUpdate(Context context, AppWidgetManager man, int[] wids) {
-        Log.d(TAG, "onUpdate");
-        for(int i = 0; i < wids.length; i++) 
-	    update_widget(context, man, wids[i], null, null, App.get_string(R.string.loc_unk_yet));
-        Log.d(TAG, "onUpdate complete");
-    }
-
-    @Override
     public void onDeleted(Context context, int[] wids) {
         Log.d(TAG, "onDeleted");
     } 
@@ -107,17 +113,31 @@ public class WidgetProvider extends AppWidgetProvider {
 	pint_widget_update = null;
     }
 
+    private static String windDir(String degrees) {
+        try {
+            double deg = Double.parseDouble(degrees);   
+            String[] directions = App.getContext().getResources().getStringArray(R.array.short_wind_dirs);
+            return directions[(int)Math.round(((deg % 360) / 45))];
+        } catch (Exception e) {
+            Log.e(TAG, "invalid degrees " + degrees);      
+            return null;        
+        }
+    }
+
+
+
 //    private void weather_update(Context context) {
     private void weather_update() {
-	if(Util.localWeather == null) {
+	WeatherData wd = Srv.getLocalWeather();
+	if(wd == null) {
 	    Log.d(TAG, "weather_update: localWeather unknown");
 	    return;
 	}
- 	if(Util.localWeather.for3days == null || Util.localWeather.for3days.size() == 0) {
+ 	if(wd.for3days == null || wd.for3days.size() == 0) {
 	    Log.d(TAG, "weather_update: weather for 3 days unknown");
 	    return;
 	}
-	WeatherInfo wi = Util.localWeather.for3days.get(0);
+	WeatherInfo wi = wd.for3days.get(0);
 	if(wi == null) {
 	    Log.d(TAG, "weather_update: first weather info for 3 days unknown");
 	    return;
@@ -129,9 +149,47 @@ public class WidgetProvider extends AppWidgetProvider {
 	}
 	if(!temp.startsWith("-")) temp = "+" + temp;
 	Log.d(TAG, "weather_update: temp=" + temp);
-	int pt = temp.indexOf(".");
+
+//	int pt = temp.indexOf(".");
 //	if(pt > 0) temp = temp.substring(0, pt);
 //	temp += "°C";
+
+	String davl = wi.get_pressure();
+	if(davl != null) davl = String.format(App.get_string(R.string.wd_pressure_short), davl);	
+	else {
+	    for(int i = 0; i <  wd.for3days.size(); i++) {
+		wi = wd.for3days.get(i);
+		davl = wi.get_pressure();
+		if(davl != null) {
+		    davl = String.format(App.get_string(R.string.wd_pressure_short), davl);
+		    break;
+		}
+	    }	
+	}
+
+	Log.d(TAG, "weather_update: davl=" + davl);
+
+        String st1 = null, st2 = null, veter= null;
+	st1 = wi.get_wind_dir();
+	st2 = wi.get_wind_speed();
+	if(st1 != null && st2 != null) {
+	    st1 = windDir(st1);
+	    veter = String.format(App.get_string(R.string.wd_wind_short), st1, st2);
+        }
+	Log.d(TAG, "weather_update: veter=" + veter);
+
+	String p = wi.get_precip();
+	if(p != null) {
+	    st2 = App.get_string(R.string.wd_precip_short);
+	    p = String.format(st2, p);	
+	}
+	Log.d(TAG, "weather_update: precip=" + p);
+
+	String hum = wi.get_humidity();
+	if(hum != null) hum = String.format(App.get_string(R.string.wd_humidity_short), hum);
+	Log.d(TAG, "weather_update: humidity=" + hum);
+
+
 
 /*
 	String s, data;
@@ -146,78 +204,65 @@ public class WidgetProvider extends AppWidgetProvider {
 	int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
 	for(int i = 0; i < bound_widgets.length; i++)
-	    update_widget(ctx, gm, bound_widgets[i], temp, null, null);
+	    update_widget(ctx, gm, bound_widgets[i], null, temp, davl, veter, p, hum);
     }
 
-//    private void location_update(Context context) {
     private void location_update() {
-//	final Context ctx = context;
-        new AsyncTask<Void, Void, String>() {
-	    @Override
-	    protected String doInBackground(Void... params) {
-		Log.i(TAG, "background task");
-		if(Util.currentLocation == null) {
-		    Log.e(TAG, "background task complete: no current location yet");	
-		    return null;
-	        }
-		Station st = Util.getNearestStation(Util.currentLocation.getLatitude(), 
-			Util.currentLocation.getLongitude());
-		if(st == null) {	
-		    Log.e(TAG, "background task complete: no current station yet");	
-		    return null;
-		}
-		try {
-		    String addr = Util.getAddressFromOSM(Util.currentLocation.getLatitude(), 
-		    	Util.currentLocation.getLongitude());
-		    if(addr != null) {
-			if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;
-		    } else Log.d(TAG, "background task: zero address");
-		    Log.d(TAG, "background task complete");
-		    return addr;
-		} catch (Exception e) {
-		    Log.d(TAG, "background task: no connection");
-		    return null;
-		}
-	    }
-	    @Override
-	    protected void onPostExecute(String addr) {
-		try {
-		    if(addr != null) {	
-			int [] bound_widgets = gm.getAppWidgetIds(
+	String addr = null;
+	Station st = Srv.getCurrentStation();
+	if(st == null) {
+		Log.e(TAG, "st zerp");
+	};
+
+	if(st != null) addr = st.shortname;
+	Log.d(TAG, "addr = " + addr);
+	
+	if(addr != null) {
+		int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
-			for(int i = 0; i < bound_widgets.length; i++)
-			    update_widget(ctx, gm, bound_widgets[i], null, null, addr);
-			Log.d(TAG, "location change: widget updated: " + addr);
-		    } else Log.d(TAG, "location change: widget left untouched");
-		} catch (Exception e) {
-		    Log.e(TAG, "exception in foreground task");
-		}
-	    }
-	}.execute();
+		for(int i = 0; i < bound_widgets.length; i++)	
+			update_widget(ctx, gm, bound_widgets[i], addr);
+	}
     }	
 
     static void update_widget(Context context, AppWidgetManager man, int wid, 
-		String temp, String data, String addr) {
+		String addr, String... data) {
 
-        Log.d(TAG, "update_widget id=" + wid + ", temp=" + temp + ", addr=" + addr);
+//        Log.d(TAG, "update_widget id=" + wid + ", temp=" + temp + ", addr=" + addr);
 
 	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
-	if(temp != null) views.setTextViewText(R.id.w_temp, temp);
 	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
+	if(data != null) {
+	    if(data.length > 0) views.setTextViewText(R.id.w_temp, data[0]);
+	    if(data.length > 1) views.setTextViewText(R.id.w_pressure, data[1]);
+	    if(data.length > 2) views.setTextViewText(R.id.w_wind, data[2]);
+	    if(data.length > 3) views.setTextViewText(R.id.w_precip, data[3]);
+	    if(data.length > 4) views.setTextViewText(R.id.w_humidity, data[4]);
+	    	
+	}
+
 //	if(data != null) views.setTextViewText(R.id.w_data, data);
 
 	// Pending intent to display a webpage when the right part of the widget is clicked
-	if(Util.currentStation != null && Util.currentStation.code != last_sta_code) {
-	    last_sta_code = Util.currentStation.code;
-	    String url =  Util.URL_STA_DATA + "?p=" + Util.currentStation.code;	
+	Station st = Srv.getCurrentStation();
+	if(st != null && st.code != last_sta_code) {
+	    last_sta_code = st.code;
+	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
 	    Intent intent = new Intent(context, WebActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    intent.putExtra("action", url);
 	    intent.putExtra("show_ui", false);
 	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, 0); 	
 	}
-	if(pint_show_webpage != null) views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);	    		
+	if(pint_show_webpage != null) {
+	    Log.d(TAG, "setting clicks");
+	    views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);
+	    views.setOnClickPendingIntent(R.id.w_pressure, pint_show_webpage);
+	    views.setOnClickPendingIntent(R.id.w_wind, pint_show_webpage);
+	    views.setOnClickPendingIntent(R.id.w_precip, pint_show_webpage);
+	    views.setOnClickPendingIntent(R.id.w_humidity, pint_show_webpage);
+	}	    		
 
 	// Pending intent to update weather when the left part of the widget is clicked
     	if(pint_widget_update == null) {

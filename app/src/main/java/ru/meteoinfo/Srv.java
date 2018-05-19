@@ -17,8 +17,8 @@ import android.os.Message;
 import android.preference.PreferenceManager;
 
 import com.google.android.gms.location.*;
-import com.google.android.gms.tasks.OnSuccessListener;
-
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
@@ -57,6 +57,13 @@ public class Srv extends Service {
     private static final int COLOUR_GOOD = WeatherActivity.COLOUR_GOOD;
     private static final int COLOUR_DBG = WeatherActivity.COLOUR_DBG;
 
+    private static Location currentLocation = null;	
+    private static Station currentStation = null;
+    public static Station getCurrentStation() { return currentStation; };	
+
+    private static WeatherData localWeather = null;
+    public static WeatherData getLocalWeather() { return localWeather; }
+
     private static void log(int colour, String mesg) {
 	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
 	if(colour == COLOUR_ERR) Log.e(TAG, mesg);
@@ -67,48 +74,58 @@ public class Srv extends Service {
 	log(colour, App.get_string(res_id));
     }
 
+    public static Location getCurrentLocation() {
+	return currentLocation;
+    }
+
     @Override
     public IBinder onBind (Intent intent) {
 	return null;
     }
+
+    private void send_init_result(boolean res) {
+	if(App.activity_visible) {
+	    Log.e(TAG, "Activity visible, sending " + res);	
+	    Message msg = new Message();
+	    Bundle b = new Bundle();
+	    b.putBoolean("init_complete", res);
+	    msg.setData(b);
+	    WeatherActivity.ui_update.sendMessage(msg);		
+	} else Log.e(TAG, "activity not visible");
+	if(App.widget_visible) {
+	    	
+	}
+    }		
 
     @Override
     public void onCreate() {
 	super.onCreate();
 
 	log(COLOUR_INFO, "creating service");
-	
-	if(Util.fullStationList == null || Util.localWeather == null) {
+
+	if(!Util.stationListKnown()) {
 	    new Thread(new Runnable() {
 		@Override
 		public void run() {
-		    int result = 0;
-		    log(COLOUR_INFO, "init: updating station list");
-		    if(Util.fullStationList == null) result = (Util.getStations()) ? 1 : 0; 
-		    else Log.d(TAG,"otlichno"); 
-		    if(Util.currentStation != null) {
-		        Log.d(TAG, "init: updating local weather for " + Util.currentStation.code);
-			Util.localWeather = Util.getWeather(Util.currentStation.code);
-		    	Log.d(TAG, "init: weather updated");
+		    log(COLOUR_DBG, "updating station list");
+		    if(!Util.getStations()) {  // stationList still unknown
+			log(COLOUR_ERR, "init: failed");
+			send_init_result(false);
+		    } else {
+			log(COLOUR_DBG, "station list obtained");
+			restart_updates();
 		    }	
-		    if(App.activity_visible) {
-			log(COLOUR_DBG, "init: report result to activity");
-			Message msg = new Message();
-			Bundle b = new Bundle();
-			b.putInt("init_complete", result);
-			msg.setData(b);
-			WeatherActivity.ui_update.sendMessage(msg);
-		    } else log(COLOUR_DBG, "init: activity not started");
 	        }
 	    }).start();
+	} else {
+	    log(COLOUR_INFO, "station list is known already");
+	    restart_updates(); 
 	}
-
-	restart_updates();
-
     }
 
     public void restart_updates() {
-
+	Log.d(TAG, "restarting updates");
+	send_init_result(true);
 	// Start location updates
 	read_prefs();
 	
@@ -123,10 +140,22 @@ public class Srv extends Service {
 	pint_location = PendingIntent.getService(this, 0, intent, 0);	
 
 	loc_client = LocationServices.getFusedLocationProviderClient(this);
+	loc_client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+	    @Override
+	    public void onComplete(Task<Location> task) {
+		if(!task.isSuccessful() || task.getResult() == null) return;
+		currentLocation = task.getResult();
+		currentStation = Util.getNearestStation(currentLocation.getLatitude(), 
+		    currentLocation.getLongitude());
+		updateLocalWeather(null);
+            }
+	});
+
 	LocationRequest loc_req = new LocationRequest();
 	loc_req.setPriority(loc_priority);
 	loc_req.setInterval(loc_update_interval);
 //	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
+	loc_req.setFastestInterval(loc_update_interval/4);	// Samsung Galaxy S9
 	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
 	loc_client.requestLocationUpdates(loc_req, pint_location);
 
@@ -188,14 +217,14 @@ public class Srv extends Service {
 		    Log.e(TAG, "null location");
 		    break;
 		}
-		Util.currentLocation = loc;
+		currentLocation = loc;
 		Station st = Util.getNearestStation(loc.getLatitude(), loc.getLongitude());
 		if(st == null) {
 		    Log.d(TAG, "station list unknown yet");
 		    break;
 		}
-		if(Util.currentStation == null || Util.currentStation.code != st.code) {
-		    Util.currentStation = st;
+		if(currentStation == null || currentStation.code != st.code) {
+		    currentStation = st;
 		    Log.d(TAG, "station changed to " + st.code);
 		    if(App.widget_visible) {
 			ii = new Intent(this, WidgetProvider.class);
@@ -221,12 +250,12 @@ public class Srv extends Service {
 
 	    case WIDGET_STARTED:
 		Log.d(TAG, "widget started");
-		if(Util.localWeather != null) {
+		if(localWeather != null) {
 		    ii = new Intent(this, WidgetProvider.class);
 		    ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 		    sendBroadcast(ii);
 		} 
-		if(Util.currentStation != null) {
+		if(currentStation != null) {
 		    ii.setAction(WidgetProvider.LOCATION_CHANGED_BROADCAST);
 		    sendBroadcast(ii);
 		} else {
@@ -237,7 +266,7 @@ public class Srv extends Service {
 			public void run() {
 			  try {	
 			    this.wait(2000);
-			    if(Util.currentStation != null) {
+			    if(currentStation != null) {
 		//		ii = new ru.meteoinfo.App.getContext().Intent(this, WidgetProvider.class);
 		//		ii.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 				sendBroadcast(uu);
@@ -254,11 +283,10 @@ public class Srv extends Service {
 		break;
 		
 	    case WIDGET_STOPPED:
-		Log.d(TAG, "widget stopped");
-		break;	
+		break;
 
 	    case ACTIVITY_STARTED: 	
-		Log.d(TAG, "activity started");
+		restart_updates();
 		break;	
 
 	    case ACTIVITY_STOPPED: 	
@@ -267,7 +295,7 @@ public class Srv extends Service {
 		break;
 
 	    default:
-		Log.d(TAG, "unknown action");
+		Log.e(TAG, "unknown action");
 		break;
 	}
 	return START_STICKY;
@@ -275,16 +303,16 @@ public class Srv extends Service {
 
     private void updateLocalWeather(Intent intent) {
 	final Intent ii = intent;
-	if(Util.currentStation == null) {
+	if(currentStation == null) {
 	    Log.e(TAG, "updateLocalWeather: local station unknown yet");
 	    return;	
 	}
 	new Thread(new Runnable() {
 	    @Override
 	    public void run() {
-		Log.d(TAG, "updating local weather for " + Util.currentStation.code);
-		Util.localWeather = Util.getWeather(Util.currentStation.code);
-		if(ii != null && Util.localWeather != null) sendBroadcast(ii);
+		Log.d(TAG, "updating local weather for " + currentStation.code);
+		localWeather = Util.getWeather(currentStation.code);
+		if(ii != null && localWeather != null) sendBroadcast(ii);
 	    }
 	}).start();
     }

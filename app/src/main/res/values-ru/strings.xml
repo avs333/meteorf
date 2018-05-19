@@ -14,7 +14,7 @@
     <string name="conn_bad">Нет связи с сервером! Проверьте настройки Internet и попробуйте еще раз</string>
     <string name="conn_ok">Инициализация прошла успешно</string>
     <string name="no_internet">Нет подключения к Internet!</string>
-    <string name="title_data_activity">Подробные данные о погоде</string>
+    <string name="title_data_activity">Почасовой прогноз</string>
     <string name="try_find_loc">Определение текущих координат...</string>
     <string name="failed_to_find_loc">Не удалось найти текущие координаты</string>
     <string name="no_loc_srv">Сервис Location недоступен на этом устройстве!</string>
@@ -130,6 +130,11 @@
     <string name="wd_humidity">Относительная влажность: %s%%\n</string>
     <string name="wd_visibility">Видимость: %s м\n</string>
     <string name="wd_clouds">Балл общей облачности (0-10): %s\n</string>
+
+    <string name="wd_pressure_short">Давление: %s</string>
+    <string name="wd_wind_short">Ветер: %s %s м/с</string>
+    <string name="wd_precip_short">Осадки: %s мм</string>
+    <string name="wd_humidity_short">Влажность: %s%%</string>
 
 
     <string-array name="wind_dirs">

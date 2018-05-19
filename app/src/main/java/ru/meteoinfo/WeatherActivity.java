@@ -52,10 +52,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.location.*;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
 import ru.meteoinfo.Util.Station;
 
 
@@ -92,17 +88,13 @@ public class WeatherActivity extends AppCompatActivity
     private final long LOC_UPDATE_INTERVAL = 20 * 1000;
     private final long LOC_FASTEST_UPDATE_INTERVAL = 2000; /* 2 sec */
 
-//    private final int locPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;	
-    private final int locPriority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;	
 
     public static String formattedLocString = null;
 
     public static AppCompatActivity mainAct;    // this activity
 
     private static ArrayList<Station> matchingStationList = null;
-
     public static Station curStation = null;
-//  public static Location curLocation = null;
 
     // either coordinates of curLocation, or explicitly entered ones
     public static double requestedLon = Util.inval_coord;
@@ -185,13 +177,13 @@ public class WeatherActivity extends AppCompatActivity
 	 	tview.append(Html.fromHtml(ss));
 		return;
 	    }
-	    int result = bundle.getInt("init_complete", -1);
-	    if(result != -1) {
+	    boolean result = bundle.getBoolean("init_complete", false);
+	    if(result) {
 		for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
 		if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
 		else navMenu.getItem(fav_menu_idx).setEnabled(false);
 		logUI(COLOUR_GOOD, R.string.conn_ok);	
-	    }		
+	    }
 	}
     };
 
@@ -229,6 +221,8 @@ public class WeatherActivity extends AppCompatActivity
 
  	prefs = new Prefs();	// calls prefs.load();
 
+	App.activity_visible = true;
+
 	Intent intie = new Intent(this, Srv.class);
 	intie.setAction(Srv.ACTIVITY_STARTED);
 
@@ -244,8 +238,6 @@ public class WeatherActivity extends AppCompatActivity
         res.updateConfiguration(config, res.getDisplayMetrics());
 
         setContentView(R.layout.activity_weather);
-
-	App.activity_visible = true;
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -272,49 +264,11 @@ public class WeatherActivity extends AppCompatActivity
 	
 	for(int i = 0; i < menu_size; i++) {
 	    MenuItem mi = navMenu.getItem(i);
-	    if(Util.fullStationList == null) mi.setEnabled(false);
+	    mi.setEnabled(false);
 	    if(mi.getTitle().equals(getString(R.string.select_fav))) {
 		fav_menu_idx = i;
 	    }		
 	}
-	if(Util.fullStationList != null) {
-	    logUI(COLOUR_GOOD, R.string.init_already);	
-	    if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
-	    else navMenu.getItem(fav_menu_idx).setEnabled(false);
-	}
-
-/*
- else {
-	    Runnable rr = new Runnable() {
-		@Override
-		public void run() {
-		    logUI(COLOUR_INFO, R.string.checking_server_conn);
-		    serverAvail = Util.getStations();
-		    if(serverAvail) {
-			logUI(COLOUR_GOOD, R.string.conn_ok);	
-			ui_update.post(new Runnable() {	
-			    public void run() {
-				for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
-				if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
-				else navMenu.getItem(fav_menu_idx).setEnabled(false);
-			    }
-			});
-		    }
-		}		
-	    };
-	    Thread thd = new Thread(rr);
-	    thd.start();
-	}
-*/
-	LocationServices.getFusedLocationProviderClient(this).getLastLocation().addOnSuccessListener(this, 
-            new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-		    if(location == null) return;
-                    if(Util.currentLocation == null) Util.currentLocation = location;                        
-		    logUI(COLOUR_GOOD, R.string.cur_loc_known);
-                }
-        });
     }
 
     @Override
@@ -339,7 +293,7 @@ public class WeatherActivity extends AppCompatActivity
 		Runnable fgr = new Runnable() {
 		    @Override
 		    public void run() {
-			if(Util.currentLocation == null) {
+			if(Srv.getCurrentLocation() == null) {
 			   Toast.makeText(getApplicationContext(), getString(R.string.failed_to_find_loc), Toast.LENGTH_LONG).show();
 			   return;
 		        }
@@ -357,9 +311,9 @@ public class WeatherActivity extends AppCompatActivity
 		Runnable bgr = new Runnable() {
 		    @Override
 		    public void run() {
-			if(Util.currentLocation == null) return;
-			requestedLat = Util.currentLocation.getLatitude();
-			requestedLon = Util.currentLocation.getLongitude();
+			if(Srv.getCurrentLocation() == null) return;
+			requestedLat = Srv.getCurrentLocation().getLatitude();
+			requestedLon = Srv.getCurrentLocation().getLongitude();
 			formattedLocString = get_formatted_address(requestedLat, requestedLon);
 		    }
 		};
@@ -579,21 +533,6 @@ public class WeatherActivity extends AppCompatActivity
         return dialog;
     }
 
-    private Station getFavStation(String fav) {
-	try {
-	    long k = Long.parseLong(fav);
-	    for(int i = 0; i < Util.fullStationList.size(); i++) {
-		Station st = Util.fullStationList.get(i);
-		if(k == st.code) return st;
-	    }
-        } catch (Exception e) {
-	    logUI(COLOUR_ERR, getString(R.string.err_exception) + " " + fav);	
-	    e.printStackTrace();
-	    return null;
-	}
-        return null;
-    }
-
     public Dialog selFavList() {
         if(favs == null || favs.size() == 0) {
 	    logUI(COLOUR_DBG, getString(R.string.err_in) + " selFavList");	
@@ -608,7 +547,7 @@ public class WeatherActivity extends AppCompatActivity
 
 	final ArrayList<String> fstr0 = new ArrayList<>(favs);
 	ArrayList<String> fstr1 = new ArrayList<>();
-	for(i = 0; i < fstr0.size(); i++) fstr1.add(getFavStation(fstr0.get(i)).name_p);
+	for(i = 0; i < fstr0.size(); i++) fstr1.add(Util.getFavStation(fstr0.get(i)).name_p);
         final ListView st_list = dialog.findViewById(R.id.StationList);
         final ArrayAdapter<String> ff = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1, fstr1);
 
@@ -617,7 +556,7 @@ public class WeatherActivity extends AppCompatActivity
         st_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                curStation = getFavStation(fstr0.get(i));
+                curStation = Util.getFavStation(fstr0.get(i));
 		if(curStation == null) {
 		    logUI(COLOUR_ERR, R.string.no_cur_sta);
 		    return;	
@@ -653,7 +592,7 @@ public class WeatherActivity extends AppCompatActivity
         st_list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                long cd = getFavStation(fstr0.get(i)).code;
+                long cd = Util.getFavStation(fstr0.get(i)).code;
 		String code = Long.toString(cd);
 		logUI(COLOUR_DBG, getString(R.string.fav_removal) + " " + i);
 		favs.remove(code);
