@@ -5,8 +5,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.JsonReader;
-import android.util.JsonToken;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -70,8 +69,9 @@ public class DataActivity extends AppCompatActivity {
                 if(meteodata != null) {
                     Intent sendIntent = new Intent();
                     sendIntent.setAction(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, meteodata);
-                    sendIntent.setType("text/plain");
+                    sendIntent.putExtra(Intent.EXTRA_TEXT,
+			"<body><html>" +  meteodata + "</body></html>");
+                    sendIntent.setType("text/html");
                     startActivity(sendIntent);
                 }
             }
@@ -82,10 +82,17 @@ public class DataActivity extends AppCompatActivity {
         Runnable bgr = new Runnable() {
             @Override
             public void run() {
+	/*	wdata = null;
 		log_msg("getting weather for " + curStation.code);
-		if(local) wdata = Srv.getLocalWeather();
-		else wdata = Util.getWeather(curStation.code);
-		log_msg("getWeather returned " + wdata);
+		if(local) {
+		    log_msg("local");
+		    wdata = Srv.getLocalWeather();
+		} else log_msg("non-local"); 
+		if(wdata == null) 
+		*/
+		log_msg("getting weather for " + curStation.code);
+		wdata = Util.getWeather(curStation.code);
+		log_msg("getting weather for " + curStation.code + " " + ((wdata == null) ? "failed" : "succeeded"));
 		if(wdata != null) meteodata = parseWeatherData(wdata);
 		else meteodata = null;
             }
@@ -93,10 +100,10 @@ public class DataActivity extends AppCompatActivity {
         Runnable fgr = new Runnable() {
             @Override
             public void run() {
-                if(meteodata != null && meteodata.length() != 0) {
-                    String s = meteodata;
-                    etext.setText(s);
-                } else etext.setText(getString(R.string.no_data_avail));
+                if(meteodata != null && meteodata.length() != 0) 
+                    etext.setText(Html.fromHtml(meteodata));
+		else etext.setText(Html.fromHtml("<h1><font color=#C00000>" + 
+			getString(R.string.no_data_avail) + "</font></h1>"));
             }
         };
         AsyncTaskWithProgress atp = new AsyncTaskWithProgress(this, getString(R.string.receiving_data), bgr, fgr);
@@ -120,15 +127,13 @@ public class DataActivity extends AppCompatActivity {
 	String s = "", st, st1, st2, st3;
 
 	    st = wi.get_date();
-
-	    if(st != null) s += st + "\n"; 
+	    if(st != null) s += "<br><p><h2><i>" + st + "</i></h2>";
 
 	    st = wi.get_temperature();
-	    if(st != null) s += String.format(getString(R.string.wd_temperature), st);
-
+	    if(st != null) s += String.format(getString(R.string.wd_temperature), st) + "<br>";
 
 	    st = wi.get_pressure();
-	    if(st != null) s += String.format(getString(R.string.wd_pressure), st);
+	    if(st != null) s += String.format(getString(R.string.wd_pressure), st) + "<br>";
 
 	    st = wi.get_wind_dir();
 	    st2 = wi.get_wind_speed();
@@ -138,62 +143,63 @@ public class DataActivity extends AppCompatActivity {
 	        st1 = windDir(st);
 		if(st3 != null) s += String.format(getString(R.string.wd_wind_gusts), st1, st, st2, st3);
 		else s += String.format(getString(R.string.wd_wind_nogusts), st1, st, st2);
+		s += "<br>";
 	    }
 
 	    st = wi.get_info();
-	    if(st != null) s += st + "\n";	
-	
+	    if(st != null) s += st + "<br>";
 
 	    st = wi.get_precip();  		    
 	    if(st != null) {
 		if(wi.gettype() == Util.WEATHER_REQ_7DAY) st3 = getString(R.string.wd_precip_nd);
 		else st3 = getString(R.string.wd_precip1h);		
-		s += String.format(st3, st);
+		s += String.format(st3, st) + "<br>";
 	    }	
 
 	    if(wi.gettype() == Util.WEATHER_REQ_7DAY) return s;	// no more data for 7-day forecast
 	    else if(wi.gettype() == Util.WEATHER_REQ_3DAY) {
 		st = wi.get_humidity();
-		if(st != null) s += String.format(getString(R.string.wd_humidity), st);
+		if(st != null) s += String.format(getString(R.string.wd_humidity), st) + "<br>";
 		return s;				// no more data for 3-day forecast
 	    }	
 	    st = wi.get_precip3h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip3h), st);
+	    if(st != null) s += String.format(getString(R.string.wd_precip3h), st) + "<br>";
 
 	    st = wi.get_precip6h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip6h), st);
+	    if(st != null) s += String.format(getString(R.string.wd_precip6h), st) + "<br>";
 
 	    st = wi.get_precip12h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip12h), st);
+	    if(st != null) s += String.format(getString(R.string.wd_precip12h), st) + "<br>";
 
 	    st = wi.get_humidity();
-	    if(st != null) s += String.format(getString(R.string.wd_humidity), st);
+	    if(st != null) s += String.format(getString(R.string.wd_humidity), st) + "<br>";
 
 	    st = wi.get_visibility();
-	    if(st != null) s += String.format(getString(R.string.wd_visibility), st);
+	    if(st != null) s += String.format(getString(R.string.wd_visibility), st) + "<br>";
 
 	    st = wi.get_clouds();
-	    if(st != null) s += String.format(getString(R.string.wd_clouds), st);
+	    if(st != null) s += String.format(getString(R.string.wd_clouds), st) + "<br>";
 
 	return s;
 	     	
     }
 
-    private static final String separator = "******************\n";
+    private static final String separator = "<p>";
 
     private String parseWeatherData(WeatherData wd) {
 
         WeatherInfo wi;
         String s = "", st;
 
-	if(wd.observ != null && wd.observ.valid) { 
-	    s += getString(R.string.observ_data) + "\n";	
+/*	if(wd.observ != null && wd.observ.valid) { 
+	    s += "<b>" + getString(R.string.observ_data) + "</b>" + separator;	
 	    st = parseWeatherInfo(wd.observ);
 	    if(st != null) {
 		s += st; s += separator;
 	    } 		
 	    s += separator;
 	}
+*/
 
 /*
 	if(wd.for7days != null) {
@@ -210,7 +216,7 @@ public class DataActivity extends AppCompatActivity {
 	}
 */
 	if(wd.for3days != null) {
-	    s += getString(R.string.daily_data) + "\n";	
+//	    s += "<b>" + getString(R.string.daily_data) + "</b>" + separator;	
 	    for(int i = 0; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
 		if(wi == null || !wi.valid) continue;

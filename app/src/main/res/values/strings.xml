@@ -118,24 +118,76 @@
     <string name="hourly_data_bad">Нет данных почасового прогноза</string>               
     <string name="weekly_data_bad">Нет данных недельного прогноза</string>               
     <string name="empty_elem_skiped">пустой элемент списка пропущен</string>               
-    <string name="wd_temperature">Температура: %s°C\n</string>
-    <string name="wd_pressure">Давление: %s мм рт.ст.\n</string>
-    <string name="wd_wind_nogusts">Ветер: %s [%s°] %s м/с\n</string>
-    <string name="wd_wind_gusts">Ветер: %s [%s°] %s м/с, порывы до %s м/с\n</string>
-    <string name="wd_precip_nd">Осадки за ночь/день: %s мм\n</string>
-    <string name="wd_precip1h">Осадки за 1 час: %s мм\n</string>
-    <string name="wd_precip3h">Осадки за 3 часа: %s мм\n</string>
-    <string name="wd_precip6h">Осадки за 6 часов: %s мм\n</string>
-    <string name="wd_precip12h">Осадки за 12 часов: %s мм\n</string>
-    <string name="wd_humidity">Относительная влажность: %s%%\n</string>
-    <string name="wd_visibility">Видимость: %s м\n</string>
-    <string name="wd_clouds">Балл общей облачности (0-10): %s\n</string>
+    <string name="wd_temperature">Температура: %s°C</string>
+    <string name="wd_pressure">Давление: %s мм рт.ст.</string>
+    <string name="wd_wind_nogusts">Ветер: %s [%s°] %s м/с</string>
+    <string name="wd_wind_gusts">Ветер: %s [%s°] %s м/с, порывы до %s м/с</string>
+    <string name="wd_precip_nd">Осадки за ночь/день: %s мм</string>
+    <string name="wd_precip1h">Осадки за 1 час: %s мм</string>
+    <string name="wd_precip3h">Осадки за 3 часа: %s мм</string>
+    <string name="wd_precip6h">Осадки за 6 часов: %s мм</string>
+    <string name="wd_precip12h">Осадки за 12 часов: %s мм</string>
+    <string name="wd_humidity">Относительная влажность: %s%%</string>
+    <string name="wd_visibility">Видимость: %s м</string>
+    <string name="wd_clouds">Балл общей облачности (0-10): %s</string>
 
     <string name="wd_pressure_short">Давление: %s</string>
-    <string name="wd_wind_short">Ветер: %s %s м/с</string>
-    <string name="wd_precip_short">Осадки: %s мм</string>
+    <string name="wd_wind_short">Ветер: %s, %s м/с</string>
+    <string name="wd_precip_short">Осадки: %s мм/ч</string>
     <string name="wd_humidity_short">Влажность: %s%%</string>
 
+    <string name="wd_unk_temp">+??</string>               
+
+
+    <string-array name="verb_names">
+	<item>Ошибки</item>
+	<item>Ошибки и еще кое-что</item>
+	<item>Все</item>
+    </string-array>
+
+    <string-array name="addr_names">
+	<item>Нет</item>
+	<item>Google</item>
+	<item>OSM</item>
+    </string-array>
+
+    <string-array name="vals123">
+	<item>0</item>
+	<item>1</item>
+	<item>2</item>
+    </string-array>
+
+    <string-array name="loc_update_names">
+	<item>10 секунд</item>
+	<item>1 минута</item>
+	<item>5 минут</item>
+	<item>20 минут</item>
+	<item>1 час</item>
+    </string-array>
+
+    <string-array name="loc_update_vals">
+	<item>10</item>
+	<item>60</item>
+	<item>300</item>
+	<item>1200</item>
+	<item>3600</item>
+    </string-array>
+
+    <string-array name="wth_update_names">
+	<item>5 минут</item>
+	<item>20 минут</item>
+	<item>1 час</item>
+	<item>2 часа</item>
+	<item>4 часа</item>
+    </string-array>
+
+    <string-array name="wth_update_vals">
+	<item>300</item>
+	<item>1200</item>
+	<item>3600</item>
+	<item>7200</item>
+	<item>14400</item>
+    </string-array>
 
     <string-array name="wind_dirs">
 	<item>северный</item>
@@ -149,22 +201,6 @@
 	<item>северный</item>
     </string-array>
 
-    <string-array name="update_intervals">
-	<item>10 секунд</item>
-	<item>1 минута</item>
-	<item>5 минут</item>
-	<item>20 минут</item>
-	<item>1 час</item>
-    </string-array>
-
-    <string-array name="update_interval_sec">
-	<item>10</item>
-	<item>60</item>
-	<item>300</item>
-	<item>1200</item>
-	<item>3600</item>
-    </string-array>
-
     <string-array name="short_wind_dirs">
 	<item>С</item>
 	<item>СВ</item>
@@ -176,5 +212,6 @@
 	<item>СЗ</item>
 	<item>С</item>
     </string-array>
+
 </resources>
 

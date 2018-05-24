@@ -54,6 +54,8 @@ import android.widget.Toast;
 import com.google.android.gms.common.GoogleApiAvailability;
 import ru.meteoinfo.Util.Station;
 
+//import android.appwidget.AppWidgetManager;
+//import android.appwidget.AppWidgetProviderInfo;
 
 public class WeatherActivity extends AppCompatActivity 
 	implements NavigationView.OnNavigationItemSelectedListener {
@@ -163,6 +165,7 @@ public class WeatherActivity extends AppCompatActivity
     private static int menu_size;
     private static TextView tview;
     private static int fav_menu_idx = -1;
+    private static int cur_loc_menu_idx = -1;
 
     public static Handler ui_update = new Handler() {
 	@Override
@@ -177,13 +180,19 @@ public class WeatherActivity extends AppCompatActivity
 	 	tview.append(Html.fromHtml(ss));
 		return;
 	    }
-	    boolean result = bundle.getBoolean("init_complete", false);
-	    if(result) {
-		for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
-		if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
-		else navMenu.getItem(fav_menu_idx).setEnabled(false);
-		logUI(COLOUR_GOOD, R.string.conn_ok);	
+
+	    int result = bundle.getInt("init_complete", Srv.RES_ERR);
+	    if(result == Srv.RES_ERR) {
+		// MUST restart service!
+		return;
 	    }
+	    for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
+	    if(result == Srv.RES_LIST) {
+		navMenu.getItem(cur_loc_menu_idx).setEnabled(false);	
+	//	logUI(COLOUR_INFO, R.string.no_cur_sta);
+	    } else logUI(COLOUR_GOOD, R.string.conn_ok);	
+	    if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
+	    else navMenu.getItem(fav_menu_idx).setEnabled(false);
 	}
     };
 
@@ -223,6 +232,14 @@ public class WeatherActivity extends AppCompatActivity
 
 	App.activity_visible = true;
 
+/*
+	AppWidgetManager aman = AppWidgetManager.getInstance(this);
+	List<AppWidgetProviderInfo> provs = aman.getInstalledProviders();
+	if(provs == null) Log.d(TAG, "NO PROVIDERS");
+	else for(AppWidgetProviderInfo api : provs) {
+	    Log.d(TAG, api.provider.flattenToString());
+	}
+*/
 	Intent intie = new Intent(this, Srv.class);
 	intie.setAction(Srv.ACTIVITY_STARTED);
 
@@ -267,6 +284,8 @@ public class WeatherActivity extends AppCompatActivity
 	    mi.setEnabled(false);
 	    if(mi.getTitle().equals(getString(R.string.select_fav))) {
 		fav_menu_idx = i;
+	    } else if(mi.getTitle().equals(getString(R.string.current_location))) {
+		cur_loc_menu_idx = i;
 	    }		
 	}
     }

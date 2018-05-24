@@ -342,7 +342,7 @@ public class Util {
 		    continue;
 		}
 		if(stans[i].startsWith("16169")) {  // known dead station next to Kievsky vokzal
-	    	    log(COLOUR_DBG, R.string.skip_kiev);
+//	    	    log(COLOUR_DBG, R.string.skip_kiev);
 		    continue;
 	        }
 		std = stans[i].split(";");
@@ -420,6 +420,7 @@ public class Util {
     }	
 
     public static ArrayList<Station> getMatchingStationsList(String pattern) {
+	if(fullStationList == null) return null;	
         ArrayList<Station> stations = new ArrayList<>();
 	int i;
 	String pat = pattern.toLowerCase();
@@ -435,6 +436,7 @@ public class Util {
 
     public static Station getFavStation(String fav) {
         try {
+	    if(fullStationList == null) return null;	
             long k = Long.parseLong(fav);
             for(int i = 0; i < Util.fullStationList.size(); i++) {
                 Station st = Util.fullStationList.get(i);
