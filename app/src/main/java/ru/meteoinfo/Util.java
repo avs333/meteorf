@@ -478,6 +478,7 @@ public class Util {
                 String name = reader.nextName();
                 if(name.equals("display_name")) {
                     addr = reader.nextString();
+		    if(addr.matches("^\\d+?.*")) addr = "Дом " + addr;	
                     break;
                 } else reader.skipValue();
             }
@@ -562,64 +563,48 @@ public class Util {
         return addr;
     }
 
-
+/*
     public static String windDegreesToString(double degrees) {
 	String[] directions = App.getContext().getResources().getStringArray(R.array.wind_dirs);
 	return directions[(int)Math.round(((degrees % 360) / 45))];
     }  	
+*/
+    public static final double inval_temp = -273.15;
 
     public static class WeatherInfo {
-	// won't bother converting floats to strings and back
-	private String params[] = null;
+
 	private int type = -1;
+	private long utc = 0;
         public boolean valid = false;
+
+	// debug only: interpolated weather
+	public boolean interpol_data = false;
+
+	private String date = null;
+	private String info = null;
+	private double pressure = -1, temperature = inval_temp, 
+		wind_dir = -1, wind_speed = -1, precip = -1, 
+		precip3h = -1, precip6h = -1, precip12h = -1, 
+		humidity = -1, visibility = -1, clouds = -1, gusts = -1;
+
 	// "yyyy-MM-dd HH:mm UTC"
 
 	public int gettype() { return type; }
-	public String get_date() { return params[0]; } 
-//	public String get_time() { return params[1]; } 
-	public String get_pressure() { return params[2]; }
-	public String get_temperature() { return params[3]; }
-	public String get_wind_dir() { return params[4]; }
-	public String get_wind_speed() { return params[5]; }
-	public String get_info() { 
-	    String ret = null;	
-	    if(params[6] == null || params[6].isEmpty()) return null;
-	    try {
-		int i = Integer.parseInt(params[6]);
-		switch(type) {
-		    case WEATHER_REQ_OBSERV:
-			ret = new String(weatherCodesObserv[i]);
-			break;	
-		    case WEATHER_REQ_7DAY:
-			ret = new String(weatherCodes7day[i]);
-			break;
-		    case WEATHER_REQ_3DAY:
-			// ???
-			break; 
-		}	
-	    } catch(Exception e) {
-		Log.e(TAG, "error parsing weather code " + params[6] + " for type " + type);
-	    }	 	
-	    return ret; 
-	}
-	public String get_precip() { return params[7]; }
-	public String get_precip3h() { return (type == WEATHER_REQ_OBSERV) ? params[8] : null; }
-	public String get_precip6h() { return (type == WEATHER_REQ_OBSERV) ? params[9] : null; }
-	public String get_precip12h() { return (type == WEATHER_REQ_OBSERV) ? params[10] : null; }
-	public String get_humidity() { 
-	    switch(type) {
-		case WEATHER_REQ_OBSERV: 
-		    return params[11];
-		case WEATHER_REQ_3DAY:
-		    return params[8];
-		default:
-		    return null;
-	    }
-	}
-	public String get_visibility() { return (type == WEATHER_REQ_OBSERV) ? params[12] : null; }
-	public String get_clouds() { return (type == WEATHER_REQ_OBSERV) ? params[13] : null; }
-	public String get_gusts() { return (type == WEATHER_REQ_OBSERV) ? params[14] : null; }
+	public String get_date() { return date; } 
+	public long get_utc() { return utc; } 
+	public double get_pressure() { return pressure; }
+	public double get_temperature() { return temperature; }
+	public double get_wind_dir() { return wind_dir; }
+	public double get_wind_speed() { return wind_speed; }
+	public String get_info() { return info; }  
+	public double get_precip() { return precip; }
+	public double get_precip3h() { return precip3h; }
+	public double get_precip6h() { return precip6h; }
+	public double get_precip12h() { return precip12h; }
+	public double get_humidity() { return humidity; }
+	public double get_visibility() { return visibility; }
+	public double get_clouds() { return clouds; }
+	public double get_gusts() { return gusts; }
 
 	public WeatherInfo(int type, String s) {
 	    int i, params_sz;
@@ -646,16 +631,51 @@ public class Util {
 
 	    if(p.length < params_sz) {
 		Log.e(TAG, "invalid weatherinfo string: " + p.length + "<" + params_sz);
-		Log.e(TAG, "string was <" + s + ">");
+		Log.e(TAG, "string was <" + s + ">, of type " + type);
 		return;
 	    }
 
 	    this.type = type;	
-	    params = new String[params_sz];
+
 	    for(i = 0; i < params_sz; i++) {
-		if(p[i] == null || p[i].isEmpty()) params[i] = null;
-		else params[i] = new String(p[i]);
-	    }	
+		try {
+		  if(p[i] == null || p[i].isEmpty()) {
+		      p[i] = null; 
+		      continue;
+		  }
+		  switch(i) {
+		    case 2: pressure = Double.parseDouble(p[i]); break;
+		    case 3: temperature = Double.parseDouble(p[i]); break;
+		    case 4: wind_dir = Double.parseDouble(p[i]); break;
+		    case 5: wind_speed = Double.parseDouble(p[i]); break;
+		    case 6: int k = Integer.parseInt(p[i]);
+			    switch(type) {
+				case WEATHER_REQ_OBSERV: info = new String(weatherCodesObserv[k]); break;
+				case WEATHER_REQ_7DAY: info = new String(weatherCodes7day[k]); break;
+				case WEATHER_REQ_3DAY: break; // ?????
+			    }	
+			    break;
+
+		    case 7: precip  = Double.parseDouble(p[i]); break;
+		    case 8: if(type == WEATHER_REQ_OBSERV) precip3h = Double.parseDouble(p[i]);
+			    else humidity = Double.parseDouble(p[i]); 
+			    break;
+		    case 9: if((type == WEATHER_REQ_OBSERV)) precip6h = Double.parseDouble(p[i]);
+		    case 10: if((type == WEATHER_REQ_OBSERV)) precip12h = Double.parseDouble(p[i]);
+		    case 11: if((type == WEATHER_REQ_OBSERV)) humidity = Double.parseDouble(p[i]);	
+		    case 12: if((type == WEATHER_REQ_OBSERV)) visibility = Double.parseDouble(p[i]);	
+		    case 13: if((type == WEATHER_REQ_OBSERV)) clouds = Double.parseDouble(p[i]);
+		    case 14: if((type == WEATHER_REQ_OBSERV)) gusts = Double.parseDouble(p[i]);
+		  }
+		} catch(Exception e) {
+		    log(COLOUR_ERR, "error parsing " + p[i] + ", index=" + i);
+		}
+	    }
+
+	    if(p[0] == null || p[1] == null) {
+		log(COLOUR_ERR, "missing date in weatherinfo");
+		return;
+	    }
 
 	    // rewrite a bit to speedup future access
 	    try {
@@ -663,42 +683,155 @@ public class Util {
 		Locale loc = new Locale("ru", "RU");
 	        if(type == WEATHER_REQ_7DAY) {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd");
-		    Date date = in.parse(params[0]);
-		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMM", loc);
-		    if(params[1].equals("night")) params[1] = new String(App.get_string(R.string.night));
-		    else if(params[1].equals("day")) params[1] = new String(App.get_string(R.string.day));
-		    params[0] = new String(out.format(date) + ", " + params[1]);
+		    Date _date = in.parse(p[0]);
+		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMMM", loc);
+		    if(p[1].equals("night")) p[1] = new String(App.get_string(R.string.night));
+		    else if(p[1].equals("day")) p[1] = new String(App.get_string(R.string.day));
+		    date = new String(out.format(_date) + ", " + p[1]);
 		} else {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		    in.setTimeZone(TimeZone.getTimeZone("UTC"));
-		    Date date = in.parse(params[0] + " " + params[1]);
-		    SimpleDateFormat out = new SimpleDateFormat("HH:mm EEEE, d MMM", loc);
-		    out.setTimeZone(TimeZone.getDefault());
-		    params[0] = new String(out.format(date));    
+		    Date _date = in.parse(p[0] + " " + p[1]);
+		    utc = _date.getTime();
+		    SimpleDateFormat out = new SimpleDateFormat("HH:mm EEEE, d MMMM", loc);
+		    out.setTimeZone(TimeZone.getDefault());	// convert UTC -> device timezone
+		    date = new String(out.format(_date));    
 		}
-		params[1] = null;
 	    } catch(Exception e) {
 		Log.e(TAG, "error parsing date");
 	    }
 
-/*	    try {
-		double d = Double.parseDouble(get_wind_dir());
-		if(d >= 0.0 && d <= 360.0) params[4] = new String(windDegreesToString(d));
-	    } catch(Exception e) {
-		Log.e(TAG, "error parsing wind direction");
-		params[4] = null;
-	    }	 
-	    if(type == WEATHER_REQ_OBSERV && params[12] != null) { // visibility -> km
-		try {
-		    double d = Double.parseDouble(params[12]);
-		    d /= 1000.0;
-		    params[12] = String.format("%.1g", d);				    	
-		} catch(Exception e) { }
-	    } 	*/      	 	
-
 	    valid = true; 	
 	}
-    }
+
+	// interpolate WeatherInfo data: wl = future forecasts, w = last observed data
+	public static boolean interpol(ArrayList<WeatherInfo> wl, WeatherInfo w) {
+	    if(wl == null) {
+		log(COLOUR_ERR, "Internal error: interpolation for null WeatherInfo list");
+		return false;
+	    }
+	    if(wl.get(0).type != WEATHER_REQ_3DAY || 
+		  (w != null && (w.type != WEATHER_REQ_OBSERV && w.type != WEATHER_REQ_3DAY))) {
+		log(COLOUR_ERR, "Internal error: interpolation for wrong WeatherInfo type");
+		return false;
+	    }
+	    if(w != null) wl.add(0, w);		// if we've got observables, let it be 1st entry
+
+	    int i, k, i_first; 	
+
+	    if(wl.get(0).get_pressure() != -1) i_first = 0;
+	    else i_first = -1;		    
+
+	    for(i = 1; i < wl.size(); i++) {
+		WeatherInfo wn = wl.get(i);
+		if(wn.get_pressure() != -1) {		// must be valid
+		    if(i - i_first == 1) {		// no need to interpolate
+			i_first = i;
+			continue;
+		    }
+		    if(i_first == -1) {			// no previous weather data, set to current
+			for(k = 0; k < i; k++) {
+			    WeatherInfo wi = wl.get(k);
+			    wi.type = WEATHER_REQ_3DAY; // just for clarity
+			    wi.pressure = wn.get_pressure();
+			    wi.wind_dir = wn.get_wind_dir();
+			    wi.wind_speed = wn.get_wind_speed();
+			    wi.precip = wn.get_precip();
+			    wi.humidity = wn.get_humidity();
+			    wi.interpol_data = true;
+			    wl.set(k, wi);
+			}
+			i_first = i;
+		        continue;
+		    }
+		    for(k = i_first + 1; k < i; k++) {
+			WeatherInfo wi = wl.get(k);
+			if(wi.get_pressure() != -1) {
+			    log(COLOUR_ERR, "Internal error: interpolation for known WeatherInfo");
+			    return false;
+			}
+			WeatherInfo w0 = wl.get(i_first);
+			if(w0.get_pressure() == -1) {
+			    log(COLOUR_ERR, "Internal error: interpolation for unknown WeatherInfo");
+			    return false;
+			}	
+			wi.type = WEATHER_REQ_3DAY; // just for clarity
+			wi.pressure = mean_param(w0.get_pressure(), wn.get_pressure(), k - i_first, i - i_first); // i - i_first > 1 here
+			wi.wind_dir = mean_wind(w0.get_wind_dir(), wn.get_wind_dir(), k - i_first, i - i_first);  // this case is special
+			wi.wind_speed = mean_param(w0.get_wind_speed(), wn.get_wind_speed(), k - i_first, i - i_first);
+			wi.precip = mean_param(w0.get_precip(), wn.get_precip(), k - i_first, i - i_first);
+			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), k - i_first, i - i_first);
+			wi.interpol_data = true;
+			wl.set(k, wi);
+		    }
+		    i_first = i;
+		}
+	    }
+	    if(w != null) wl.remove(0);
+	    return true;
+	}
+
+        private static double mean_param(double f0, double f1, int k, int delta) {
+	    if(f0 == -1) return (f1 == -1) ? -1 : f1;
+	    if(f1 == -1) return (f0 == -1) ? -1 : f0;
+	    if(f0 == f1) return f0;
+	    return f0 + (k * (f1 - f0)) / delta;
+	}
+
+	private static double mean_wind(double f0, double f1, int k, int delta) {
+	    try {
+		double fr, diff;
+		final double max_diff = 90;	// largest sector f0 and f1 must be in to get a credible result
+		boolean min_changed = false;
+		if(f0 == -1) return (f1 == -1) ? -1 : f1;
+		if(f1 == -1) return (f0 == -1) ? -1 : f0;
+		if(f0 == f1) return f0;
+		if(f1 < f0) {
+		    fr = f0;
+		    f0 = f1;
+		    f1 = fr;
+		    min_changed = true;
+		}
+
+		diff = f1 - f0;
+
+		if(diff < max_diff) {
+		    if(!min_changed) fr = f0 + (k * diff) / delta; 
+		    else fr = f1 - (k * diff) /delta;
+		} else if(360 - f1 + f0 < max_diff) {
+		    diff = 360 - diff;
+		    if(!min_changed) {
+			fr = f0 - (k * diff) /delta;
+			if(fr < 0) fr = 360 - fr;
+			Log.d(TAG, "min unchanged");
+
+		    } else {	
+			fr = f1 + (k * diff) /delta;
+			if(fr > 360) fr -= 360;
+			Log.d(TAG, "min changed");
+ 		    }
+/*		    double shift = 360 - f1;
+		    if(!min_changed) {	
+			fr = (k * (f0 + shift)) / delta;
+			if(fr >= shift) fr -= shift;
+			else fr = 360 - (shift - fr);
+		    } else {
+
+		    } */
+		} else { 
+		    log(COLOUR_ERR, "mean_wind: wind changes too fast from " + f0 + " to " + f1);	
+		    fr = f0;
+		}
+//	        Log.d(TAG, "wind: f0=" + f0 + ", f1=" + f1 + ", k=" + k + ", d=" + delta + ", changed=" + min_changed + ", fr=" + fr);
+		return fr;
+	    } catch(Exception e) {
+		log(COLOUR_ERR, "exception in WeatherInfo::mean_wind()");
+		e.printStackTrace();
+		return f0;
+	    }
+        }
+    }  // class WeatherInfo
+
 
     // All weather data for a particular station
 
@@ -752,8 +885,12 @@ public class Util {
 		    if(wi != null && wi.valid) ret.for3days.add(wi);
 		}	
 	    }	
-	    if(ret.for3days.size() > 0) log(COLOUR_DBG, R.string.hourly_data_okay);
-	    else log(COLOUR_ERR, R.string.hourly_data_bad);	
+	    if(ret.for3days.size() > 0) {
+		log(COLOUR_DBG, R.string.hourly_data_okay);
+		if(WeatherInfo.interpol(ret.for3days, null))
+		    log(COLOUR_GOOD, "weather data interpolated");
+		else log(COLOUR_ERR, "failed to interpolate weather data");  
+	    } else log(COLOUR_ERR, R.string.hourly_data_bad);	
 	} else log(COLOUR_ERR, R.string.hourly_data_bad);
 
 	return ret;

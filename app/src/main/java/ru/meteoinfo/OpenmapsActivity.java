@@ -22,13 +22,14 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
-import org.osmdroid.mapsforge.MapsForgeTileSource;
-import org.osmdroid.mapsforge.MapsForgeTileProvider;
-import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 
-import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
-import org.mapsforge.map.android.rendertheme.AssetsRenderTheme;
-import org.mapsforge.map.rendertheme.XmlRenderTheme;
+//import org.osmdroid.mapsforge.MapsForgeTileSource;
+//import org.osmdroid.mapsforge.MapsForgeTileProvider;
+//import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
+
+//import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
+//import org.mapsforge.map.android.rendertheme.AssetsRenderTheme;
+//import org.mapsforge.map.rendertheme.XmlRenderTheme;
 
 import android.util.Log;
 
@@ -37,8 +38,8 @@ public class OpenmapsActivity extends Activity {
     private double lat, lon, sta_lat, sta_lon;
     private MapView mapview = null;
 
-    private MapsForgeTileProvider forge = null;
-    private MapsForgeTileSource msrc = null;
+//    private MapsForgeTileProvider forge = null;
+//    private MapsForgeTileSource msrc = null;
 
     final String MAP_FILES_DIR = "/sdcard/osmdroid/";	
 
@@ -46,7 +47,8 @@ public class OpenmapsActivity extends Activity {
 	int val = b[offs] << 24 | (b[offs+1] & 0xff) << 16 | (b[offs+2] & 0xff) << 8 | (b[offs+3] & 0xff);
 	return ((double) val)/1000000.0;      	
     }
-	
+
+/*	
     private boolean checkFileForRange(File file, double lat, double lon) {
 	FileInputStream fin = null;
 	try {
@@ -84,7 +86,6 @@ public class OpenmapsActivity extends Activity {
 	// no data for lat/lon
 	return false;	
     }
-	
     private File[] getMatchingMaps(double lat, double lon) {
 	File maps_dir = new File(MAP_FILES_DIR);
 	if(!maps_dir.exists()) return null;
@@ -96,6 +97,7 @@ public class OpenmapsActivity extends Activity {
 	    }	
 	});
     }
+*/	
 
     @Override public void onCreate(Bundle savedInstanceState) {
 
@@ -108,7 +110,7 @@ public class OpenmapsActivity extends Activity {
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
 
 	// Important!
-	AndroidGraphicFactory.createInstance(getApplication());	
+//	if(WeatherActivity.use_offline_maps)  AndroidGraphicFactory.createInstance(getApplication());	
 
 
         Intent intent = getIntent();
@@ -117,6 +119,7 @@ public class OpenmapsActivity extends Activity {
         sta_lat = intent.getDoubleExtra("sta_lat", Util.inval_coord);
         sta_lon = intent.getDoubleExtra("sta_lon", Util.inval_coord);
 
+/*
 	if(WeatherActivity.use_offline_maps) {
 	    File [] map_files = (lat == Util.inval_coord || lon == Util.inval_coord) ?
 			 getMatchingMaps(sta_lat, sta_lon) : getMatchingMaps(lat, lon);
@@ -136,7 +139,7 @@ public class OpenmapsActivity extends Activity {
 	if(forge != null) WeatherActivity.logUI(WeatherActivity.COLOUR_INFO, getString(R.string.using_offline_maps));
 
 	if(forge != null) mapview.setTileProvider(forge);
-	else mapview.setTileSource(TileSourceFactory.MAPNIK);
+	else */ mapview.setTileSource(TileSourceFactory.MAPNIK);
 
         mapview.setBuiltInZoomControls(true);
         mapview.setMultiTouchControls(true);

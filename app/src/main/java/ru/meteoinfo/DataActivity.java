@@ -1,6 +1,7 @@
 package ru.meteoinfo;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -67,12 +68,23 @@ public class DataActivity extends AppCompatActivity {
               /*  Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show(); */
                 if(meteodata != null) {
-                    Intent sendIntent = new Intent();
-                    sendIntent.setAction(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT,
+
+		try {
+/*                  Intent sendIntent = new Intent();
+                    sendIntent.setAction(Intent.ACTION_SEND); */
+		    Intent sendIntent = new Intent(Intent.ACTION_SEND, Uri.parse("mailto:"));
+		    sendIntent.setType("text/html");
+			//	Uri.fromParts("mailto", "mygmail.com", null));	
+		    sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Meteoinfo.ru data");
+                    sendIntent.putExtra(Intent.EXTRA_STREAM,
 			"<body><html>" +  meteodata + "</body></html>");
-                    sendIntent.setType("text/html");
+//			Html.fromHtml("<body><html>" +  meteodata + "</body></html>").toString());
+//			Html.fromHtml(meteodata).toString());
+//			Html.fromHtml(new StringBuilder().append(meteodata).toString()));
                     startActivity(sendIntent);
+		} catch (Exception e) { e.printStackTrace(); }
+
+
                 }
             }
         });
@@ -102,8 +114,8 @@ public class DataActivity extends AppCompatActivity {
             public void run() {
                 if(meteodata != null && meteodata.length() != 0) 
                     etext.setText(Html.fromHtml(meteodata));
-		else etext.setText(Html.fromHtml("<h1><font color=#C00000>" + 
-			getString(R.string.no_data_avail) + "</font></h1>"));
+		else etext.setText(Html.fromHtml("<p><br><br><center><h1><font color=#C00000>" + 
+			getString(R.string.no_data_avail) + "</font></h1></center>"));
             }
         };
         AsyncTaskWithProgress atp = new AsyncTaskWithProgress(this, getString(R.string.receiving_data), bgr, fgr);
@@ -111,11 +123,10 @@ public class DataActivity extends AppCompatActivity {
 
     }
 
-    private static String windDir(String degrees) {
+    private static String windDir(double degrees) {
 	try {
-	    double deg = Double.parseDouble(degrees);	
 	    String[] directions = App.getContext().getResources().getStringArray(R.array.wind_dirs);
-            return directions[(int)Math.round(((deg % 360) / 45))];
+            return directions[(int)Math.round(((degrees % 360) / 45))];
 	} catch (Exception e) {
 	    log_err("invalid degrees " + degrees);	
 	    return null;	
@@ -124,61 +135,66 @@ public class DataActivity extends AppCompatActivity {
 
     private String parseWeatherInfo(WeatherInfo wi) {
 
-	String s = "", st, st1, st2, st3;
+	String s = "", st;
+	double val, val2, val3;
 
 	    st = wi.get_date();
-	    if(st != null) s += "<br><p><h2><i>" + st + "</i></h2>";
+	    if(st != null) {
+		if(wi.interpol_data) st += " (avg)";
+		s += "<br><p><h2><i>" + st + "</i></h2>";
+	    } 
 
-	    st = wi.get_temperature();
-	    if(st != null) s += String.format(getString(R.string.wd_temperature), st) + "<br>";
+	    val = wi.get_temperature();	
+	    if(val != Util.inval_temp) s += String.format(getString(R.string.wd_temperature), val) + "<br>";
 
-	    st = wi.get_pressure();
-	    if(st != null) s += String.format(getString(R.string.wd_pressure), st) + "<br>";
+	    val = wi.get_pressure();
+	    if(val != -1) s += String.format(getString(R.string.wd_pressure), val) + "<br>";
 
-	    st = wi.get_wind_dir();
-	    st2 = wi.get_wind_speed();
-	    st3 = wi.get_gusts();	
+	    val = wi.get_wind_dir();
+	    val2 = wi.get_wind_speed();
+	    val3 = wi.get_gusts();	
 
-	    if(st != null && st2 != null) {
-	        st1 = windDir(st);
-		if(st3 != null) s += String.format(getString(R.string.wd_wind_gusts), st1, st, st2, st3);
-		else s += String.format(getString(R.string.wd_wind_nogusts), st1, st, st2);
+	    if(val != -1 && val2 != -1) {
+	        st = windDir(val);
+		if(val3 != -1) s += String.format(getString(R.string.wd_wind_gusts), st, val, val2, val3);
+		else s += String.format(getString(R.string.wd_wind_nogusts), st, val, val2);
 		s += "<br>";
 	    }
 
 	    st = wi.get_info();
 	    if(st != null) s += st + "<br>";
 
-	    st = wi.get_precip();  		    
-	    if(st != null) {
-		if(wi.gettype() == Util.WEATHER_REQ_7DAY) st3 = getString(R.string.wd_precip_nd);
-		else st3 = getString(R.string.wd_precip1h);		
-		s += String.format(st3, st) + "<br>";
+	    val = wi.get_precip();  		    
+	    if(val != -1) {
+		if(wi.gettype() == Util.WEATHER_REQ_7DAY) st = getString(R.string.wd_precip_nd);
+		else st = getString(R.string.wd_precip1h);		
+		s += String.format(st, val) + "<br>";
 	    }	
+
 
 	    if(wi.gettype() == Util.WEATHER_REQ_7DAY) return s;	// no more data for 7-day forecast
 	    else if(wi.gettype() == Util.WEATHER_REQ_3DAY) {
-		st = wi.get_humidity();
-		if(st != null) s += String.format(getString(R.string.wd_humidity), st) + "<br>";
+		val = wi.get_humidity();
+		if(val != -1) s += String.format(getString(R.string.wd_humidity), val) + "<br>";
 		return s;				// no more data for 3-day forecast
 	    }	
-	    st = wi.get_precip3h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip3h), st) + "<br>";
+	    val = wi.get_precip3h();  		    
+	    if(val != -1) s += String.format(getString(R.string.wd_precip3h), val) + "<br>";
 
-	    st = wi.get_precip6h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip6h), st) + "<br>";
+	    val = wi.get_precip6h();  		    
+	    if(val != -1) s += String.format(getString(R.string.wd_precip6h), val) + "<br>";
 
-	    st = wi.get_precip12h();  		    
-	    if(st != null) s += String.format(getString(R.string.wd_precip12h), st) + "<br>";
+	    val = wi.get_precip12h();  		    
+	    if(val != -1) s += String.format(getString(R.string.wd_precip12h), val) + "<br>";
 
-	    st = wi.get_humidity();
-	    if(st != null) s += String.format(getString(R.string.wd_humidity), st) + "<br>";
+	    val = wi.get_humidity();
+	    if(val != -1) s += String.format(getString(R.string.wd_humidity), val) + "<br>";
 
-	    st = wi.get_visibility();
-	    if(st != null) s += String.format(getString(R.string.wd_visibility), st) + "<br>";
+	    val = wi.get_visibility();
+	    if(val != -1) s += String.format(getString(R.string.wd_visibility), val) + "<br>";
 
-	    st = wi.get_clouds();
-	    if(st != null) s += String.format(getString(R.string.wd_clouds), st) + "<br>";
+	    val = wi.get_clouds();
+	    if(val != -1) s += String.format(getString(R.string.wd_clouds), val) + "<br>";
 
 	return s;
 	     	
@@ -191,15 +207,6 @@ public class DataActivity extends AppCompatActivity {
         WeatherInfo wi;
         String s = "", st;
 
-/*	if(wd.observ != null && wd.observ.valid) { 
-	    s += "<b>" + getString(R.string.observ_data) + "</b>" + separator;	
-	    st = parseWeatherInfo(wd.observ);
-	    if(st != null) {
-		s += st; s += separator;
-	    } 		
-	    s += separator;
-	}
-*/
 
 /*
 	if(wd.for7days != null) {
@@ -226,6 +233,15 @@ public class DataActivity extends AppCompatActivity {
 		} 		
 	    }
 	}
+
+	if(wd.observ != null && wd.observ.valid) { 
+	    s += "<br><p><h2><i><font color=#0000C0>" + getString(R.string.observ_data) + "</font></i></h2>" + separator;	
+	    st = parseWeatherInfo(wd.observ);
+	    if(st != null) {
+		s += st; s += separator;
+	    } 		
+	}
+
 
 	return s;
     } 	

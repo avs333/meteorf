@@ -16,6 +16,9 @@ import android.widget.RemoteViews;
 import android.location.Location;
 import android.app.PendingIntent;
 
+import java.util.List;
+import java.util.Date;
+
 import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
@@ -75,8 +78,10 @@ public class WidgetProvider extends AppWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager man, int[] wids) {
 	super.onUpdate(context, man, wids);
         Log.d(TAG, "onUpdate");
-        for(int i = 0; i < wids.length; i++) 
+/*        for(int i = 0; i < wids.length; i++) 
 	    update_widget(context, man, wids[i], App.get_string(R.string.loc_unk_yet));
+*/
+	weather_update();
         Log.d(TAG, "onUpdate complete");
     }
 
@@ -124,16 +129,35 @@ public class WidgetProvider extends AppWidgetProvider {
 	pint_widget_update = null;
     }
 
-    private static String windDir(String degrees) {
+    private static String windDir(double deg) {
         try {
-            double deg = Double.parseDouble(degrees);   
             String[] directions = App.getContext().getResources().getStringArray(R.array.short_wind_dirs);
             return directions[(int)Math.round(((deg % 360) / 45))];
         } catch (Exception e) {
-            Log.e(TAG, "invalid degrees " + degrees);      
+            Log.e(TAG, "invalid degrees " + deg);      
             return null;        
         }
     }
+
+    private int findWeatherInfo(WeatherData wd) {
+	try {
+	    long now = System.currentTimeMillis();
+	    List<WeatherInfo> wl = wd.for3days;
+	    for(int i = 0; i < wl.size(); i++) {
+		WeatherInfo wi = wl.get(i);
+		if(wi == null) {
+		    Log.e(TAG, "null WeatherInfo at index " + i);
+		    return -1;
+		}
+		long time = wi.get_utc();
+		if(now <= time) return i;
+	    }
+	} catch(Exception e) {
+	    Log.e(TAG, "exception in findWeatherInfo");
+	    e.printStackTrace();
+	}		
+	return -1;
+    } 
 
 //    private void weather_update(Context context) {
     private void weather_update() {
@@ -146,61 +170,82 @@ public class WidgetProvider extends AppWidgetProvider {
 	    Log.d(TAG, "weather_update: weather for 3 days unknown");
 	    return;
 	}
-	WeatherInfo wi = wd.for3days.get(0);
-	if(wi == null) {
-	    Log.d(TAG, "weather_update: first weather info for 3 days unknown");
+
+	Station st = Srv.getCurrentStation();
+	String addr = null;
+	if(st != null) addr = st.shortname;
+
+//	WeatherInfo wi = wd.for3days.get(0);
+
+	int k = findWeatherInfo(wd);
+	if(k < 0) return;
+	WeatherInfo wi = wd.for3days.get(k);
+
+	if(wi == null)  return;	// can't happen
+
+	Log.d(TAG, "found WeatherInfo at index " + k);
+
+	String temp = null;
+	double val = wi.get_temperature();
+
+	if(val == Util.inval_temp) {
+	    Log.d(TAG, "weather_update: fake temperature");	
 	    return;
 	}
-	String temp = wi.get_temperature();
-	if(temp == null) {
-	    Log.d(TAG, "weather_update: null temperature string");	
-	    return;
-	}
-	if(!temp.startsWith("-")) temp = "+" + temp;
+
+	temp = String.format("+%.1f", val);
 	Log.d(TAG, "weather_update: temp=" + temp);
 
 //	int pt = temp.indexOf(".");
 //	if(pt > 0) temp = temp.substring(0, pt);
 //	temp += "°C";
 
-	String press = wi.get_pressure();
-	if(press != null) press = String.format(App.get_string(R.string.wd_pressure_short), press);
-	else {
-	    for(int i = 0; i < wd.for3days.size(); i++) {
+	String press = null;
+	val = wi.get_pressure();
+
+	if(val != -1) {	 
+	    try {
+		press = String.format(App.get_string(R.string.wd_pressure_short), (int) Math.round(val));
+	    } catch(Exception e) {
+		Log.e(TAG, "error parsing pressure " + val);
+	    }
+	} else {
+	    for(int i = k; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
-		press = wi.get_pressure();
-		if(press != null) {
-		    press = String.format(App.get_string(R.string.wd_pressure_short), press);
-		    break;
+		val = wi.get_pressure();
+		if(val != -1) {
+		   try {
+			press = String.format(App.get_string(R.string.wd_pressure_short), (int) Math.round(val));
+		    } catch(Exception e) {
+			Log.e(TAG, "error parsing pressure " + val);
+		    }
 		}
 	    }	
 	}
+	if(press != null) press += " " + App.get_string(R.string.wd_pressure_units);
 
 	Log.d(TAG, "weather_update: pressure=" + press);
 
-        String st1 = null, st2 = null, wind = null;
-	st1 = wi.get_wind_dir();
-	st2 = wi.get_wind_speed();
-	if(st1 != null && st2 != null) {
-	    st1 = windDir(st1);
-	    wind = String.format(App.get_string(R.string.wd_wind_short), st1, st2);
-        }
+	String wind = null;
+
+	double wind_dir = wi.get_wind_dir();
+	double wind_speed = wi.get_wind_speed();
+
+	if(wind_dir != -1 && wind_speed != -1) 
+	    wind = String.format(App.get_string(R.string.wd_wind_short), windDir(wind_dir), wind_speed);
 	Log.d(TAG, "weather_update: wind=" + wind);
 
-	String p = wi.get_precip();
-	if(p != null) {
-	    st2 = App.get_string(R.string.wd_precip_short);
-	    p = String.format(st2, p);	
-	}
-	Log.d(TAG, "weather_update: precip=" + p);
+	String precip = null;
+	val = wi.get_precip();
 
-	String hum = wi.get_humidity();
-	if(hum != null) hum = String.format(App.get_string(R.string.wd_humidity_short), hum);
+	if(val != -1) precip = String.format(App.get_string(R.string.wd_precip_short), val);
+	Log.d(TAG, "weather_update: precip=" + precip);
+
+	String hum = null;
+	val = wi.get_humidity();
+	if(val != -1) hum = String.format(App.get_string(R.string.wd_humidity_short), val);
 	Log.d(TAG, "weather_update: humidity=" + hum);
 
-	Station st = Srv.getCurrentStation();
-	String addr = null;
-	if(st != null) addr = st.shortname;
 
 /*
 	String s, data;
@@ -215,7 +260,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(ctx, "ru.meteoinfo.WidgetProvider"));
 	for(int i = 0; i < bound_widgets.length; i++)
-	    update_widget(ctx, gm, bound_widgets[i], addr, temp, press, wind, p, hum);
+	    update_widget(ctx, gm, bound_widgets[i], addr, temp, press, wind, precip, hum);
     }
 
     private void update_widget(Context context, AppWidgetManager man, int wid, 

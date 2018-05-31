@@ -86,7 +86,7 @@
     <string name="good_read_sta">Число станций: %d</string>               
     <string name="cur_coord">Lat=%.7f Lon=%.7f</string>               
     <string name="inv_sta_data">Неверный формат данных на строке </string>               
-    <string name="err_exception">Ошибка: просьба связаться с разработчиком</string>               
+    <string name="err_exception">Ошибка: плохая связь или некорректные данные</string>               
     <string name="err_google">Ошибка в ответе от Google</string>               
     <string name="null_coords">Недопустимые координаты</string>               
     <string name="inv_last_coords">Исключение в getLastLocation</string>               
@@ -118,23 +118,24 @@
     <string name="hourly_data_bad">Нет данных почасового прогноза</string>               
     <string name="weekly_data_bad">Нет данных недельного прогноза</string>               
     <string name="empty_elem_skiped">пустой элемент списка пропущен</string>               
-    <string name="wd_temperature">Температура: %s°C</string>
-    <string name="wd_pressure">Давление: %s мм рт.ст.</string>
-    <string name="wd_wind_nogusts">Ветер: %s [%s°] %s м/с</string>
-    <string name="wd_wind_gusts">Ветер: %s [%s°] %s м/с, порывы до %s м/с</string>
-    <string name="wd_precip_nd">Осадки за ночь/день: %s мм</string>
-    <string name="wd_precip1h">Осадки за 1 час: %s мм</string>
-    <string name="wd_precip3h">Осадки за 3 часа: %s мм</string>
-    <string name="wd_precip6h">Осадки за 6 часов: %s мм</string>
-    <string name="wd_precip12h">Осадки за 12 часов: %s мм</string>
-    <string name="wd_humidity">Относительная влажность: %s%%</string>
-    <string name="wd_visibility">Видимость: %s м</string>
-    <string name="wd_clouds">Балл общей облачности (0-10): %s</string>
+    <string name="wd_temperature">Температура: %.1f°C</string>
+    <string name="wd_pressure">Давление: %.1f мм рт.ст.</string>
+    <string name="wd_wind_nogusts">Ветер: %s [%.1f°] %.1f м/с</string>
+    <string name="wd_wind_gusts">Ветер: %s [%.1f°] %.1f м/с, порывы до %.1f м/с</string>
+    <string name="wd_precip_nd">Осадки за ночь/день: %.1f мм</string>
+    <string name="wd_precip1h">Осадки за 1 час: %.1f мм</string>
+    <string name="wd_precip3h">Осадки за 3 часа: %.1f мм</string>
+    <string name="wd_precip6h">Осадки за 6 часов: %.1f мм</string>
+    <string name="wd_precip12h">Осадки за 12 часов: %.1f мм</string>
+    <string name="wd_humidity">Относительная влажность: %.1f%%</string>
+    <string name="wd_visibility">Видимость: %.1f м</string>
+    <string name="wd_clouds">Балл общей облачности (0-10): %.1f</string>
 
-    <string name="wd_pressure_short">Давление: %s</string>
-    <string name="wd_wind_short">Ветер: %s, %s м/с</string>
-    <string name="wd_precip_short">Осадки: %s мм/ч</string>
-    <string name="wd_humidity_short">Влажность: %s%%</string>
+    <string name="wd_pressure_short">Давление: %d</string>
+    <string name="wd_wind_short">Ветер: %s, %.1f м/с</string>
+    <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
+    <string name="wd_humidity_short">Влажность: %.1f%%</string>
+    <string name="wd_pressure_units">мм Hg</string>
 
     <string name="wd_unk_temp">+??</string>               
 
