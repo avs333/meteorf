@@ -210,7 +210,6 @@ public class Srv extends Service {
 			if(cur_res_level < RES_LOC) {	// Stage 2
 			    send_init_result(RES_LOC);
 			    cur_res_level = RES_LOC;
-			    send_init_result(RES_LOC);
 			}
 			log(COLOUR_DBG, "getLastLocation.onComplete: station=" + currentStation.code);
 			updateLocalWeather();

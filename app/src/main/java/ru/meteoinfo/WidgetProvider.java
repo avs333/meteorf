@@ -176,7 +176,7 @@ public class WidgetProvider extends AppWidgetProvider {
 //    private void weather_update(Context context) {
 
     static private int widx = 0;
-    private final int max_widx = 6;
+    private final int max_widx = 12;
 
     private void weather_update(String action, Context context) {
 
@@ -296,8 +296,13 @@ public class WidgetProvider extends AppWidgetProvider {
 	String precip = null;
 	val = wi.get_precip();
 
+	if(precip == null && widx == -1) {
+	    val = wi.get_precip3h();
+	    if(val == -1) val = wi.get_precip6h(); 
+	    if(val == -1) val = wi.get_precip12h();
+	}
+
 	if(val != -1) precip = String.format(App.get_string(R.string.wd_precip_short), val);
-	Log.d(TAG, "weather_update: precip=" + precip);
 
 	String hum = null;
 	val = wi.get_humidity();
@@ -335,7 +340,6 @@ public class WidgetProvider extends AppWidgetProvider {
 	    if(data.length > 2) views.setTextViewText(R.id.w_wind, data[2]);
 	    if(data.length > 3) views.setTextViewText(R.id.w_precip, data[3]);
 	    if(data.length > 4) views.setTextViewText(R.id.w_humidity, data[4]);
-	    	
 	}
 
 	// Pending intent to display a webpage when the right part of the widget is clicked

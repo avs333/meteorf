@@ -141,8 +141,11 @@
 
     <string name="wd_unk_temp">+??</string>               
 
-    <string name="wd_forecast">[пр.]</string>               
-    <string name="wd_observ">[набл.]</string>               
+    <string name="wd_forecast">[прогноз]</string>               
+    <string name="wd_observ">[данные]</string>               
+    <string name="wd_precip_3h">[3ч]</string>               
+    <string name="wd_precip_6h">[6ч]</string>               
+    <string name="wd_precip_12h">[12ч]</string>               
 
 
     <string-array name="verb_names">

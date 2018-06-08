@@ -194,8 +194,9 @@ public class WeatherActivity extends AppCompatActivity
 		navMenu.getItem(cur_loc_menu_idx).setEnabled(false);	
 	//	logUI(COLOUR_INFO, R.string.no_cur_sta);
 	    } else logUI(COLOUR_GOOD, R.string.conn_ok);	
-	    if(favs != null && fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);
-	    else navMenu.getItem(fav_menu_idx).setEnabled(false);
+
+	    boolean fp = (favs == null) ? false : favs.size() > 0;
+	    if(fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(fp);
 	}
     };
 
@@ -274,8 +275,9 @@ public class WeatherActivity extends AppCompatActivity
 	    MenuItem mi = navMenu.getItem(i);
 	    if(mi.getTitle().equals(getString(R.string.select_fav))) {
 		fav_menu_idx = i;
-		if(App.service_started) mi.setEnabled(Srv.cur_res_level != Srv.RES_ERR && favs != null ? true : false);
-		else mi.setEnabled(favs == null ? false : true);
+		boolean fp = (favs == null) ? false : favs.size() > 0;
+		if(App.service_started) mi.setEnabled(Srv.cur_res_level != Srv.RES_ERR && fp ? true : false);
+		else mi.setEnabled(fp ? false : true);
 	    } else if(mi.getTitle().equals(getString(R.string.current_location))) {
 		cur_loc_menu_idx = i;
 		if(App.service_started) mi.setEnabled(Srv.cur_res_level == Srv.RES_LOC ? true : false);
