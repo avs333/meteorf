@@ -140,7 +140,7 @@ public class DataActivity extends AppCompatActivity {
 
 	    st = wi.get_date();
 	    if(st != null) {
-		if(wi.interpol_data) st += " (avg)";
+		if(wi.interpol_data) st += " (***)";
 		s += "<br><p><h2><i>" + st + "</i></h2>";
 	    } 
 
@@ -200,13 +200,10 @@ public class DataActivity extends AppCompatActivity {
 	     	
     }
 
-    private static final String separator = "<p>";
-
     private String parseWeatherData(WeatherData wd) {
 
         WeatherInfo wi;
         String s = "", st;
-
 
 /*
 	if(wd.for7days != null) {
@@ -216,32 +213,31 @@ public class DataActivity extends AppCompatActivity {
 		if(wi == null || !wi.valid) continue;
 		st = parseWeatherInfo(wi);
 		if(st != null) {
-		    s += st; s += separator;
+		    s += st; s += "<p>";
 		} 		
 	    }
-	    s += separator;
+	    s += "<p>";
 	}
 */
+	if(wd.observ != null && wd.observ.valid) { 
+	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.observ_data) + "</font></i></h2>";	
+	    st = parseWeatherInfo(wd.observ);
+	    if(st != null) {
+		s += st; s += "<p>";
+	    } 		
+	}
+
 	if(wd.for3days != null) {
-//	    s += "<b>" + getString(R.string.daily_data) + "</b>" + separator;	
+	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.daily_data) + "</font></i></h2>";	
 	    for(int i = 0; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
 		if(wi == null || !wi.valid) continue;
 		st = parseWeatherInfo(wi);
 		if(st != null) {
-		    s += st; s += separator;
+		    s += st; s += "<p>";
 		} 		
 	    }
 	}
-
-	if(wd.observ != null && wd.observ.valid) { 
-	    s += "<br><p><h2><i><font color=#0000C0>" + getString(R.string.observ_data) + "</font></i></h2>" + separator;	
-	    st = parseWeatherInfo(wd.observ);
-	    if(st != null) {
-		s += st; s += separator;
-	    } 		
-	}
-
 
 	return s;
     } 	

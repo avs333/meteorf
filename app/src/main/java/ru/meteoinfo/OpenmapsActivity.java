@@ -119,8 +119,7 @@ public class OpenmapsActivity extends Activity {
         sta_lat = intent.getDoubleExtra("sta_lat", Util.inval_coord);
         sta_lon = intent.getDoubleExtra("sta_lon", Util.inval_coord);
 
-/*
-	if(WeatherActivity.use_offline_maps) {
+/* 	if(WeatherActivity.use_offline_maps) {
 	    File [] map_files = (lat == Util.inval_coord || lon == Util.inval_coord) ?
 			 getMatchingMaps(sta_lat, sta_lon) : getMatchingMaps(lat, lon);
 	    XmlRenderTheme theme = null;

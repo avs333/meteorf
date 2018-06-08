@@ -660,12 +660,12 @@ public class Util {
 		    case 8: if(type == WEATHER_REQ_OBSERV) precip3h = Double.parseDouble(p[i]);
 			    else humidity = Double.parseDouble(p[i]); 
 			    break;
-		    case 9: if((type == WEATHER_REQ_OBSERV)) precip6h = Double.parseDouble(p[i]);
-		    case 10: if((type == WEATHER_REQ_OBSERV)) precip12h = Double.parseDouble(p[i]);
-		    case 11: if((type == WEATHER_REQ_OBSERV)) humidity = Double.parseDouble(p[i]);	
-		    case 12: if((type == WEATHER_REQ_OBSERV)) visibility = Double.parseDouble(p[i]);	
-		    case 13: if((type == WEATHER_REQ_OBSERV)) clouds = Double.parseDouble(p[i]);
-		    case 14: if((type == WEATHER_REQ_OBSERV)) gusts = Double.parseDouble(p[i]);
+		    case 9: if((type == WEATHER_REQ_OBSERV)) precip6h = Double.parseDouble(p[i]); break;
+		    case 10: if((type == WEATHER_REQ_OBSERV)) precip12h = Double.parseDouble(p[i]); break;
+		    case 11: if((type == WEATHER_REQ_OBSERV)) humidity = Double.parseDouble(p[i]); break;
+		    case 12: if((type == WEATHER_REQ_OBSERV)) visibility = Double.parseDouble(p[i]); break;
+		    case 13: if((type == WEATHER_REQ_OBSERV)) clouds = Double.parseDouble(p[i]); break;
+		    case 14: if((type == WEATHER_REQ_OBSERV)) gusts = Double.parseDouble(p[i]); break;
 		  }
 		} catch(Exception e) {
 		    log(COLOUR_ERR, "error parsing " + p[i] + ", index=" + i);
@@ -756,11 +756,23 @@ public class Util {
 			    return false;
 			}	
 			wi.type = WEATHER_REQ_3DAY; // just for clarity
-			wi.pressure = mean_param(w0.get_pressure(), wn.get_pressure(), k - i_first, i - i_first); // i - i_first > 1 here
+
+			if(w0.utc == 0 || wi.utc < w0.utc || wn.utc < wi.utc) {
+			    log(COLOUR_ERR, "Invalid utc dates: w0=" + w0.utc + " wi=" + wi.utc + " wn=" + wn.utc);
+			    continue;
+			}
+			double alpha = ((double) (wi.utc - w0.utc))/((double) (wn.utc - w0.utc));
+			wi.pressure = mean_param(w0.get_pressure(), wn.get_pressure(), alpha); // i - i_first > 1 here
+			wi.wind_dir = mean_wind(w0.get_wind_dir(), wn.get_wind_dir(), alpha);  // this case is special
+			wi.wind_speed = mean_param(w0.get_wind_speed(), wn.get_wind_speed(), alpha);
+			wi.precip = mean_param(w0.get_precip(), wn.get_precip(), alpha);
+			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), alpha);
+
+		/*	wi.pressure = mean_param(w0.get_pressure(), wn.get_pressure(), k - i_first, i - i_first); // i - i_first > 1 here
 			wi.wind_dir = mean_wind(w0.get_wind_dir(), wn.get_wind_dir(), k - i_first, i - i_first);  // this case is special
 			wi.wind_speed = mean_param(w0.get_wind_speed(), wn.get_wind_speed(), k - i_first, i - i_first);
 			wi.precip = mean_param(w0.get_precip(), wn.get_precip(), k - i_first, i - i_first);
-			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), k - i_first, i - i_first);
+			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), k - i_first, i - i_first); */
 			wi.interpol_data = true;
 			wl.set(k, wi);
 		    }
@@ -771,14 +783,18 @@ public class Util {
 	    return true;
 	}
 
-        private static double mean_param(double f0, double f1, int k, int delta) {
+     // private static double mean_param(double f0, double f1, int k, int delta) {
+        private static double mean_param(double f0, double f1, double alpha) {
 	    if(f0 == -1) return (f1 == -1) ? -1 : f1;
 	    if(f1 == -1) return (f0 == -1) ? -1 : f0;
-	    if(f0 == f1) return f0;
-	    return f0 + (k * (f1 - f0)) / delta;
+	    // if(f0 == f1) return f0;
+	    // return f0 + (k * (f1 - f0)) / delta;
+	    return f0 + alpha * (f1 - f0);
 	}
 
-	private static double mean_wind(double f0, double f1, int k, int delta) {
+
+    //  private static double mean_wind(double f0, double f1, int k, int delta) {
+	private static double mean_wind(double f0, double f1, double alpha) {
 	    try {
 		double fr, diff;
 		final double max_diff = 90;	// largest sector f0 and f1 must be in to get a credible result
@@ -786,6 +802,7 @@ public class Util {
 		if(f0 == -1) return (f1 == -1) ? -1 : f1;
 		if(f1 == -1) return (f0 == -1) ? -1 : f0;
 		if(f0 == f1) return f0;
+
 		if(f1 < f0) {
 		    fr = f0;
 		    f0 = f1;
@@ -796,28 +813,18 @@ public class Util {
 		diff = f1 - f0;
 
 		if(diff < max_diff) {
-		    if(!min_changed) fr = f0 + (k * diff) / delta; 
-		    else fr = f1 - (k * diff) /delta;
+		    if(!min_changed) fr = f0 + alpha * diff; // (k * diff) / delta; 
+		    else fr = f1 - alpha * diff; // (k * diff) /delta;
 		} else if(360 - f1 + f0 < max_diff) {
 		    diff = 360 - diff;
 		    if(!min_changed) {
-			fr = f0 - (k * diff) /delta;
+			fr = f0 - alpha * diff; //(k * diff) /delta;
 			if(fr < 0) fr = 360 - fr;
-			Log.d(TAG, "min unchanged");
 
 		    } else {	
-			fr = f1 + (k * diff) /delta;
+			fr = f1 + alpha * diff; //(k * diff) /delta;
 			if(fr > 360) fr -= 360;
-			Log.d(TAG, "min changed");
  		    }
-/*		    double shift = 360 - f1;
-		    if(!min_changed) {	
-			fr = (k * (f0 + shift)) / delta;
-			if(fr >= shift) fr -= shift;
-			else fr = 360 - (shift - fr);
-		    } else {
-
-		    } */
 		} else { 
 		    log(COLOUR_ERR, "mean_wind: wind changes too fast from " + f0 + " to " + f1);	
 		    fr = f0;
@@ -894,7 +901,6 @@ public class Util {
 	} else log(COLOUR_ERR, R.string.hourly_data_bad);
 
 	return ret;
-
     }
 
     private static final String[] weatherCodesObserv = {

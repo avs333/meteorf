@@ -8,6 +8,7 @@ public class App extends Application {
     private static Context context;
     public static boolean activity_visible = false;
     public static boolean widget_visible = false;
+    public static boolean service_started = false;
 
     @Override
     public void onCreate() {

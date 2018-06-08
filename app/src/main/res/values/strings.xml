@@ -24,6 +24,7 @@
     <string name="short_patt">Слишком мало букв для поиска</string>
     <string name="okey">Далее</string>
     <string name="ok">OK</string>
+    <string name="srv_running">Сервис уже запущен</string>
     <string name="patt_no_match">Для введенной строки станций не найдено</string>
     <string name="cancel">Отмена</string>
     <string name="receiving_stl">Получение списка станций</string>
@@ -44,6 +45,7 @@
     <string name="try_find_coords">Поиск ближайшей станции...</string>
     <string name="try_google">Дополнительные данные от Google...</string>
     <string name="station">Станция</string>
+    <string name="sta_changed">Станция изменилась на</string>
     <string name="country">Страна</string>
     <string name="name">Название</string>
     <string name="failed">Сбой связи с сервером</string>
@@ -138,6 +140,9 @@
     <string name="wd_pressure_units">мм Hg</string>
 
     <string name="wd_unk_temp">+??</string>               
+
+    <string name="wd_forecast">[пр.]</string>               
+    <string name="wd_observ">[набл.]</string>               
 
 
     <string-array name="verb_names">

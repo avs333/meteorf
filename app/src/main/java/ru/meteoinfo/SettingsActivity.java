@@ -21,6 +21,12 @@ public class SettingsActivity extends PreferenceActivity {
     private static final String TAG = "ru.meteoinfo";	
     private static SharedPreferences settings;
 
+    public static final boolean DFL_USE_GPS = false;
+    public static final int DFL_VERBOSE = 1; 	
+    public static final int DFL_ADDR_SRC = 0; 	
+    public static final int DFL_LOC_UPDATE_INTERVAL = 60; 	
+    public static final int DFL_WTH_UPDATE_INTERVAL = 1200; 	
+
     private void setupListPreference(ListPreference pref, int title_id,
 		String pref_name, int names_id, int values_id, int defl) {
 	String names[] = getResources().getStringArray(names_id);
@@ -63,40 +69,40 @@ public class SettingsActivity extends PreferenceActivity {
         launchPrefCat.setTitle(R.string.pref_base_settings);
         root.addPreference(launchPrefCat);
 
-        CheckBoxPreference use_russian = new CheckBoxPreference(this);
-        use_russian.setTitle(R.string.pref_use_russian);
-        use_russian.setKey("use_russian");
-        launchPrefCat.addPreference(use_russian);
+//        CheckBoxPreference use_russian = new CheckBoxPreference(this);
+//        use_russian.setTitle(R.string.pref_use_russian);
+//        use_russian.setKey("use_russian");
+//        launchPrefCat.addPreference(use_russian);
 
-        CheckBoxPreference use_offline_maps = new CheckBoxPreference(this);
-        use_offline_maps.setTitle(R.string.pref_use_offline_maps);
-        use_offline_maps.setKey("use_offline_maps");
-        launchPrefCat.addPreference(use_offline_maps);
+//        CheckBoxPreference use_offline_maps = new CheckBoxPreference(this);
+//        use_offline_maps.setTitle(R.string.pref_use_offline_maps);
+//        use_offline_maps.setKey("use_offline_maps");
+//        launchPrefCat.addPreference(use_offline_maps);
 
         CheckBoxPreference use_gps = new CheckBoxPreference(this);
         use_gps.setTitle(R.string.pref_use_gps);
         use_gps.setKey("use_gps");
         launchPrefCat.addPreference(use_gps);
 
-	ListPreference verbose = new ListPreference(this);
+	final ListPreference verbose = new ListPreference(this);
 	setupListPreference(verbose, R.string.pref_verbose, "verbose", 
-	    R.array.verb_names, R.array.vals123, 1);
+	    R.array.verb_names, R.array.vals123, DFL_VERBOSE);
         launchPrefCat.addPreference(verbose);
 
-	ListPreference addr_source = new ListPreference(this);
+	final ListPreference addr_source = new ListPreference(this);
 	setupListPreference(addr_source, R.string.pref_addr_source, "addr_source", 
-	    R.array.addr_names, R.array.vals123, 0);
+	    R.array.addr_names, R.array.vals123, DFL_ADDR_SRC);
         launchPrefCat.addPreference(addr_source);
 
 
 	final ListPreference loc_updates = new ListPreference(this);
 	setupListPreference(loc_updates, R.string.pref_loc_updates, "loc_update_interval", 
-	    R.array.loc_update_names, R.array.loc_update_vals, 60);
+	    R.array.loc_update_names, R.array.loc_update_vals, DFL_LOC_UPDATE_INTERVAL);
         launchPrefCat.addPreference(loc_updates);
 
 	final ListPreference wth_updates = new ListPreference(this);
 	setupListPreference(wth_updates, R.string.pref_wth_updates, "wth_update_interval", 
-	    R.array.wth_update_names, R.array.wth_update_vals, 1200);
+	    R.array.wth_update_names, R.array.wth_update_vals, DFL_WTH_UPDATE_INTERVAL);
         launchPrefCat.addPreference(wth_updates);
 
         return root;

@@ -11,7 +11,7 @@
 
     <TextView
         android:id="@+id/w_temp"
-        android:layout_rowSpan="3"
+        android:layout_rowSpan="2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/wd_unk_temp"
@@ -29,6 +29,7 @@
         android:textStyle="italic"
 	android:layout_gravity="fill"
         android:textSize="16sp" />
+
     <TextView
         android:id="@+id/w_pressure"
         android:layout_width="wrap_content"
@@ -43,6 +44,17 @@
         android:layout_marginStart="8dip"
         android:layout_marginLeft="8dip"
         android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/w_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="8dip"
+        android:layout_marginStart="8dip"
+        android:text="[??:??]"
+        android:textSize="12sp" />
+
     <TextView
         android:id="@+id/w_humidity"
         android:layout_width="wrap_content"

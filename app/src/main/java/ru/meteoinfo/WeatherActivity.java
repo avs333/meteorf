@@ -80,12 +80,12 @@ public class WeatherActivity extends AppCompatActivity
     // 1 -> all excluding COLOUR_DBG
     // 2 -> all
     // all means all, not only the four defined above.
-    private static int verbose = 1;
+    private static int verbose;
 
     // 0 -> none
     // 1 -> google
     // 2 -> OSM (always used by widget)
-    private static int addr_source = 0;      	    
+    private static int addr_source;
  
     private final long LOC_UPDATE_INTERVAL = 20 * 1000;
     private final long LOC_FASTEST_UPDATE_INTERVAL = 2000; /* 2 sec */
@@ -104,8 +104,8 @@ public class WeatherActivity extends AppCompatActivity
 
     public static boolean serverAvail = false;
 
-    public static boolean use_russian = true;
-    public static boolean use_offline_maps = true;
+//  public static boolean use_russian = true;
+//  public static boolean use_offline_maps = true;
 
     private static Prefs prefs = null;
     private static Set<String> favs;
@@ -120,12 +120,15 @@ public class WeatherActivity extends AppCompatActivity
 
     boolean maps_avail = false;
 
-    protected  void onActivityResult(int req, int res, Intent data) {
+    protected void onActivityResult(int req, int res, Intent data) {
 	if(req == PREF_ACT_REQ) {
-	    Context context = App.getContext();	
+	/*  Context context = App.getContext();	
  	    Intent i = new Intent(context, Srv.class);
 	    i.setAction(Srv.UPDATE_REQUIRED);
-            context.startService(i);
+            context.startService(i); */
+ 	    Intent i = new Intent(this, Srv.class);
+	    i.setAction(Srv.UPDATE_REQUIRED);
+	    startService(i);
 	    if(prefs != null) prefs.load();	
 	    else prefs = new Prefs();	
 	}
@@ -232,21 +235,7 @@ public class WeatherActivity extends AppCompatActivity
 
 	App.activity_visible = true;
 
-/*
-	AppWidgetManager aman = AppWidgetManager.getInstance(this);
-	List<AppWidgetProviderInfo> provs = aman.getInstalledProviders();
-	if(provs == null) Log.d(TAG, "NO PROVIDERS");
-	else for(AppWidgetProviderInfo api : provs) {
-	    Log.d(TAG, api.provider.flattenToString());
-	}
-*/
-	Intent intie = new Intent(this, Srv.class);
-	intie.setAction(Srv.ACTIVITY_STARTED);
-
-	if(startService(intie) == null) Log.d(TAG, "Service not started");
-	else Log.d(TAG, "Service started");
-
-        Locale loc = use_russian ? new Locale("ru", "RU") : new Locale("en", "US");
+        Locale loc = /* use_russian ? new Locale("ru", "RU") : */ new Locale("en", "US");
         Locale.setDefault(loc);
         Resources res = this.getResources();
         Configuration config = new Configuration(res.getConfiguration());
@@ -278,16 +267,29 @@ public class WeatherActivity extends AppCompatActivity
 
 	navMenu = navigationView.getMenu();
 	menu_size = navMenu.size();
+
+	if(App.service_started) logUI(COLOUR_INFO, R.string.srv_running);
 	
 	for(int i = 0; i < menu_size; i++) {
 	    MenuItem mi = navMenu.getItem(i);
-	    mi.setEnabled(false);
 	    if(mi.getTitle().equals(getString(R.string.select_fav))) {
 		fav_menu_idx = i;
+		if(App.service_started) mi.setEnabled(Srv.cur_res_level != Srv.RES_ERR && favs != null ? true : false);
+		else mi.setEnabled(favs == null ? false : true);
 	    } else if(mi.getTitle().equals(getString(R.string.current_location))) {
 		cur_loc_menu_idx = i;
-	    }		
+		if(App.service_started) mi.setEnabled(Srv.cur_res_level == Srv.RES_LOC ? true : false);
+		else mi.setEnabled(false);
+	    } else {
+		if(App.service_started) mi.setEnabled(Srv.cur_res_level != Srv.RES_ERR ? true : false);
+		else mi.setEnabled(false);
+	    }			
 	}
+
+	Intent intie = new Intent(this, Srv.class);
+	intie.setAction(Srv.ACTIVITY_STARTED);
+	if(startService(intie) == null) Log.d(TAG, "startService() failed");
+	else Log.d(TAG, "startService() succeeded");
     }
 
     @Override
@@ -804,15 +806,15 @@ public class WeatherActivity extends AppCompatActivity
 	    favs = settings.getStringSet("favs", null);
         }
 	public void load() {
-            use_russian = settings.getBoolean("use_russian", true);
-            use_offline_maps = settings.getBoolean("use_offline_maps", true);
-	    verbose = settings.getInt("verbose", 1);
-	    addr_source = settings.getInt("addr_source", 0);
+//          use_russian = settings.getBoolean("use_russian", true);
+//          use_offline_maps = settings.getBoolean("use_offline_maps", true);
+	    verbose = settings.getInt("verbose", SettingsActivity.DFL_VERBOSE);
+	    addr_source = settings.getInt("addr_source", SettingsActivity.DFL_ADDR_SRC);
 	}
         public void save() {
             SharedPreferences.Editor editor = settings.edit();
-            editor.putBoolean("use_russian", use_russian);
-            editor.putBoolean("use_offline_maps", use_offline_maps);
+//          editor.putBoolean("use_russian", use_russian);
+//          editor.putBoolean("use_offline_maps", use_offline_maps);
 	    editor.putStringSet("favs", favs);
 	    editor.putInt("verbose", verbose);	
 	    editor.putInt("addr_source", addr_source);	

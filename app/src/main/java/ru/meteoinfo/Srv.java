@@ -59,6 +59,10 @@ public class Srv extends Service {
     private static final long init_wth_update_interval = 3000;
     private static int loc_priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY; // PRIORITY_HIGH_ACCURACY;
 
+    // false if update intervals must be increased after first loc/wth update
+    private boolean loc_fix = false;
+    private boolean wth_fix = false;
+
     private static final long LOC_FASTEST_UPDATE_INTERVAL = 2 * 1000;
     private static final float LOC_MIN_DISPLACEMENT = 0.0f; // <- in metres. 0.0 debug only!! 500.0f; will be ok for release
 	
@@ -75,6 +79,7 @@ public class Srv extends Service {
 	
     private static Location currentLocation = null;	
     private static Station currentStation = null;
+    private static Station lastStation = null;
     public static Station getCurrentStation() { return currentStation; };	
 
     private static WeatherData localWeather = null;
@@ -107,7 +112,7 @@ public class Srv extends Service {
     public static final int RES_ERR = 0;
     public static final int RES_LIST = 1;
     public static final int RES_LOC = 2;
-    public static int cur_res_level = RES_ERR;
+    public static int cur_res_level;
 	
     private void send_init_result(int res) {
 	if(App.activity_visible) {
@@ -120,6 +125,8 @@ public class Srv extends Service {
 	}
     }
 
+    private static final Object wt_obj = new Object();
+
     @Override
     public void onCreate() {
 	super.onCreate();
@@ -128,45 +135,31 @@ public class Srv extends Service {
 	int ids[] = man.getAppWidgetIds(wc);
 	widget_installed = (ids != null && ids.length > 0);
 	log(COLOUR_INFO, "service created, widget_installed=" + widget_installed);
-    }
-
-    // startup -> getStations
-
-    private static final Object lock_startup = new Object();
-    private static final Object wt_obj = new Object();
-
-    private void startup() {
-
-	synchronized(lock_startup) {
-	    if(!Util.stationListKnown()) {	// Stage 0
-		new Thread(new Runnable() {
-		    @Override
-		    public void run() {
-			log(COLOUR_INFO, "fetching station list");
-			int i;
-			synchronized(wt_obj) {
-			    for(i = 0; i < init_attempts; i++) {
-				if(Util.getStations()) break;
-				try {
-				    log(COLOUR_DBG, "retrying: attempt " + i);
-				    wt_obj.wait(init_attempts_delay);
-				} catch(Exception e) { Log.e(TAG, "exception in wait()"); }	
-			    }
-			}
-			if(i == init_attempts) {
-			    log(COLOUR_ERR, R.string.conn_bad);
-			    send_init_result(RES_ERR);
-			    return;
-			}
-			log(COLOUR_INFO, "station list obtained");
-			restart_updates(false);
+	cur_res_level = RES_ERR;
+	new Thread(new Runnable() {
+	    @Override
+	    public void run() {
+		log(COLOUR_INFO, "fetching station list");
+		int i;
+		synchronized(wt_obj) {
+		    for(i = 0; i < init_attempts; i++) {
+			if(Util.getStations()) break;
+			try {
+			    log(COLOUR_DBG, "attempt " + i + " failed, retrying after " + init_attempts_delay + "ms");
+			    wt_obj.wait(init_attempts_delay);
+			} catch(Exception e) { Log.e(TAG, "exception in wait()"); }	
 		    }
-		}).start();
-	    } else {
-		log(COLOUR_INFO, "station list is known already");
-		restart_updates(false);
+		}
+		if(i == init_attempts) {
+		    log(COLOUR_ERR, R.string.conn_bad);
+		    send_init_result(RES_ERR);
+		    return;
+		}
+		log(COLOUR_INFO, "station list obtained");
+		restart_updates();
 	    }
-	}
+	}).start();
+	App.service_started = true;
     }
 
     // fullStationList must be known here
@@ -174,18 +167,23 @@ public class Srv extends Service {
 
     private static final Object lock_restart = new Object();
     private static final Object lock_loc_update = new Object();
+
 		
-    private void restart_updates(boolean forced) {
+    private void restart_updates() {
 
 	synchronized(lock_restart) {
 
+	    if(!Util.stationListKnown()) {
+		send_init_result(RES_ERR);
+		Log.d(TAG, "internal error: station list unknown on entry to restart_updates()");
+		return;
+	    }
 	    log(COLOUR_DBG, "restarting updates");
 
 	    if(cur_res_level < RES_LIST) {
 		send_init_result(RES_LIST);
 		cur_res_level = RES_LIST;	// Stage 1
 	    }
-
 	    // Start location updates
 
 	    read_prefs();
@@ -205,25 +203,27 @@ public class Srv extends Service {
 			}
 			synchronized(lock_loc_update) {
 			    currentLocation = task.getResult();
+			    if(currentLocation == null) return;
 			    currentStation = Util.getNearestStation(currentLocation.getLatitude(), 
 				currentLocation.getLongitude());
 			}
 			if(cur_res_level < RES_LOC) {	// Stage 2
 			    send_init_result(RES_LOC);
 			    cur_res_level = RES_LOC;
+			    send_init_result(RES_LOC);
 			}
 			log(COLOUR_DBG, "getLastLocation.onComplete: station=" + currentStation.code);
 			updateLocalWeather();
 		    }
 		});
 	    }
-	    if(pint_location == null || forced) start_location_updates(true);
-	    if(widget_installed && (pint_weather == null || forced)) start_weather_updates(true);
+	    loc_fix = false;
+	    wth_fix = false;
+	    start_location_updates(true);
+	    if(widget_installed) start_weather_updates(true);
 	}
     }
 
-    boolean loc_fix = false;
-    boolean wth_fix = false;
 
     synchronized void start_location_updates(boolean init) {
 	long interval = init ? init_loc_update_interval : loc_update_interval;
@@ -236,6 +236,7 @@ public class Srv extends Service {
 //	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
 	loc_req.setFastestInterval(interval/4);	// Samsung Galaxy S9
 	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
+	if(loc_client == null) loc_client = LocationServices.getFusedLocationProviderClient(this);
 	loc_client.requestLocationUpdates(loc_req, pint_location);
 	log(COLOUR_DBG, "location updates restarted at " + interval/1000 + " sec intervals");
     }
@@ -254,6 +255,7 @@ public class Srv extends Service {
     @Override
     public void onDestroy() {
 	log(COLOUR_DBG, "destroying service");
+	App.service_started = false;
 	if(pint_location != null) 
 	    LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(pint_location);
 	if(pint_weather != null) {
@@ -286,11 +288,14 @@ public class Srv extends Service {
 
 		Location loc = null;
 		LocationResult result = LocationResult.extractResult(intent);
+
 		if(result != null) loc = result.getLastLocation();
 		if(loc == null) {
 		    log(COLOUR_DBG, "null location");
 		    break;
 		}
+		boolean station_changed = false;
+		
 		synchronized(lock_loc_update) {
 		    long tdiff = cur_ltime - last_loc_update_time;	
 		    if(tdiff < loc_update_interval/4 && currentLocation != null) {
@@ -300,6 +305,11 @@ public class Srv extends Service {
 		    currentLocation = loc;
 		    currentStation = Util.getNearestStation(loc.getLatitude(), loc.getLongitude());
 		    last_loc_update_time = cur_ltime;
+		    if(currentStation != lastStation) {
+			lastStation = currentStation;
+		        station_changed = true;
+			log(COLOUR_INFO, App.get_string(R.string.sta_changed) + " " + currentStation.code);
+		    }
 		}
 
 		if(!loc_fix) {
@@ -307,12 +317,11 @@ public class Srv extends Service {
 		    loc_fix = true;
 		}
 
-
 		if(App.activity_visible && cur_res_level != RES_LOC) {	// Stage 2
                     send_init_result(RES_LOC);
                     cur_res_level = RES_LOC;
 		}
-		if(localWeather == null || !widget_updated) updateLocalWeather();
+		if(localWeather == null || !widget_updated || station_changed) updateLocalWeather();
 		break;
 
 	    case WEATHER_UPDATE:
@@ -328,7 +337,8 @@ public class Srv extends Service {
 		log(COLOUR_DBG, "widget started");
 		widget_installed = true;
 		widget_updated = false;
-		startup();
+		wth_fix = false;
+		start_weather_updates(true);
 		break;		
 
 	    case WIDGET_STOPPED:
@@ -342,8 +352,7 @@ public class Srv extends Service {
 		break;
 
 	    case ACTIVITY_STARTED: 	
-		cur_res_level = RES_ERR;
-		startup();
+		// nothing
 		break;	
 
 	    case ACTIVITY_STOPPED: 	
@@ -352,10 +361,8 @@ public class Srv extends Service {
 		break;
 
 	    case UPDATE_REQUIRED:	// settings changed
-		loc_fix = false;
-		wth_fix = false;
 		log(COLOUR_DBG, "restarting updates with new settings");
-		restart_updates(true);
+		restart_updates();
 		break;
 
 	    default:
@@ -400,16 +407,12 @@ public class Srv extends Service {
 
     public static void read_prefs() {
 	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
-	boolean use_gps = settings.getBoolean("use_gps", false);
+	boolean use_gps = settings.getBoolean("use_gps", SettingsActivity.DFL_USE_GPS);
 	loc_priority = use_gps ? LocationRequest.PRIORITY_HIGH_ACCURACY : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
-	loc_update_interval = settings.getInt("loc_update_interval", 60) * 1000;
-	wth_update_interval = settings.getInt("wth_update_interval", 1200) * 1000;
-    }		
+	loc_update_interval = settings.getInt("loc_update_interval", SettingsActivity.DFL_LOC_UPDATE_INTERVAL) * 1000;
+	wth_update_interval = settings.getInt("wth_update_interval", SettingsActivity.DFL_WTH_UPDATE_INTERVAL) * 1000;
+    }
 
 }
-
-
-
-
 
 
