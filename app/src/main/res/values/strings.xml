@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">MeteoInfoWeather</string>
     <string name="action_settings">Hacтройки</string>
+    <string name="action_about">О программе</string>
     <string name="greetings">Вас приветствует Гидрометцентр РФ!</string>
     <string name="check_server_conn">Соединение с сервером</string>
     <string name="no_server_conn">Нет связи с сервером</string>
@@ -8,6 +9,8 @@
     <string name="read_alerts">Последние тревожные оповещения</string>
     <string name="read_bulletin">Последние публикации о погоде</string>
     <string name="weather_data">Данные и прогнозы</string>
+    <string name="data_obtained_processed">Данные получены и обработаны</string>
+    <string name="data_process_error">Ошибка при обработке данных</string>
     <string name="current_location">Для текущего местонахождения</string>
     <string name="select_loc_by_name">По названию ближайшей станции</string>
     <string name="select_loc_by_coord">По координатам ближайшей станции</string>
@@ -55,6 +58,7 @@
     <string name="pref_use_russian">Русский язык</string>
     <string name="pref_verbose">Информация в главном окне</string>
     <string name="pref_base_settings">Основные настройки</string>
+    <string name="pref_widget_settings">Настройки виджета</string>
     <string name="pref_addr_source">Доп. данные о местонахождении</string>
     <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
     <string name="pref_use_gps">Использовать GPS</string>
@@ -138,14 +142,19 @@
     <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
     <string name="wd_humidity_short">Влажность: %.1f%%</string>
     <string name="wd_pressure_units">мм Hg</string>
+    <string name="wd_sta_short">Станция %d</string>
 
     <string name="wd_unk_temp">+??</string>               
 
-    <string name="wd_forecast">[прогноз]</string>               
-    <string name="wd_observ">[данные]</string>               
+    <string name="wd_forecast">[П]</string>               
+    <string name="wd_observ">[Н]</string>               
     <string name="wd_precip_3h">[3ч]</string>               
     <string name="wd_precip_6h">[6ч]</string>               
     <string name="wd_precip_12h">[12ч]</string>               
+
+    <string name="wd_font_colour">Цвет шрифта виджета</string>
+    <string name="wd_back_colour">Цвет фона виджета</string>
+    <string name="wd_show_sta">Номер станции</string>
 
 
     <string-array name="verb_names">

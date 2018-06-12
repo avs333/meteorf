@@ -121,18 +121,25 @@ public class WeatherActivity extends AppCompatActivity
     boolean maps_avail = false;
 
     protected void onActivityResult(int req, int res, Intent data) {
+	Log.d(TAG, "req=" + req + " , res=" + res);
 	if(req == PREF_ACT_REQ) {
-	/*  Context context = App.getContext();	
- 	    Intent i = new Intent(context, Srv.class);
-	    i.setAction(Srv.UPDATE_REQUIRED);
-            context.startService(i); */
- 	    Intent i = new Intent(this, Srv.class);
-	    i.setAction(Srv.UPDATE_REQUIRED);
-	    startService(i);
-	    if(prefs != null) prefs.load();	
-	    else prefs = new Prefs();	
-	}
-        if(res == 0) maps_avail = true;
+	    logUI(COLOUR_DBG, "settings result=" + res);	
+ 	    Intent i;
+	    if((res & SettingsActivity.PCHG_SRV_MASK) != 0) {	
+		logUI(COLOUR_DBG, "perferences changed for server");
+		i = new Intent(this, Srv.class);
+		i.setAction(Srv.UPDATE_REQUIRED);
+		startService(i);
+		if(prefs != null) prefs.load();	
+		else prefs = new Prefs();	
+	    }
+	    if((res & SettingsActivity.PCHG_WID_MASK) != 0) {
+		logUI(COLOUR_DBG, "perferences changed for widget");
+		i = new Intent(this, WidgetProvider.class);
+		i.setAction(WidgetProvider.COLOURS_CHANGED_BROADCAST);
+		sendBroadcast(i);
+	    }	
+	} else if(res == 0) maps_avail = true;
     }
 
     @Override
@@ -387,13 +394,24 @@ public class WeatherActivity extends AppCompatActivity
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
+	Intent i;
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-	    prefs.save();	
-            Intent i = new Intent(this, SettingsActivity.class);
-            startActivityForResult(i, PREF_ACT_REQ);
-            return true;
+        switch(id) {
+	    case R.id.action_settings:
+		prefs.save();	
+		i = new Intent(this, SettingsActivity.class);
+		startActivityForResult(i, PREF_ACT_REQ);
+		return true;
+	    case R.id.action_about:
+		String url = "file:///android_asset/about.html"; 
+		i = new Intent(this, WebActivity.class);
+		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		i.putExtra("action", url);
+		i.putExtra("show_ui", false);
+		Log.d(TAG, "starting web activity for " + url);
+		startActivity(i);
+		return true;	
         }
         return super.onOptionsItemSelected(item);
     }

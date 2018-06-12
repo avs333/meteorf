@@ -22,6 +22,7 @@ public class WebActivity extends AppCompatActivity {
     private WebView webview;
     private static long time, bytes;
     private static boolean show_ui = true;
+    private static ProgressDialog locDlg = null;	
 
     Handler hdl = new Handler() {
 	@Override
@@ -57,7 +58,7 @@ public class WebActivity extends AppCompatActivity {
 
         webview = (WebView) findViewById(R.id.webview);
 
-        final ProgressDialog locDlg = ProgressDialog.show(this, getString(R.string.info),
+        locDlg = ProgressDialog.show(this, getString(R.string.info),
                                         getString(R.string.op_in_progress));
 	locDlg.setCancelable(true);
 
@@ -88,12 +89,17 @@ public class WebActivity extends AppCompatActivity {
 		if(rx - bytes > 0) s += " bytes=" + (rx - bytes);
 		else s += " (cached)";
 		if(show_ui) logUI(COLOUR_DBG, s);
+		if(locDlg != null) {
+		    locDlg.dismiss();
+		    locDlg = null;	
+		}
 	    }	
 	    @Override 
 	    public void onLoadResource(WebView view, String u) {
 	        super.onLoadResource(view, u);
-	        if(webview.getProgress() == 100) {
+	        if(webview.getProgress() == 100 && locDlg != null) {
 		    locDlg.dismiss();
+		    locDlg = null;
 	        }    
 	    }
 	    @Override
@@ -103,7 +109,10 @@ public class WebActivity extends AppCompatActivity {
 		    view.stopLoading();
 		    view.clearView();
 		    if(view.canGoBack()) view.goBack();
-		    locDlg.dismiss();
+		    if(locDlg != null) {
+			locDlg.dismiss();
+			locDlg = null;
+		    }	
 		    Message msg = new Message();
                     Bundle data = new Bundle();
 		    data.putString("error", description);

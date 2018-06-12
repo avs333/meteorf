@@ -73,8 +73,10 @@
 		android:resource="@xml/widget_provider" />
 	    <intent-filter>
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+		<!--	
 		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
 		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
+		-->
 	    </intent-filter>
 	</receiver>
 

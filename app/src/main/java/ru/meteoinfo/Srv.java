@@ -297,7 +297,8 @@ public class Srv extends Service {
 		
 		synchronized(lock_loc_update) {
 		    long tdiff = cur_ltime - last_loc_update_time;	
-		    if(tdiff < loc_update_interval/4 && currentLocation != null) {
+		    long delta = loc_fix ? loc_update_interval/4 : init_loc_update_interval/4;
+		    if(tdiff < delta && currentLocation != null) {
 			log(COLOUR_DBG, "too fast location update request after " + tdiff + "ms, ignored");
 			break;
 		    }
@@ -386,7 +387,8 @@ public class Srv extends Service {
 		synchronized(w_update_lock) {
 		    cur_wtime = System.currentTimeMillis();
 		    long tdiff = cur_wtime - last_wth_update_time;	
-		    if(tdiff < wth_update_interval/4 && localWeather != null) {
+		    long delta = wth_fix ? wth_update_interval/4 : init_wth_update_interval/4;
+		    if(tdiff < delta && localWeather != null) {
 			log(COLOUR_DBG, "too fast weather update request after " + tdiff + "ms, ignored");
 			return;
 		    }

@@ -894,9 +894,8 @@ public class Util {
 	    }	
 	    if(ret.for3days.size() > 0) {
 		log(COLOUR_DBG, R.string.hourly_data_okay);
-		if(WeatherInfo.interpol(ret.for3days, null))
-		    log(COLOUR_GOOD, "weather data interpolated");
-		else log(COLOUR_ERR, "failed to interpolate weather data");  
+		if(WeatherInfo.interpol(ret.for3days, null)) log(COLOUR_GOOD, R.string.data_obtained_processed);
+		else log(COLOUR_ERR, R.string.data_process_error);  
 	    } else log(COLOUR_ERR, R.string.hourly_data_bad);	
 	} else log(COLOUR_ERR, R.string.hourly_data_bad);
 
