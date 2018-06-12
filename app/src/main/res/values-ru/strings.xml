@@ -141,7 +141,7 @@
     <string name="wd_wind_short">Ветер: %s, %.1f м/с</string>
     <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
     <string name="wd_humidity_short">Влажность: %.1f%%</string>
-    <string name="wd_pressure_units">мм Hg</string>
+    <string name="wd_pressure_units">ммРт</string>
     <string name="wd_sta_short">Станция %d</string>
 
     <string name="wd_unk_temp">+??</string>               

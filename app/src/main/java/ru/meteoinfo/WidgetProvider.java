@@ -171,14 +171,14 @@ public class WidgetProvider extends AppWidgetProvider {
 	    fg = (int) Long.parseLong(fg_colour, 16);
 	} catch(Exception e) { 
 	    fg = 0xffffffff;
-	    Log.e(TAG, "fg: NumberFormatException in colours_update()");
+	    Log.e(TAG, "fg: NumberFormatException in colours_update()" + fg);
 	}
 
 	try {
 	    bg = (int) Long.parseLong(bg_colour, 16);
 	} catch(Exception e) { 
 	    bg = 0;
-	    Log.e(TAG, "bg: NumberFormatException in colours_update()");
+	    Log.e(TAG, "bg: NumberFormatException in colours_update()" + bg);
 	}
 
 	Log.d(TAG, String.format("colours_update: fg=%08x bg=%08x " + wd_show_sta, fg, bg));
@@ -373,6 +373,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	// Pending intent to display a webpage when the right part of the widget is clicked
 	Station st = Srv.getCurrentStation();
 	if(st != null && st.code != last_sta_code) {
+		
 	    last_sta_code = st.code;
 	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
 	    Intent intent = new Intent(context, WebActivity.class);

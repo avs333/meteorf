@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:text="@string/wd_unk_temp"
 	android:layout_marginLeft="0dp"
-        android:textSize="32sp" />
+        android:textSize="34sp" />
 
     <TextView
         android:id="@+id/w_addr"
@@ -56,7 +56,7 @@
 	android:layout_gravity="left"
         android:text="[??:??]"
 	android:layout_marginBottom="4dip"
-        android:textSize="12sp" />
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/w_humidity"
