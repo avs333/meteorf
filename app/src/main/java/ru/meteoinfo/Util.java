@@ -826,7 +826,7 @@ public class Util {
 			if(fr > 360) fr -= 360;
  		    }
 		} else { 
-		    log(COLOUR_ERR, "mean_wind: wind changes too fast from " + f0 + " to " + f1);	
+		    log(COLOUR_DBG, String.format(App.get_string(R.string.too_windy),f0, f1));	
 		    fr = f0;
 		}
 //	        Log.d(TAG, "wind: f0=" + f0 + ", f1=" + f1 + ", k=" + k + ", d=" + delta + ", changed=" + min_changed + ", fr=" + fr);

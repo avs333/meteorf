@@ -13,6 +13,10 @@ import java.lang.System;
 import android.content.DialogInterface;
 import android.app.AlertDialog;
 import android.net.TrafficStats;
+import android.webkit.WebResourceRequest;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.Context;
 
 import static ru.meteoinfo.WeatherActivity.*;  // for logUI
 
@@ -70,7 +74,18 @@ public class WebActivity extends AppCompatActivity {
 	webview.setWebViewClient(new WebViewClient() {
 	    @Override 
 	    public boolean shouldOverrideUrlLoading(WebView view, String u) {
-	        view.loadUrl(u);
+		if(u.startsWith("mailto:")) {
+		    logUI(COLOUR_DBG, "handling mailto link");	
+		    u = u.replace("mailto:", "");
+		    Intent mail = new Intent(Intent.ACTION_SEND);
+		    mail.setType("application/octet-stream");
+		    mail.putExtra(Intent.EXTRA_EMAIL, new String[] { u } );
+		    Context context = view.getContext();
+		    PackageManager packageManager = context.getPackageManager();
+		    ResolveInfo info = packageManager.resolveActivity(mail, PackageManager.MATCH_DEFAULT_ONLY);
+		    if(info != null) context.startActivity(mail);
+		    return true;   	
+		} else view.loadUrl(u);
 	        return false;
 	    }
 	    @Override 
@@ -94,6 +109,7 @@ public class WebActivity extends AppCompatActivity {
 		    locDlg = null;	
 		}
 	    }	
+
 	    @Override 
 	    public void onLoadResource(WebView view, String u) {
 	        super.onLoadResource(view, u);

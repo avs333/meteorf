@@ -165,6 +165,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	String fg_colour = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
 	String bg_colour = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
 	wd_show_sta = settings.getBoolean("wd_show_sta", false);
+	if(gm == null) gm = AppWidgetManager.getInstance(context);
 
 	int fg, bg;
 	try {
@@ -222,6 +223,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
     private void weather_update(String action, Context context) {
 
+	if(gm == null) gm = AppWidgetManager.getInstance(context);
 	WeatherData wd = Srv.getLocalWeather();
 	if(wd == null) {
 	    Log.e(TAG, "weather_update: localWeather unknown");
