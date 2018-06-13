@@ -137,6 +137,8 @@
     <string name="wd_visibility">Видимость: %.1f м</string>
     <string name="wd_clouds">Балл общей облачности (0-10): %.1f</string>
 
+    <string name="too_windy">Слишком ветрено: от %.1f до %.1f</string>
+
     <string name="wd_pressure_short">Давление: %d</string>
     <string name="wd_wind_short">Ветер: %s, %.1f м/с</string>
     <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
@@ -152,9 +154,10 @@
     <string name="wd_precip_6h">[6ч]</string>               
     <string name="wd_precip_12h">[12ч]</string>               
 
-    <string name="wd_font_colour">Цвет шрифта виджета</string>
-    <string name="wd_back_colour">Цвет фона виджета</string>
+    <string name="wd_font_colour">Цвет текста</string>
+    <string name="wd_back_colour">Цвет фона</string>
     <string name="wd_show_sta">Номер станции</string>
+    <string name="email_subject">О программе/виджете под Android</string>
 
 
     <string-array name="verb_names">

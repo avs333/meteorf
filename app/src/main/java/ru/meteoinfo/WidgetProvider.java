@@ -374,8 +374,8 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	// Pending intent to display a webpage when the right part of the widget is clicked
 	Station st = Srv.getCurrentStation();
+
 	if(st != null && st.code != last_sta_code) {
-		
 	    last_sta_code = st.code;
 	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
 	    Intent intent = new Intent(context, WebActivity.class);
@@ -383,7 +383,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	    intent.putExtra("action", url);
 	    intent.putExtra("show_ui", false);
 	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT); 	
-	    if(pint_show_webpage != null) views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);
+	    views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);
 	}
 
 	// Pending intent to start main activity when the left part of the widget is clicked
@@ -391,7 +391,8 @@ public class WidgetProvider extends AppWidgetProvider {
 	    Intent intent = new Intent(context, WeatherActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    pint_start_activity = PendingIntent.getActivity(context,0,intent,0);	
-	    if(pint_start_activity != null) views.setOnClickPendingIntent(R.id.w_temp, pint_start_activity);	    		
+	    views.setOnClickPendingIntent(R.id.w_temp, pint_start_activity);
+	    views.setOnClickPendingIntent(R.id.w_date, pint_start_activity);
 	}
 
 	// Pending intent to scroll left when pressure/humidity grid elements are clicked

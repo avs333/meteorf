@@ -80,6 +80,7 @@ public class WebActivity extends AppCompatActivity {
 		    Intent mail = new Intent(Intent.ACTION_SEND);
 		    mail.setType("application/octet-stream");
 		    mail.putExtra(Intent.EXTRA_EMAIL, new String[] { u } );
+		    mail.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject));
 		    Context context = view.getContext();
 		    PackageManager packageManager = context.getPackageManager();
 		    ResolveInfo info = packageManager.resolveActivity(mail, PackageManager.MATCH_DEFAULT_ONLY);
