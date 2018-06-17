@@ -126,7 +126,7 @@ public class WeatherActivity extends AppCompatActivity
 	    logUI(COLOUR_DBG, "settings result=" + res);	
  	    Intent i;
 	    if((res & SettingsActivity.PCHG_SRV_MASK) != 0) {	
-		logUI(COLOUR_DBG, "perferences changed for server");
+		Log.d(TAG, "perferences changed for server");
 		i = new Intent(this, Srv.class);
 		i.setAction(Srv.UPDATE_REQUIRED);
 		startService(i);
@@ -134,7 +134,7 @@ public class WeatherActivity extends AppCompatActivity
 		else prefs = new Prefs();	
 	    }
 	    if((res & SettingsActivity.PCHG_WID_MASK) != 0) {
-		logUI(COLOUR_DBG, "perferences changed for widget");
+		Log.d(TAG, "perferences changed for widget");
 		i = new Intent(this, WidgetProvider.class);
 		i.setAction(WidgetProvider.COLOURS_CHANGED_BROADCAST);
 		sendBroadcast(i);

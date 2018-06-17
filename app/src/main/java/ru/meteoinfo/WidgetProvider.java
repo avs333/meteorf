@@ -224,12 +224,14 @@ public class WidgetProvider extends AppWidgetProvider {
     private void weather_update(String action, Context context) {
 
 	if(gm == null) gm = AppWidgetManager.getInstance(context);
+
 	WeatherData wd = Srv.getLocalWeather();
+
 	if(wd == null) {
 	    Log.e(TAG, "weather_update: localWeather unknown");
 	    return;
 	}
- 	if(wd.for3days == null || wd.for3days.size() <= max_widx) {
+ 	if(wd.for3days == null) {
 	    Log.e(TAG, "weather_update: invalid weather for 3 days");
 	    return;
 	}
@@ -241,9 +243,26 @@ public class WidgetProvider extends AppWidgetProvider {
 	    else addr = st.shortname;
 	} else Log.d(TAG, "weather_update: no current station yet");
 
+	long now = System.currentTimeMillis();
+
 	WeatherInfo wi = null;
 
-	Log.d(TAG, "weather_update: addr=" + addr);
+	while((wi = wd.for3days.get(0)) != null) {
+	    if(now <= wi.get_utc()) break;
+	    Log.d(TAG, "weather_update: removing stale data for " + wi.get_date());
+	    wd.for3days.remove(0);
+	    if(wd.for3days.size() == 0) break;
+	    if(widx > 0) widx--;
+	}
+
+	int max = wd.for3days.size() - 1;
+	if(max < 0) {
+	    Log.e(TAG, "weather_update: no weather to display");
+	    return;
+	}
+	if(max > max_widx) max = max_widx;
+
+	Log.d(TAG, "weather_update: " + action + " addr=" + addr + ", widx=" + widx + ", max=" + max);
 
 	switch(action) {
 	    case WEATHER_CHANGED_BROADCAST:
@@ -253,13 +272,13 @@ public class WidgetProvider extends AppWidgetProvider {
 		break; 
 	    case ACTION_LEFT_BROADCAST:	
 		widx--;
-		if(widx < -1 || (widx < 0 && wd.observ == null)) widx = max_widx;
+		if(widx < -1 || (widx < 0 && wd.observ == null)) widx = max;
 		Log.d(TAG, "" + action + ": " + widx);
 		wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
 		break;
 	    case ACTION_RIGHT_BROADCAST:	
 		widx++;
-		if(widx > max_widx) widx = (wd.observ != null) ? -1 : 0;
+		if(widx > max) widx = (wd.observ != null) ? -1 : 0;
 		Log.d(TAG, "" + action + ": " + widx);
 		wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
 		break;
@@ -362,6 +381,8 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
+	Log.d(TAG, "updating widget");
+
 	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
 	if(date != null) views.setTextViewText(R.id.w_date, date);
 	if(data != null) {
@@ -376,6 +397,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	Station st = Srv.getCurrentStation();
 
 	if(st != null && st.code != last_sta_code) {
+	    Log.d(TAG, "pint to display webpage");	
 	    last_sta_code = st.code;
 	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
 	    Intent intent = new Intent(context, WebActivity.class);
@@ -388,6 +410,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	// Pending intent to start main activity when the left part of the widget is clicked
     	if(pint_start_activity == null) {
+	    Log.d(TAG, "pint to start activity");	
 	    Intent intent = new Intent(context, WeatherActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    pint_start_activity = PendingIntent.getActivity(context,0,intent,0);	
@@ -397,6 +420,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	// Pending intent to scroll left when pressure/humidity grid elements are clicked
 	if(pint_left == null) {
+	    Log.d(TAG, "pint to scroll left");	
 	    Intent intent = new Intent(context, WidgetProvider.class);
 	    intent.setAction(ACTION_LEFT_BROADCAST);	
 	    pint_left = PendingIntent.getBroadcast(context,0,intent,0);	
@@ -406,6 +430,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	// Pending intent to scroll left when wind/precipitation grid elements are clicked
 	if(pint_right == null) {
+	    Log.d(TAG, "pint to scroll right");	
 	    Intent intent = new Intent(context, WidgetProvider.class);
 	    intent.setAction(ACTION_RIGHT_BROADCAST);	
 	    pint_right = PendingIntent.getBroadcast(context,0,intent,0);	
