@@ -252,6 +252,18 @@ public class WidgetProvider extends AppWidgetProvider {
 	    else addr = st.shortname;
 	} else Log.d(TAG, "weather_update: no current station yet");
 
+	if(st != null && st.code != last_sta_code) {
+	    Log.d(TAG, "pint to display webpage");	
+	    last_sta_code = st.code;
+	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
+	    Intent intent = new Intent(context, WebActivity.class);
+	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    intent.putExtra("action", url);
+	    intent.putExtra("show_ui", false);
+	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT); 	
+	    views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);
+	}
+
 	long now = System.currentTimeMillis();
 
 	WeatherInfo wi = null;
@@ -394,11 +406,7 @@ public class WidgetProvider extends AppWidgetProvider {
 
     private void restart(Context context) {
 	Log.d(TAG, "restarting");
-	set_pints(context);
 	startup(context);
-//	int [] bound_widgets = gm.getAppWidgetIds(
-//			    new ComponentName(context, "ru.meteoinfo.WidgetProvider"));
-//	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
 	colours_update(context);
     }
 

@@ -114,8 +114,8 @@ public class DataActivity extends AppCompatActivity {
             public void run() {
                 if(meteodata != null && meteodata.length() != 0) 
                     etext.setText(Html.fromHtml(meteodata));
-		else etext.setText(Html.fromHtml("<p><br><br><center><h1><font color=#C00000>" + 
-			getString(R.string.no_data_avail) + "</font></h1></center>"));
+		else etext.setText(Html.fromHtml("<p><br><br>&emsp;<h1><font color=#C00000>" + 
+			getString(R.string.no_data_avail) + "</font></h1>"));
             }
         };
         AsyncTaskWithProgress atp = new AsyncTaskWithProgress(this, getString(R.string.receiving_data), bgr, fgr);
