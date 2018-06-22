@@ -134,12 +134,11 @@ public class Srv extends Service {
 	AppWidgetManager man = AppWidgetManager.getInstance(this);
 	int ids[] = man.getAppWidgetIds(wc);
 	widget_installed = (ids != null && ids.length > 0);
-	log(COLOUR_INFO, "service created, widget_installed=" + widget_installed);
+	log(COLOUR_INFO, App.get_string(R.string.srv_created) + widget_installed);
 	cur_res_level = RES_ERR;
 	new Thread(new Runnable() {
 	    @Override
 	    public void run() {
-		log(COLOUR_INFO, "fetching station list");
 		int i;
 		synchronized(wt_obj) {
 		    for(i = 0; i < init_attempts; i++) {
@@ -155,7 +154,7 @@ public class Srv extends Service {
 		    send_init_result(RES_ERR);
 		    return;
 		}
-		log(COLOUR_INFO, "station list obtained");
+		log(COLOUR_GOOD, R.string.srv_sta_list_recv);
 		restart_updates();
 	    }
 	}).start();
@@ -282,7 +281,6 @@ public class Srv extends Service {
 
 	    case LOCATION_UPDATE:	
 
-		log(COLOUR_DBG, "location update received");
 		cur_ltime = System.currentTimeMillis();
 
 		Location loc = null;
@@ -290,9 +288,11 @@ public class Srv extends Service {
 
 		if(result != null) loc = result.getLastLocation();
 		if(loc == null) {
-		    log(COLOUR_DBG, "null location");
+		    log(COLOUR_DBG, "null location received");
 		    break;
 		}
+
+
 		boolean station_changed = false;
 		
 		synchronized(lock_loc_update) {
@@ -322,11 +322,14 @@ public class Srv extends Service {
                     cur_res_level = RES_LOC;
 		}
 		if(localWeather == null || !widget_updated || station_changed) updateLocalWeather();
+
+		log(COLOUR_INFO, R.string.srv_loc_update);
+
 		break;
 
 	    case WEATHER_UPDATE:
-		log(COLOUR_DBG, "weather update received");
 		updateLocalWeather();
+		log(COLOUR_INFO, R.string.srv_weather_update);
 		if(!wth_fix) {
 		    start_weather_updates(false);
 		    wth_fix = true;
@@ -352,8 +355,8 @@ public class Srv extends Service {
 		break;
 
 	    case ACTIVITY_STARTED: 	
-		// nothing
-		break;	
+		send_init_result(cur_res_level);
+		break;
 
 	    case ACTIVITY_STOPPED: 	
 		Log.d(TAG, "activity stopped");

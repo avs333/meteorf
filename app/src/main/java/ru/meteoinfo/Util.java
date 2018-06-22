@@ -767,12 +767,6 @@ public class Util {
 			wi.wind_speed = mean_param(w0.get_wind_speed(), wn.get_wind_speed(), alpha);
 			wi.precip = mean_param(w0.get_precip(), wn.get_precip(), alpha);
 			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), alpha);
-
-		/*	wi.pressure = mean_param(w0.get_pressure(), wn.get_pressure(), k - i_first, i - i_first); // i - i_first > 1 here
-			wi.wind_dir = mean_wind(w0.get_wind_dir(), wn.get_wind_dir(), k - i_first, i - i_first);  // this case is special
-			wi.wind_speed = mean_param(w0.get_wind_speed(), wn.get_wind_speed(), k - i_first, i - i_first);
-			wi.precip = mean_param(w0.get_precip(), wn.get_precip(), k - i_first, i - i_first);
-			wi.humidity = mean_param(w0.get_humidity(), wn.get_humidity(), k - i_first, i - i_first); */
 			wi.interpol_data = true;
 			wl.set(k, wi);
 		    }
@@ -783,17 +777,13 @@ public class Util {
 	    return true;
 	}
 
-     // private static double mean_param(double f0, double f1, int k, int delta) {
         private static double mean_param(double f0, double f1, double alpha) {
 	    if(f0 == -1) return (f1 == -1) ? -1 : f1;
 	    if(f1 == -1) return (f0 == -1) ? -1 : f0;
-	    // if(f0 == f1) return f0;
-	    // return f0 + (k * (f1 - f0)) / delta;
 	    return f0 + alpha * (f1 - f0);
 	}
 
 
-    //  private static double mean_wind(double f0, double f1, int k, int delta) {
 	private static double mean_wind(double f0, double f1, double alpha) {
 	    try {
 		double fr, diff;
@@ -813,23 +803,21 @@ public class Util {
 		diff = f1 - f0;
 
 		if(diff < max_diff) {
-		    if(!min_changed) fr = f0 + alpha * diff; // (k * diff) / delta; 
-		    else fr = f1 - alpha * diff; // (k * diff) /delta;
+		    if(!min_changed) fr = f0 + alpha * diff;
+		    else fr = f1 - alpha * diff; 
 		} else if(360 - f1 + f0 < max_diff) {
 		    diff = 360 - diff;
 		    if(!min_changed) {
-			fr = f0 - alpha * diff; //(k * diff) /delta;
+			fr = f0 - alpha * diff;
 			if(fr < 0) fr = 360 - fr;
-
 		    } else {	
-			fr = f1 + alpha * diff; //(k * diff) /delta;
+			fr = f1 + alpha * diff;
 			if(fr > 360) fr -= 360;
  		    }
 		} else { 
 		    log(COLOUR_DBG, String.format(App.get_string(R.string.too_windy),f0, f1));	
 		    fr = f0;
 		}
-//	        Log.d(TAG, "wind: f0=" + f0 + ", f1=" + f1 + ", k=" + k + ", d=" + delta + ", changed=" + min_changed + ", fr=" + fr);
 		return fr;
 	    } catch(Exception e) {
 		log(COLOUR_ERR, "exception in WeatherInfo::mean_wind()");

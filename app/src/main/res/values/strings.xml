@@ -2,6 +2,7 @@
     <string name="app_name">MeteoInfoWeather</string>
     <string name="action_settings">Hacтройки</string>
     <string name="action_about">О программе</string>
+    <string name="action_restart">Перезапуск</string>
     <string name="greetings">Вас приветствует Гидрометцентр РФ!</string>
     <string name="check_server_conn">Соединение с сервером</string>
     <string name="no_server_conn">Нет связи с сервером</string>
@@ -109,7 +110,7 @@
     <string name="read_timeout">время ожидания истекло</string>               
     <string name="no_cur_sta">Станция неизвестна</string>               
     <string name="conn_slow">Слишком медленное соединение</string>               
-    <string name="loc_unk_yet">Местонахождение еще не определено...</string>               
+    <string name="loc_unk_yet">Поиск координат...</string>               
     <string name="init_already">Список станций получен.</string>               
     <string name="night">ночью</string>               
     <string name="day">днем</string>               
@@ -146,7 +147,7 @@
     <string name="wd_pressure_units">ммРт</string>
     <string name="wd_sta_short">Станция %d</string>
 
-    <string name="wd_unk_temp">+??</string>               
+    <string name="wd_unk_temp">T,°C</string>               
 
     <string name="wd_forecast">[П]</string>               
     <string name="wd_observ">[Н]</string>               
@@ -159,6 +160,11 @@
     <string name="wd_show_sta">Номер станции</string>
     <string name="email_subject">О программе/виджете под Android</string>
 
+    <string name="srv_weather_update">Новые данные о погоде</string>
+    <string name="srv_loc_update">Новые данные о местонахождении</string>
+
+    <string name="srv_created">Сервис запущен, виджет=</string>
+    <string name="srv_sta_list_recv">Список станций получен</string>
 
     <string-array name="verb_names">
 	<item>Ошибки</item>

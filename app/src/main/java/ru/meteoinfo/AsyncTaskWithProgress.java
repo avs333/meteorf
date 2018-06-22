@@ -7,7 +7,7 @@ import android.os.AsyncTask;
 import java.lang.ref.WeakReference;
 
 public class AsyncTaskWithProgress extends AsyncTask<Void,Void,Void> {
-    private ProgressDialog pr;
+    private ProgressDialog pr = null;
     private Runnable bgr, fgr;
     private WeakReference<Context> contextRef;
     String title;
@@ -36,8 +36,7 @@ public class AsyncTaskWithProgress extends AsyncTask<Void,Void,Void> {
     }
     protected void onPostExecute(Void result) {
         try {
-            boolean showing = pr.isShowing();
-            if (showing) pr.dismiss();
+            if(pr != null && pr.isShowing()) pr.dismiss();
         } catch(Exception e) {
             e.printStackTrace();
         }

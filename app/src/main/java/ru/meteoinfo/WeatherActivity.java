@@ -412,6 +412,11 @@ public class WeatherActivity extends AppCompatActivity
 		Log.d(TAG, "starting web activity for " + url);
 		startActivity(i);
 		return true;	
+	    case R.id.action_restart:
+		i = new Intent(this, WidgetProvider.class);
+		i.setAction(WidgetProvider.ACTION_RESTART);
+		sendBroadcast(i);
+		return true;
         }
         return super.onOptionsItemSelected(item);
     }

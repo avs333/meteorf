@@ -31,6 +31,7 @@ public class WidgetProvider extends AppWidgetProvider {
     public static final String COLOURS_CHANGED_BROADCAST  = "colours_changed";
     public static final String ACTION_LEFT_BROADCAST  = "action_left";
     public static final String ACTION_RIGHT_BROADCAST  = "action_right";
+    public static final String ACTION_RESTART = "action_restart";
 
     private static final String TAG = "ru.meteoinfo:Widget";
 
@@ -44,7 +45,8 @@ public class WidgetProvider extends AppWidgetProvider {
 
     private static Context ctx = null;
 
-    private static AppWidgetManager gm;
+    private static AppWidgetManager gm = null;
+    private static RemoteViews views = null;
 
     // handler for enqueuing update requests to avoid race conditions 	
     private final Handler hdl = new Handler();
@@ -56,6 +58,7 @@ public class WidgetProvider extends AppWidgetProvider {
         Log.d(TAG, "onEnabled");
 	startup(context);
     }
+
     private void startup(Context context) {
 	Log.d(TAG, "startup entry");
 	App.widget_visible = true;
@@ -75,8 +78,9 @@ public class WidgetProvider extends AppWidgetProvider {
 	pint_right = null;
 	pint_start_activity = null;
 	pint_show_webpage = null;
- 
 	gm = AppWidgetManager.getInstance(context);
+	views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+	set_pints(context);
 	Intent i = new Intent(context, Srv.class);
 	i.setAction(Srv.WIDGET_STARTED);
 	context.startService(i);
@@ -109,9 +113,12 @@ public class WidgetProvider extends AppWidgetProvider {
 	    if(!action.equals(AppWidgetManager.ACTION_APPWIDGET_ENABLED)) {
 		Log.e(TAG, action + ": I'm dead, trying to recover");	
 		startup(context);
+		colours_update(context);
 	    }
 	}
+
 	final Context cc = context;
+
 	switch(action) {
 	    case WEATHER_CHANGED_BROADCAST:
 	    case ACTION_LEFT_BROADCAST:	
@@ -123,6 +130,9 @@ public class WidgetProvider extends AppWidgetProvider {
 		});	
 //		Log.d(TAG, "weather change queued for " + action);
 		break;
+	    case ACTION_RESTART:
+		restart(cc);
+		break;	
 	    case COLOURS_CHANGED_BROADCAST:
 		hdl.post(new Runnable() { 
 		    public void run() { 
@@ -161,11 +171,12 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(context);
 	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, "ru.meteoinfo.WidgetProvider"));
-	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 	String fg_colour = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
 	String bg_colour = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
 	wd_show_sta = settings.getBoolean("wd_show_sta", false);
+
 	if(gm == null) gm = AppWidgetManager.getInstance(context);
+	if(views == null) new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
 	int fg, bg;
 	try {
@@ -192,20 +203,17 @@ public class WidgetProvider extends AppWidgetProvider {
 	}
 
 	Log.d(TAG, "show_sta=" + wd_show_sta + ", addr=" + addr);
+	views.setTextColor(R.id.w_temp, fg);
+	views.setTextColor(R.id.w_addr, fg);
+	views.setTextColor(R.id.w_pressure, fg);
+	views.setTextColor(R.id.w_wind, fg);
+	views.setTextColor(R.id.w_date, fg);
+	views.setTextColor(R.id.w_humidity, fg);
+	views.setTextColor(R.id.w_precip, fg);
+	views.setInt(R.id.w_grid, "setBackgroundColor", bg);
+	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
 
-	for(int i = 0; i < bound_widgets.length; i++) {
-	    views.setTextColor(R.id.w_temp, fg);
-	    views.setTextColor(R.id.w_addr, fg);
-	    views.setTextColor(R.id.w_pressure, fg);
-	    views.setTextColor(R.id.w_wind, fg);
-	    views.setTextColor(R.id.w_date, fg);
-	    views.setTextColor(R.id.w_humidity, fg);
-	    views.setTextColor(R.id.w_precip, fg);
-	    views.setInt(R.id.w_grid, "setBackgroundColor", bg);
-	    if(addr != null) views.setTextViewText(R.id.w_addr, addr);
-//	    if(addr != null) update_widget(context, gm, bound_widgets[i], addr, null, va);	
-	    gm.updateAppWidget(bound_widgets[i], views);
-	}
+	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
     }
 	
     private static String windDir(double deg) {
@@ -224,6 +232,7 @@ public class WidgetProvider extends AppWidgetProvider {
     private void weather_update(String action, Context context) {
 
 	if(gm == null) gm = AppWidgetManager.getInstance(context);
+	if(views == null) new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
 	WeatherData wd = Srv.getLocalWeather();
 
@@ -268,18 +277,15 @@ public class WidgetProvider extends AppWidgetProvider {
 	    case WEATHER_CHANGED_BROADCAST:
 		widx = 0;
 		wi = wd.for3days.get(widx);
-		Log.d(TAG, "" + action + ": " + widx);
 		break; 
 	    case ACTION_LEFT_BROADCAST:	
 		widx--;
 		if(widx < -1 || (widx < 0 && wd.observ == null)) widx = max;
-		Log.d(TAG, "" + action + ": " + widx);
 		wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
 		break;
 	    case ACTION_RIGHT_BROADCAST:	
 		widx++;
 		if(widx > max) widx = (wd.observ != null) ? -1 : 0;
-		Log.d(TAG, "" + action + ": " + widx);
 		wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
 		break;
 	    default:
@@ -296,8 +302,11 @@ public class WidgetProvider extends AppWidgetProvider {
 
 	if(date != null) {
 	    if(date.length() < 5) date = null;
-	    else date = date.substring(0,5) + " " +
-		context.getString(widx < 0 ? R.string.wd_observ : R.string.wd_forecast);
+	    else {
+		date = date.substring(0,5);
+		if(widx >= 0) date = "[" + date + "]";
+		// context.getString(widx < 0 ? R.string.wd_observ : R.string.wd_forecast);
+	    }	
 	}
 //	Log.d(TAG, "weather_update: date=" + date);
 
@@ -368,39 +377,43 @@ public class WidgetProvider extends AppWidgetProvider {
 	if(precip == null) precip = filler;
 	if(hum == null) hum = filler;
 
+	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
+	if(date != null) views.setTextViewText(R.id.w_date, date);
+	if(temp != null) views.setTextViewText(R.id.w_temp, temp);
+	if(press != null) views.setTextViewText(R.id.w_pressure, press);
+	if(wind != null) views.setTextViewText(R.id.w_wind, wind);
+	if(precip != null) views.setTextViewText(R.id.w_precip, precip);
+	if(hum != null) views.setTextViewText(R.id.w_humidity, hum);
+
+
 	int [] bound_widgets = gm.getAppWidgetIds(
 			    new ComponentName(context, "ru.meteoinfo.WidgetProvider"));
 
-	for(int i = 0; i < bound_widgets.length; i++)
-	    update_widget(context, gm, bound_widgets[i], addr, date, temp, press, wind, precip, hum);
-
+	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
     }
 
-    private void update_widget(Context context, AppWidgetManager man, int wid, 
-		String addr, String date, String... data) {
+    private void restart(Context context) {
+	Log.d(TAG, "restarting");
+	set_pints(context);
+	startup(context);
+//	int [] bound_widgets = gm.getAppWidgetIds(
+//			    new ComponentName(context, "ru.meteoinfo.WidgetProvider"));
+//	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
+	colours_update(context);
+    }
 
-	RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
-	Log.d(TAG, "updating widget");
-
-	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
-	if(date != null) views.setTextViewText(R.id.w_date, date);
-	if(data != null) {
-	    if(data.length > 0) views.setTextViewText(R.id.w_temp, data[0]);
-	    if(data.length > 1) views.setTextViewText(R.id.w_pressure, data[1]);
-	    if(data.length > 2) views.setTextViewText(R.id.w_wind, data[2]);
-	    if(data.length > 3) views.setTextViewText(R.id.w_precip, data[3]);
-	    if(data.length > 4) views.setTextViewText(R.id.w_humidity, data[4]);
-	}
-
+    private void set_pints(Context context) {
 	// Pending intent to display a webpage when the right part of the widget is clicked
 	Station st = Srv.getCurrentStation();
+	views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+	Intent intent;
 
 	if(st != null && st.code != last_sta_code) {
 	    Log.d(TAG, "pint to display webpage");	
 	    last_sta_code = st.code;
 	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
-	    Intent intent = new Intent(context, WebActivity.class);
+	    intent = new Intent(context, WebActivity.class);
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    intent.putExtra("action", url);
 	    intent.putExtra("show_ui", false);
@@ -409,38 +422,28 @@ public class WidgetProvider extends AppWidgetProvider {
 	}
 
 	// Pending intent to start main activity when the left part of the widget is clicked
-    	if(pint_start_activity == null) {
-	    Log.d(TAG, "pint to start activity");	
-	    Intent intent = new Intent(context, WeatherActivity.class);
-	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    pint_start_activity = PendingIntent.getActivity(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_temp, pint_start_activity);
-	    views.setOnClickPendingIntent(R.id.w_date, pint_start_activity);
-	}
+	Log.d(TAG, "pint to start activity");	
+	intent = new Intent(context, WeatherActivity.class);
+	intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	pint_start_activity = PendingIntent.getActivity(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_temp, pint_start_activity);
+	views.setOnClickPendingIntent(R.id.w_date, pint_start_activity);
 
-	// Pending intent to scroll left when pressure/humidity grid elements are clicked
-	if(pint_left == null) {
-	    Log.d(TAG, "pint to scroll left");	
-	    Intent intent = new Intent(context, WidgetProvider.class);
-	    intent.setAction(ACTION_LEFT_BROADCAST);	
-	    pint_left = PendingIntent.getBroadcast(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_pressure, pint_left);
-	    views.setOnClickPendingIntent(R.id.w_humidity, pint_left);
-	}
+	Log.d(TAG, "pint to scroll left");	
+	intent = new Intent(context, WidgetProvider.class);
+	intent.setAction(ACTION_LEFT_BROADCAST);	
+	pint_left = PendingIntent.getBroadcast(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_pressure, pint_left);
+	views.setOnClickPendingIntent(R.id.w_humidity, pint_left);
 
-	// Pending intent to scroll left when wind/precipitation grid elements are clicked
-	if(pint_right == null) {
-	    Log.d(TAG, "pint to scroll right");	
-	    Intent intent = new Intent(context, WidgetProvider.class);
-	    intent.setAction(ACTION_RIGHT_BROADCAST);	
-	    pint_right = PendingIntent.getBroadcast(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_wind, pint_right);
-	    views.setOnClickPendingIntent(R.id.w_precip, pint_right);
-	}
-
-        man.updateAppWidget(wid, views);
-
+	Log.d(TAG, "pint to scroll right");	
+	intent = new Intent(context, WidgetProvider.class);
+	intent.setAction(ACTION_RIGHT_BROADCAST);	
+	pint_right = PendingIntent.getBroadcast(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_wind, pint_right);
+	views.setOnClickPendingIntent(R.id.w_precip, pint_right);
     }
+
 }
 
 
