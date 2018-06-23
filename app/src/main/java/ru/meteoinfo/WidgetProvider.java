@@ -260,6 +260,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    intent.putExtra("action", url);
 	    intent.putExtra("show_ui", false);
+	    if(st.name_p != null) intent.putExtra("title", st.name_p);
 	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT); 	
 	    views.setOnClickPendingIntent(R.id.w_addr, pint_show_webpage);
 	}
@@ -330,7 +331,7 @@ public class WidgetProvider extends AppWidgetProvider {
 	    return;
 	}
 
-	temp = String.format("+%.1f", val);
+	temp = String.format(java.util.Locale.US, "+%.1f", val);
 //	Log.d(TAG, "weather_update: temp=" + temp);
 
 	String press = null;

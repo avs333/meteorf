@@ -68,7 +68,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 	    m.showInfoWindow();
 	    long rx = TrafficStats.getTotalRxBytes();
 	    rx -= start_bytes;
-	    if(rx > 0) logUI(COLOUR_DBG, String.format("%d bytes", rx, " bytes"));
+	    if(rx > 0) logUI(COLOUR_DBG, String.format(java.util.Locale.US, "%d bytes", rx, " bytes"));
 	}
 
 	sta_pos = new LatLng(sta_lat, sta_lon);

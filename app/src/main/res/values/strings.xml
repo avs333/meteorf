@@ -3,12 +3,7 @@
     <string name="action_settings">Hacтройки</string>
     <string name="action_about">О программе</string>
     <string name="action_restart">Перезапуск</string>
-    <string name="greetings">Вас приветствует Гидрометцентр РФ!</string>
-    <string name="check_server_conn">Соединение с сервером</string>
     <string name="no_server_conn">Нет связи с сервером</string>
-    <string name="checking_server_conn">Соединение...</string>
-    <string name="read_alerts">Последние тревожные оповещения</string>
-    <string name="read_bulletin">Последние публикации о погоде</string>
     <string name="weather_data">Данные и прогнозы</string>
     <string name="data_obtained_processed">Данные получены и обработаны</string>
     <string name="data_process_error">Ошибка при обработке данных</string>
@@ -19,15 +14,11 @@
     <string name="conn_ok">Инициализация прошла успешно</string>
     <string name="no_internet">Нет подключения к Internet!</string>
     <string name="title_data_activity">Почасовой прогноз</string>
-    <string name="try_find_loc">Определение текущих координат...</string>
     <string name="failed_to_find_loc">Не удалось найти текущие координаты</string>
-    <string name="no_loc_srv">Сервис Location недоступен на этом устройстве!</string>
-    <string name="loc_srv_disabled">Сервис Location отключен, включите его в настройках!</string>
     <string name="sel_pattern">Введите несколько букв названия места:</string>
     <string name="sel_coord">Введите координаты места:</string>
     <string name="short_patt">Слишком мало букв для поиска</string>
     <string name="okey">Далее</string>
-    <string name="ok">OK</string>
     <string name="srv_running">Сервис уже запущен</string>
     <string name="patt_no_match">Для введенной строки станций не найдено</string>
     <string name="cancel">Отмена</string>
@@ -37,17 +28,14 @@
     <string name="observ_data">Наблюдения за последние 6 часов</string>
     <string name="daily_data">Почасовой прогноз на 3 дня</string>
     <string name="weekly_data">Прогноз на 7 дней</string>
-    <string name="alerts_data">Последние тревожные оповещения</string>
-    <string name="get_data">Получить данные для</string>
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
     <string name="map_google">Посмотреть на картах Google</string>
     <string name="map_osm">Посмотреть на картах OSM</string>
-    <string name="map_forge">Посмотреть на картах MapsForge</string>
     <string name="inv_coords">Недопустимые координаты</string>
-    <string name="try_find_coords">Поиск ближайшей станции...</string>
-    <string name="try_google">Дополнительные данные от Google...</string>
+    <string name="try_find_coords">Поиск ближайшей станции&#8230;</string>
+    <string name="try_google">Дополнительные данные от Google&#8230;</string>
     <string name="station">Станция</string>
     <string name="sta_changed">Станция изменилась на</string>
     <string name="country">Страна</string>
@@ -77,7 +65,7 @@
     <string name="cur_loc">Местонахождение</string>               
     <string name="cur_loc_known">Местонахождение известно</string>               
     <string name="dist">Расстояние: ок.</string>               
-    <string name="info">Секундочку...</string>               
+    <string name="info">Секундочку&#8230;</string>               
     <string name="nav_header_title">Гидрометцентр РФ</string>               
     <string name="nav_header_subtitle">ПОГОДА:</string>               
     <string name="navigation_drawer_open">Open navigation drawer</string>
@@ -110,7 +98,7 @@
     <string name="read_timeout">время ожидания истекло</string>               
     <string name="no_cur_sta">Станция неизвестна</string>               
     <string name="conn_slow">Слишком медленное соединение</string>               
-    <string name="loc_unk_yet">Поиск координат...</string>               
+    <string name="loc_unk_yet">Поиск координат&#8230;</string>               
     <string name="init_already">Список станций получен.</string>               
     <string name="night">ночью</string>               
     <string name="day">днем</string>               
@@ -136,7 +124,7 @@
     <string name="wd_precip12h">Осадки за 12 часов: %.1f мм</string>
     <string name="wd_humidity">Относительная влажность: %.1f%%</string>
     <string name="wd_visibility">Видимость: %.1f м</string>
-    <string name="wd_clouds">Балл общей облачности (0-10): %.1f</string>
+    <string name="wd_clouds">Балл общей облачности (0&#8211;10): %.1f</string>
 
     <string name="too_windy">Слишком ветрено: от %.1f до %.1f</string>
 

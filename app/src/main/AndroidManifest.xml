@@ -52,6 +52,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
+	<meta-data
+	    android:name="android.max_aspect"
+	    android:value="2.1" />
+
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
@@ -73,14 +77,11 @@
 		android:resource="@xml/widget_provider" />
 	    <intent-filter>
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-			
+		<action android:name="ru.meteoinfo.WidgetProvider.COLOURS_CHANGED_BROADCAST" /> 
 		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.COLOUES_CHANGED_BROADCAST" /> 
 		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_LEFT_BROADCAST" /> 
 		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_RIGHT_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
 		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
 	    </intent-filter>
 	</receiver>
 

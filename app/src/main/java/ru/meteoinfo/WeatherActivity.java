@@ -176,8 +176,7 @@ public class WeatherActivity extends AppCompatActivity
     private static TextView tview;
     private static int fav_menu_idx = -1;
     private static int cur_loc_menu_idx = -1;
-
-    public static Handler ui_update = new Handler() {
+    public static final Handler ui_update = new Handler() {
 	@Override
 	public void handleMessage(Message msg) {
 	    super.handleMessage(msg);
@@ -409,6 +408,7 @@ public class WeatherActivity extends AppCompatActivity
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		i.putExtra("action", url);
 		i.putExtra("show_ui", false);
+		i.putExtra("title", getString(R.string.action_about));
 		Log.d(TAG, "starting web activity for " + url);
 		startActivity(i);
 		return true;	
@@ -695,6 +695,7 @@ public class WeatherActivity extends AppCompatActivity
 		}
                 url = Util.URL_STA_DATA + "?p=" + curStation.code;
                 ii.putExtra("action", url);
+		if(curStation.name_p != null) ii.putExtra("title", curStation.name_p);
                 startActivity(ii);
             }
         });
@@ -843,7 +844,7 @@ public class WeatherActivity extends AppCompatActivity
 	    editor.putStringSet("favs", favs);
 	    editor.putInt("verbose", verbose);	
 	    editor.putInt("addr_source", addr_source);	
-	    editor.commit();
+	    editor.apply();
         }
     }
 }

@@ -70,7 +70,7 @@ public class SettingsActivity extends PreferenceActivity
 		if(newval != null) {
 		    SharedPreferences.Editor editor = settings.edit();
 		    editor.putInt(pname, Integer.parseInt(newval));  
-		    editor.commit();
+		    editor.apply();
 		}
 		return true;
     	    }

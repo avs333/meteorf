@@ -41,7 +41,7 @@ public class OpenmapsActivity extends Activity {
 //    private MapsForgeTileProvider forge = null;
 //    private MapsForgeTileSource msrc = null;
 
-    final String MAP_FILES_DIR = "/sdcard/osmdroid/";	
+//    final String MAP_FILES_DIR = "/sdcard/osmdroid/";	
 
     private double getCoord(byte [] b, int offs) {
 	int val = b[offs] << 24 | (b[offs+1] & 0xff) << 16 | (b[offs+2] & 0xff) << 8 | (b[offs+3] & 0xff);

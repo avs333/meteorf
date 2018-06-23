@@ -58,6 +58,7 @@ public class WebActivity extends AppCompatActivity {
 	time = 0;
         Intent intent = getIntent();
         final String url = intent.getStringExtra("action");
+        final String title = intent.getStringExtra("title");
 	show_ui = intent.getBooleanExtra("show_ui", true);
 
         webview = (WebView) findViewById(R.id.webview);
@@ -69,7 +70,9 @@ public class WebActivity extends AppCompatActivity {
 
 	webview.getSettings().setJavaScriptEnabled(true);
 	webview.getSettings().setDomStorageEnabled(true);
-	webview.getSettings().setBuiltInZoomControls(true);
+//	webview.getSettings().setBuiltInZoomControls(true);
+
+	if(title != null) getSupportActionBar().setTitle(title);
 
 	webview.setWebViewClient(new WebViewClient() {
 	    @Override 
@@ -78,7 +81,7 @@ public class WebActivity extends AppCompatActivity {
 		    logUI(COLOUR_DBG, "handling mailto link");	
 		    u = u.replace("mailto:", "");
 		    Intent mail = new Intent(Intent.ACTION_SEND);
-		    mail.setType("application/octet-stream");
+		    mail.setType("text/html");
 		    mail.putExtra(Intent.EXTRA_EMAIL, new String[] { u } );
 		    mail.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject));
 		    Context context = view.getContext();

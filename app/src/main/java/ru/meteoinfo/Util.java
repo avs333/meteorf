@@ -259,7 +259,7 @@ public class Util {
 		last_md5 = md5;
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putString("last_md5", last_md5);	
-		editor.commit();
+		editor.apply();
 
 	    } else {
 		// No need to do anything. sta_file exists and its md5 matches with the server's
@@ -423,10 +423,10 @@ public class Util {
 	if(fullStationList == null) return null;	
         ArrayList<Station> stations = new ArrayList<>();
 	int i;
-	String pat = pattern.toLowerCase();
+	String pat = pattern.toLowerCase(java.util.Locale.US);
 	for(i = 0; i < fullStationList.size(); i++) {
 	   Station st = fullStationList.get(i);		    	
-	   String s1 = st.name.toLowerCase();
+	   String s1 = st.name.toLowerCase(java.util.Locale.US);
 	   if(s1.startsWith(pat)) {
 		stations.add(st);
 	   } 		
@@ -681,15 +681,16 @@ public class Util {
 	    try {
 //		Locale loc = use_russian ? new Locale("ru", "RU") : new Locale("en", "US");
 		Locale loc = new Locale("ru", "RU");
+		Locale len = new Locale("en", "US");
 	        if(type == WEATHER_REQ_7DAY) {
-		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd");
+		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd", len);
 		    Date _date = in.parse(p[0]);
 		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMMM", loc);
 		    if(p[1].equals("night")) p[1] = new String(App.get_string(R.string.night));
 		    else if(p[1].equals("day")) p[1] = new String(App.get_string(R.string.day));
 		    date = new String(out.format(_date) + ", " + p[1]);
 		} else {
-		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", len);
 		    in.setTimeZone(TimeZone.getTimeZone("UTC"));
 		    Date _date = in.parse(p[0] + " " + p[1]);
 		    utc = _date.getTime();

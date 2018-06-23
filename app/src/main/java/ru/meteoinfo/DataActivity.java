@@ -48,7 +48,7 @@ public class DataActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         if(curStation == null) {
-            Toast.makeText(this, getString(R.string.no_station), Toast.LENGTH_LONG);
+            Toast.makeText(this, getString(R.string.no_station), Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -76,8 +76,11 @@ public class DataActivity extends AppCompatActivity {
 		    sendIntent.setType("text/html");
 			//	Uri.fromParts("mailto", "mygmail.com", null));	
 		    sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Meteoinfo.ru data");
-                    sendIntent.putExtra(Intent.EXTRA_STREAM,
-			"<body><html>" +  meteodata + "</body></html>");
+                    sendIntent.putExtra(Intent.EXTRA_TEXT,
+			Html.fromHtml(new StringBuilder()
+			.append("<body><html>" +  meteodata + "</body></html>")
+			.toString())
+			);
 //			Html.fromHtml("<body><html>" +  meteodata + "</body></html>").toString());
 //			Html.fromHtml(meteodata).toString());
 //			Html.fromHtml(new StringBuilder().append(meteodata).toString()));
