@@ -72,24 +72,31 @@
 
 	<!-- widget stuff -->
 
-	<receiver android:name=".WidgetProvider" >
+	<receiver android:name=".WidgetSmall" >
 	    <meta-data android:name="android.appwidget.provider"
-		android:resource="@xml/widget_provider" />
+		android:resource="@xml/widget_small" />
 	    <intent-filter>
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-		<action android:name="ru.meteoinfo.WidgetProvider.COLOURS_CHANGED_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_LEFT_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_RIGHT_BROADCAST" /> 
-		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
+	    </intent-filter>
+	</receiver>
+
+	<receiver android:name=".WidgetLarge" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/widget_large" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 	    </intent-filter>
 	</receiver>
 
 	<!--
         <receiver android:name=".WidgetBroadcastReceiver" android:enabled="false">
             <intent-filter>
-                <action android:name="ru.meteoinfo.WidgetProvider.LOCATION_CHANGED_BROADCAST" />
-            </intent-filter>
+       		<action android:name="ru.meteoinfo.WidgetProvider.SETTINGS_CHANGED_BROADCAST" /> 
+		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
+		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_LEFT_BROADCAST" /> 
+		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_RIGHT_BROADCAST" /> 
+		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
+	    </intent-filter>
         </receiver> -->
 
 

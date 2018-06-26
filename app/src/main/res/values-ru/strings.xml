@@ -2,7 +2,7 @@
     <string name="app_name">MeteoInfoWeather</string>
     <string name="action_settings">Hacтройки</string>
     <string name="action_about">О программе</string>
-    <string name="action_restart">Перезапуск</string>
+    <string name="action_restart">Обновление вручную</string>
     <string name="no_server_conn">Нет связи с сервером</string>
     <string name="weather_data">Данные и прогнозы</string>
     <string name="data_obtained_processed">Данные получены и обработаны</string>
@@ -133,6 +133,7 @@
     <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
     <string name="wd_humidity_short">Влажность: %.1f%%</string>
     <string name="wd_pressure_units">ммРт</string>
+    <string name="wd_pressure_short_hg">Давление: %d мм рт.ст.</string>
     <string name="wd_sta_short">Станция %d</string>
 
     <string name="wd_unk_temp">T,°C</string>               

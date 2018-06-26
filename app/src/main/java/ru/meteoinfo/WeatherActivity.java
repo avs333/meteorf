@@ -135,8 +135,11 @@ public class WeatherActivity extends AppCompatActivity
 	    }
 	    if((res & SettingsActivity.PCHG_WID_MASK) != 0) {
 		Log.d(TAG, "perferences changed for widget");
-		i = new Intent(this, WidgetProvider.class);
-		i.setAction(WidgetProvider.COLOURS_CHANGED_BROADCAST);
+		i = new Intent(this, WidgetSmall.class);
+		i.setAction(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
+		sendBroadcast(i);
+		i = new Intent(this, WidgetLarge.class);
+		i.setAction(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
 		sendBroadcast(i);
 	    }	
 	} else if(res == 0) maps_avail = true;
@@ -413,7 +416,10 @@ public class WeatherActivity extends AppCompatActivity
 		startActivity(i);
 		return true;	
 	    case R.id.action_restart:
-		i = new Intent(this, WidgetProvider.class);
+		i = new Intent(this, WidgetSmall.class);
+		i.setAction(WidgetProvider.ACTION_RESTART);
+		sendBroadcast(i);
+		i = new Intent(this, WidgetLarge.class);
 		i.setAction(WidgetProvider.ACTION_RESTART);
 		sendBroadcast(i);
 		return true;

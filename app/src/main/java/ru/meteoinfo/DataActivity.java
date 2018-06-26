@@ -164,7 +164,7 @@ public class DataActivity extends AppCompatActivity {
 		s += "<br>";
 	    }
 
-	    st = wi.get_info();
+	    st = wi.get_info_string();
 	    if(st != null) s += st + "<br>";
 
 	    val = wi.get_precip();  		    

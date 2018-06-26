@@ -130,10 +130,15 @@ public class Srv extends Service {
     @Override
     public void onCreate() {
 	super.onCreate();
-	ComponentName wc = new ComponentName(this, "ru.meteoinfo.WidgetProvider");
+	ComponentName wc = new ComponentName(this, "ru.meteoinfo.WidgetSmall");
 	AppWidgetManager man = AppWidgetManager.getInstance(this);
 	int ids[] = man.getAppWidgetIds(wc);
 	widget_installed = (ids != null && ids.length > 0);
+	if(!widget_installed) {
+	    wc = new ComponentName(this, "ru.meteoinfo.WidgetLarge");
+	    ids = man.getAppWidgetIds(wc);
+	    widget_installed = (ids != null && ids.length > 0);
+	}
 	log(COLOUR_INFO, App.get_string(R.string.srv_created) + widget_installed);
 	cur_res_level = RES_ERR;
 	new Thread(new Runnable() {
@@ -382,8 +387,10 @@ public class Srv extends Service {
 	    log(COLOUR_ERR, "updateLocalWeather: local station unknown yet");
 	    return;	
 	}
-	final Intent intent = new Intent(this, WidgetProvider.class);
-	intent.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+	final Intent intent1 = new Intent(this, WidgetSmall.class);
+	intent1.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+	final Intent intent2 = new Intent(this, WidgetLarge.class);
+	intent2.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 	new Thread(new Runnable() {
 	    @Override
 	    public void run() {
@@ -399,7 +406,8 @@ public class Srv extends Service {
 		    log(COLOUR_DBG, "updating local weather for station " + currentStation.code);
 		    localWeather = Util.getWeather(currentStation.code);
 		    if(widget_installed && localWeather != null) {
-			sendBroadcast(intent);
+			sendBroadcast(intent1);
+			sendBroadcast(intent2);
 			widget_updated = true;
 		    } else if(localWeather == null) Log.e(TAG, "getWeather returned null!");
 		}

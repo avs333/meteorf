@@ -581,14 +581,16 @@ public class Util {
 	public boolean interpol_data = false;
 
 	private String date = null;
-	private String info = null;
 	private double pressure = -1, temperature = inval_temp, 
 		wind_dir = -1, wind_speed = -1, precip = -1, 
 		precip3h = -1, precip6h = -1, precip12h = -1, 
 		humidity = -1, visibility = -1, clouds = -1, gusts = -1;
+	private int info = -1;
+
+	// for WEATHER_REQ_7DAY only so far.
+	private boolean night = true;
 
 	// "yyyy-MM-dd HH:mm UTC"
-
 	public int gettype() { return type; }
 	public String get_date() { return date; } 
 	public long get_utc() { return utc; } 
@@ -596,7 +598,30 @@ public class Util {
 	public double get_temperature() { return temperature; }
 	public double get_wind_dir() { return wind_dir; }
 	public double get_wind_speed() { return wind_speed; }
-	public String get_info() { return info; }  
+	public int get_info() { return info; }
+	public String get_info_string() { 
+	    if(info == -1) return null;	
+	    String ret = null;
+	    try {
+	 	switch(type) {
+		    case WEATHER_REQ_OBSERV: ret = new String(weatherCodesObserv[info]); break;
+		    case WEATHER_REQ_7DAY: ret = new String(weatherCodes7day[info]); break;
+		    case WEATHER_REQ_3DAY: break; // ?????
+		}
+	    } catch (Exception e) { Log.e(TAG, "exception in get_info_string()"); }
+	    return ret; 
+	} 
+	public String get_icon_name() {
+	    if(info == -1 || type != WEATHER_REQ_7DAY) return null;
+	    String resname = null;	
+	    try {
+		int ret = forecast_code2pic[info];
+		if(ret == -1) return null;
+		resname = "ru.meteoinfo:drawable/wi" + ret + (night ? "n" : "d") + "_s";
+		
+	    } catch (Exception e) { Log.e(TAG, "exception in get_icon_name()"); }
+	    return resname;		
+	}
 	public double get_precip() { return precip; }
 	public double get_precip3h() { return precip3h; }
 	public double get_precip6h() { return precip6h; }
@@ -648,14 +673,7 @@ public class Util {
 		    case 3: temperature = Double.parseDouble(p[i]); break;
 		    case 4: wind_dir = Double.parseDouble(p[i]); break;
 		    case 5: wind_speed = Double.parseDouble(p[i]); break;
-		    case 6: int k = Integer.parseInt(p[i]);
-			    switch(type) {
-				case WEATHER_REQ_OBSERV: info = new String(weatherCodesObserv[k]); break;
-				case WEATHER_REQ_7DAY: info = new String(weatherCodes7day[k]); break;
-				case WEATHER_REQ_3DAY: break; // ?????
-			    }	
-			    break;
-
+		    case 6: info = Integer.parseInt(p[i]); break;
 		    case 7: precip  = Double.parseDouble(p[i]); break;
 		    case 8: if(type == WEATHER_REQ_OBSERV) precip3h = Double.parseDouble(p[i]);
 			    else humidity = Double.parseDouble(p[i]); 
@@ -686,8 +704,14 @@ public class Util {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd", len);
 		    Date _date = in.parse(p[0]);
 		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMMM", loc);
-		    if(p[1].equals("night")) p[1] = new String(App.get_string(R.string.night));
-		    else if(p[1].equals("day")) p[1] = new String(App.get_string(R.string.day));
+		    utc = _date.getTime(); 		    
+		    if(p[1].equals("night")) {
+			p[1] = new String(App.get_string(R.string.night));
+		    } else if(p[1].equals("day")) {
+			p[1] = new String(App.get_string(R.string.day));
+			utc += 1000 * 60 * 60 * 12;
+			night = false;
+		    }	
 		    date = new String(out.format(_date) + ", " + p[1]);
 		} else {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", len);
@@ -834,7 +858,7 @@ public class Util {
     public static class WeatherData {
 	long sta_code = -1;
 	WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
-    //    ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
+        ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
         ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
     }
 
@@ -843,7 +867,7 @@ public class Util {
 	log(COLOUR_DBG, App.get_string(R.string.query_weather_data) + " " + station_code);
 
 	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station_code);
-//	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station_code);
+	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station_code);
 	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station_code);
 
 	if(so == null /* && s7 == null */ && s3 == null) {
@@ -860,7 +884,7 @@ public class Util {
 		log(COLOUR_DBG, R.string.observed_data_okay);
 	    } else log(COLOUR_ERR, R.string.observed_data_bad);	
 	} else log(COLOUR_ERR, R.string.observed_data_bad);
-/*	if(s7 != null && !s7.isEmpty()) {
+	if(s7 != null && !s7.isEmpty()) {
 	    String[] ws = s7.split(" \n");
 	    ret.for7days = new ArrayList<>();	    		     
 	    for(int i = 0; i < ws.length; i++) {		
@@ -871,7 +895,7 @@ public class Util {
 	    }	
 	    if(ret.for7days.size() > 0) log(COLOUR_DBG, R.string.weekly_data_okay);
 	    else log(COLOUR_ERR, R.string.weekly_data_bad);	
-	} else log(COLOUR_ERR, R.string.weekly_data_bad); */
+	} else log(COLOUR_ERR, R.string.weekly_data_bad);
 	if(s3 != null && !s3.isEmpty()) {
 	    String[] ws = s3.split(" \n");
 	    ret.for3days = new ArrayList<>();	    		     
@@ -1102,7 +1126,25 @@ public class Util {
         {45, 46, 47, 48, 55, 56, 57, }, //15
         null,     //16
         {19, 20, 21, 22, 23, 24, 35, 36, 37, 38, 39, 40, },     //17
-    }; 		
+    };
+
+    // forecast code -> picture number
+    public static final int forecast_code2pic[] = { 
+	-1, 7, 6, 6, 5, 12, 12, 55, 56, 12, 12, 12, 12, 55, 55, 
+	56, 56, 56, 56, 57, 58, 59, 59, 59, 59, 
+	13, 13, 13, 13, 13, 2, 50, 50, 50, 50, 51, 52, 52, 53, 53, 53, 
+	14, 14, 14, 14, 15, 15, 15, 15, 14, 14, 14, 14, 14, 14, 15, 15, 15, 
+	4, 4, 4, 4, 10, 10, 10, 54, 10, 10, 10, 10, 10, 9, 9, 
+	54, 54, 54, 11, 11, 11, 11, 11, 1, 1, 20, 20, 20 
+    };
+    public static final int observ_code2pic[] = { 
+	-1, -1, -1, -1, 21, 21, 21, 21, -1, -1, 21, -1, -1, -1, -1, -1, 4, 23, 
+	-1, -1, 13, 1, 2, 24, 4, 20, 24, -1, 21, 23, -1, -1, -1, -1, -1, -1, 
+	17, 17, 17, 17, -1, 21, 21, 21, 21, 21, 21, 21, 21, 21, 11, 11, 11, 11, 
+	11, 11, 11, 11, 11, 11, 10, 11, 9, 1, 9, 20, 11, 1, 24, 24, 13, 2, 2, 2, 
+	56, 50, 2, 2, 2, 1, 1, 1, 1, 24, 24, 2, 2, 25, 25, -1, -1, 23, 23, 23, 23, 23, 23, 23, 23, -1	
+    };	
+ 		
 }
 
 
