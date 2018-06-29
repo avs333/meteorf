@@ -46,6 +46,14 @@ public class Srv extends Service {
 
     // called after preferences update 
     public static final String UPDATE_REQUIRED = "update_required";
+    public static boolean use_geonames;
+    public static boolean use_gps;
+    public static boolean use_interp;
+    public static boolean wd_show_sta;
+    public static String bg_colour;
+    public static String fg_colour;
+
+    public static final String WIDGET_RESTART_REQUIRED = "widget_restart_required";
 
     private static final int init_attempts = 4;
     private static final long init_attempts_delay = 30 * 1000;
@@ -86,7 +94,8 @@ public class Srv extends Service {
     public static WeatherData getLocalWeather() { return localWeather; }
 
     private static void log(int colour, String mesg) {
-	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
+	// if(App.activity_visible) 
+	WeatherActivity.logUI(colour, mesg);
 	if(colour == COLOUR_ERR) Log.e(TAG, mesg);
 	else Log.d(TAG, mesg);
     }
@@ -125,11 +134,22 @@ public class Srv extends Service {
 	}
     }
 
+    static Context context = App.getContext();
+    private void notify_widgets(String action) {
+	Intent intent1 = new Intent(context, WidgetSmall.class);
+	intent1.setAction(action);
+	Intent intent2 = new Intent(context, WidgetLarge.class);
+	intent2.setAction(action);
+	sendBroadcast(intent1);
+	sendBroadcast(intent2);
+    }
+
     private static final Object wt_obj = new Object();
 
     @Override
     public void onCreate() {
 	super.onCreate();
+
 	ComponentName wc = new ComponentName(this, "ru.meteoinfo.WidgetSmall");
 	AppWidgetManager man = AppWidgetManager.getInstance(this);
 	int ids[] = man.getAppWidgetIds(wc);
@@ -139,6 +159,8 @@ public class Srv extends Service {
 	    ids = man.getAppWidgetIds(wc);
 	    widget_installed = (ids != null && ids.length > 0);
 	}
+	read_prefs();
+
 	log(COLOUR_INFO, App.get_string(R.string.srv_created) + widget_installed);
 	cur_res_level = RES_ERR;
 	new Thread(new Runnable() {
@@ -189,8 +211,6 @@ public class Srv extends Service {
 		cur_res_level = RES_LIST;	// Stage 1
 	    }
 	    // Start location updates
-
-	    read_prefs();
 	
 	    log(COLOUR_DBG, "starting updates, priority=" + loc_priority + ", updates: location=" 
 		+ loc_update_interval + ", weather=" + wth_update_interval);
@@ -210,13 +230,17 @@ public class Srv extends Service {
 			    if(currentLocation == null) return;
 			    currentStation = Util.getNearestStation(currentLocation.getLatitude(), 
 				currentLocation.getLongitude());
+			    if(currentStation != lastStation) {
+				lastStation = currentStation;
+				log(COLOUR_INFO, App.get_string(R.string.sta_changed) + " " + currentStation.code);
+			    }
 			}
 			if(cur_res_level < RES_LOC) {	// Stage 2
 			    send_init_result(RES_LOC);
 			    cur_res_level = RES_LOC;
 			}
 			log(COLOUR_DBG, "getLastLocation.onComplete: station=" + currentStation.code);
-			updateLocalWeather();
+			updateLocalWeather(true);
 		    }
 		});
 	    }
@@ -326,15 +350,17 @@ public class Srv extends Service {
                     send_init_result(RES_LOC);
                     cur_res_level = RES_LOC;
 		}
-		if(localWeather == null || !widget_updated || station_changed) updateLocalWeather();
+		if(localWeather == null || !widget_updated || station_changed) updateLocalWeather(true);
 
-		log(COLOUR_INFO, R.string.srv_loc_update);
+	//	log(COLOUR_INFO, R.string.srv_loc_update);
+		log(COLOUR_DBG, R.string.srv_loc_update);
 
 		break;
 
 	    case WEATHER_UPDATE:
-		updateLocalWeather();
-		log(COLOUR_INFO, R.string.srv_weather_update);
+		updateLocalWeather(false);
+	//	log(COLOUR_INFO, R.string.srv_weather_update);
+		log(COLOUR_DBG, R.string.srv_weather_update);
 		if(!wth_fix) {
 		    start_weather_updates(false);
 		    wth_fix = true;
@@ -370,7 +396,15 @@ public class Srv extends Service {
 
 	    case UPDATE_REQUIRED:	// settings changed
 		log(COLOUR_DBG, "restarting updates with new settings");
-		restart_updates();
+		if(intent == null) return START_STICKY;
+		int res = intent.getIntExtra("res", 0);
+		read_prefs();
+		if((res & SettingsActivity.PCHG_SRV_MASK) != 0) restart_updates();
+		if((res & SettingsActivity.PCHG_WID_MASK) != 0) notify_widgets(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
+		break;
+
+	    case WIDGET_RESTART_REQUIRED:
+		notify_widgets(WidgetProvider.ACTION_RESTART);
 		break;
 
 	    default:
@@ -382,15 +416,12 @@ public class Srv extends Service {
 
     Object w_update_lock = new Object();	
 
-    private void updateLocalWeather() {
+    private void updateLocalWeather(boolean forced) {
 	if(currentStation == null) {
 	    log(COLOUR_ERR, "updateLocalWeather: local station unknown yet");
 	    return;	
 	}
-	final Intent intent1 = new Intent(this, WidgetSmall.class);
-	intent1.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
-	final Intent intent2 = new Intent(this, WidgetLarge.class);
-	intent2.setAction(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+	final boolean force_update = forced;
 	new Thread(new Runnable() {
 	    @Override
 	    public void run() {
@@ -398,16 +429,15 @@ public class Srv extends Service {
 		    cur_wtime = System.currentTimeMillis();
 		    long tdiff = cur_wtime - last_wth_update_time;	
 		    long delta = wth_fix ? wth_update_interval/4 : init_wth_update_interval/4;
-		    if(tdiff < delta && localWeather != null) {
+		    if(tdiff < delta && localWeather != null && !force_update) {
 			log(COLOUR_DBG, "too fast weather update request after " + tdiff + "ms, ignored");
 			return;
 		    }
 	    	    last_wth_update_time = cur_wtime;
 		    log(COLOUR_DBG, "updating local weather for station " + currentStation.code);
-		    localWeather = Util.getWeather(currentStation.code);
+		    localWeather = Util.getWeather(currentStation);
 		    if(widget_installed && localWeather != null) {
-			sendBroadcast(intent1);
-			sendBroadcast(intent2);
+			notify_widgets(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 			widget_updated = true;
 		    } else if(localWeather == null) Log.e(TAG, "getWeather returned null!");
 		}
@@ -419,7 +449,14 @@ public class Srv extends Service {
 
     public static void read_prefs() {
 	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
-	boolean use_gps = settings.getBoolean("use_gps", SettingsActivity.DFL_USE_GPS);
+	use_gps = settings.getBoolean("use_gps", SettingsActivity.DFL_USE_GPS);
+	use_geonames = settings.getBoolean("use_geonames", SettingsActivity.DFL_USE_GEONAMES);
+        use_interp = settings.getBoolean("use_interp", SettingsActivity.DFL_USE_INTERP);
+
+        fg_colour = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
+        bg_colour = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
+        wd_show_sta = settings.getBoolean("wd_show_sta", false);
+
 	loc_priority = use_gps ? LocationRequest.PRIORITY_HIGH_ACCURACY : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
 	loc_update_interval = settings.getInt("loc_update_interval", SettingsActivity.DFL_LOC_UPDATE_INTERVAL) * 1000;
 	wth_update_interval = settings.getInt("wth_update_interval", SettingsActivity.DFL_WTH_UPDATE_INTERVAL) * 1000;

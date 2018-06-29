@@ -54,6 +54,10 @@ import android.widget.Toast;
 import com.google.android.gms.common.GoogleApiAvailability;
 import ru.meteoinfo.Util.Station;
 
+
+import android.location.LocationManager;
+import android.location.Criteria;
+
 //import android.appwidget.AppWidgetManager;
 //import android.appwidget.AppWidgetProviderInfo;
 
@@ -123,25 +127,13 @@ public class WeatherActivity extends AppCompatActivity
     protected void onActivityResult(int req, int res, Intent data) {
 	Log.d(TAG, "req=" + req + " , res=" + res);
 	if(req == PREF_ACT_REQ) {
+	    if(prefs == null) prefs = new Prefs();
+	    else prefs.load(); 	
 	    logUI(COLOUR_DBG, "settings result=" + res);	
- 	    Intent i;
-	    if((res & SettingsActivity.PCHG_SRV_MASK) != 0) {	
-		Log.d(TAG, "perferences changed for server");
-		i = new Intent(this, Srv.class);
-		i.setAction(Srv.UPDATE_REQUIRED);
-		startService(i);
-		if(prefs != null) prefs.load();	
-		else prefs = new Prefs();	
-	    }
-	    if((res & SettingsActivity.PCHG_WID_MASK) != 0) {
-		Log.d(TAG, "perferences changed for widget");
-		i = new Intent(this, WidgetSmall.class);
-		i.setAction(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
-		sendBroadcast(i);
-		i = new Intent(this, WidgetLarge.class);
-		i.setAction(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
-		sendBroadcast(i);
-	    }	
+ 	    Intent intent = new Intent(this, Srv.class);
+	    intent.setAction(Srv.UPDATE_REQUIRED);
+	    intent.putExtra("res", res);
+	    startService(intent);
 	} else if(res == 0) maps_avail = true;
     }
 
@@ -173,7 +165,8 @@ public class WeatherActivity extends AppCompatActivity
 	App.activity_visible = false;
     }
 
-//  private static NavigationView navigationView;
+
+    private static NavigationView navigationView;
     private static Menu navMenu;
     private static int menu_size;
     private static TextView tview;
@@ -189,6 +182,7 @@ public class WeatherActivity extends AppCompatActivity
 	    if(s != null) {	
 		int col = bundle.getInt("colour");	
 		String ss = String.format("<font color=#%06X>%s</font><br>", col, s);		
+		if(tview == null) tview = mainAct.findViewById(R.id.text_view_id);
 	 	tview.append(Html.fromHtml(ss));
 		return;
 	    }
@@ -198,6 +192,7 @@ public class WeatherActivity extends AppCompatActivity
 		// MUST restart service!
 		return;
 	    }
+	    if(navMenu == null) navMenu = navigationView.getMenu();
 	    for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
 	    if(result == Srv.RES_LIST) {
 		navMenu.getItem(cur_loc_menu_idx).setEnabled(false);	
@@ -241,6 +236,14 @@ public class WeatherActivity extends AppCompatActivity
 	    return;
         }
 
+/* 	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+	try {
+	    lm.addTestProvider("fake_provider", true, 
+		false, false, false, false, false, false, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);	
+	} catch(Exception e) { e.printStackTrace(); }
+	List<String> provs = lm.getAllProviders();
+	for(String s: provs) Log.d(TAG, "location provider: " + s); */
+
  	prefs = new Prefs();	// calls prefs.load();
 
 	App.activity_visible = true;
@@ -272,7 +275,7 @@ public class WeatherActivity extends AppCompatActivity
 //	drawer.openDrawer(android.view.Gravity.LEFT, true);
 //	drawer.openDrawer(GravityCompat.START, true);
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 	navMenu = navigationView.getMenu();
@@ -416,12 +419,9 @@ public class WeatherActivity extends AppCompatActivity
 		startActivity(i);
 		return true;	
 	    case R.id.action_restart:
-		i = new Intent(this, WidgetSmall.class);
-		i.setAction(WidgetProvider.ACTION_RESTART);
-		sendBroadcast(i);
-		i = new Intent(this, WidgetLarge.class);
-		i.setAction(WidgetProvider.ACTION_RESTART);
-		sendBroadcast(i);
+		i = new Intent(this, Srv.class);
+		i.setAction(Srv.WIDGET_RESTART_REQUIRED);
+		startService(i);
 		return true;
         }
         return super.onOptionsItemSelected(item);

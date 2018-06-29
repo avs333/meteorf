@@ -106,7 +106,7 @@ public class DataActivity extends AppCompatActivity {
 		if(wdata == null) 
 		*/
 		log_msg("getting weather for " + curStation.code);
-		wdata = Util.getWeather(curStation.code);
+		wdata = Util.getWeather(curStation);
 		log_msg("getting weather for " + curStation.code + " " + ((wdata == null) ? "failed" : "succeeded"));
 		if(wdata != null) meteodata = parseWeatherData(wdata);
 		else meteodata = null;
@@ -144,7 +144,7 @@ public class DataActivity extends AppCompatActivity {
 	    st = wi.get_date();
 	    if(st != null) {
 		if(wi.interpol_data) st += " (***)";
-		s += "<br><p><h2><i>" + st + "</i></h2>";
+		s += "<p><h3><i>" + st + "</i></h3>";
 	    } 
 
 	    val = wi.get_temperature();	
@@ -208,20 +208,6 @@ public class DataActivity extends AppCompatActivity {
         WeatherInfo wi;
         String s = "", st;
 
-/*
-	if(wd.for7days != null) {
-	    s += getString(R.string.weekly_data) + "\n";	
-	    for(int i = 0; i < wd.for7days.size(); i++) {
-		wi = wd.for7days.get(i);
-		if(wi == null || !wi.valid) continue;
-		st = parseWeatherInfo(wi);
-		if(st != null) {
-		    s += st; s += "<p>";
-		} 		
-	    }
-	    s += "<p>";
-	}
-*/
 	if(wd.observ != null && wd.observ.valid) { 
 	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.observ_data) + "</font></i></h2>";	
 	    st = parseWeatherInfo(wd.observ);
@@ -234,6 +220,18 @@ public class DataActivity extends AppCompatActivity {
 	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.daily_data) + "</font></i></h2>";	
 	    for(int i = 0; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
+		if(wi == null || !wi.valid) continue;
+		st = parseWeatherInfo(wi);
+		if(st != null) {
+		    s += st; s += "<p>";
+		} 		
+	    }
+	}
+
+	if(wd.for7days != null) {
+	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.weekly_data) + "</font></i></h2>";	
+	    for(int i = 0; i < wd.for7days.size(); i++) {
+		wi = wd.for7days.get(i);
 		if(wi == null || !wi.valid) continue;
 		st = parseWeatherInfo(wi);
 		if(st != null) {

@@ -18,6 +18,8 @@ import android.widget.RemoteViews;
 
 import java.util.Date;
 import java.util.List;
+
+// import android.graphics.Rect;
 		
 public abstract class WidgetProvider extends AppWidgetProvider {
 
@@ -98,6 +100,8 @@ public abstract class WidgetProvider extends AppWidgetProvider {
 	    case WEATHER_CHANGED_BROADCAST:
 	    case ACTION_LEFT_BROADCAST:	
 	    case ACTION_RIGHT_BROADCAST:	
+		// Rect r = intent.getSourceBounds();
+		// if(r != null) Log.d(TAG, String.format("rect (%d %d %d %d)", r.top, r.left, r.bottom, r.right));
 		hdl.post(new Runnable() { 
 		    public void run() { 
 			weather_update(action, cc); 

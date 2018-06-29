@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.io.FileInputStream; 
 import java.io.File;
 import java.net.HttpURLConnection;
@@ -12,6 +13,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +42,9 @@ import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.Log;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
 
 public class Util {
 
@@ -53,14 +58,22 @@ public class Util {
 
     public static final double inval_coord = -1000.0;
 
+// Our APIs:
+    public static final String URL_STA_LIST = "https://meteoinfo.ru/hmc-output/mobile/st_list.php";  // + query
+    public static final String URL_STA_DATA = "https://meteoinfo.ru/hmc-output/mobile/st_fc.php";    //?p=station
+    public static final String URL_WEATHER_DATA = "https://meteoinfo.ru/hmc-output/mobile/st_obsfc.php";    //?p=query&st=station
+
+// OSM APIs:
 // https://wiki.openstreetmap.org/wiki/Nominatim -- takes lat/lon coordinates, returns some human-readable
 // address in the proximity. NB: user-agent +must+ be specified (no permission otherwise), see getAddress() in Utils.
     public static final String URL_OSM_GEOCODING = "https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru,en"; // &lat=...&lon=...	
 
-    public static final String URL_STA_LIST = "https://meteoinfo.ru/hmc-output/mobile/st_list.php";  // + query
-    public static final String URL_STA_DATA = "https://meteoinfo.ru/hmc-output/mobile/st_fc.php";    //?p=station
-    public static final String URL_WEATHER_DATA = "https://meteoinfo.ru/hmc-output/mobile/st_obsfc.php";    //?p=query&st=station
-    public static final String GOOGLE_LL = "http://maps.googleapis.com/maps/api/geocode/json?latlng="; // lat,lon&language=
+// GOOGLE APIs:
+    public static final String GOOGLE_NM = "http://maps.googleapis.com/maps/api/geocode/json?latlng="; // lat,lon&language=
+
+// GEONAMES APIs:
+    public static final String URL_GEONAMES_NM = "http://api.geonames.org/findNearbyPlaceName?username=meteoinfo_ru&lang=local"; // &lat=...&lng...
+    public static final String URL_GEONAMES_TZ = "http://api.geonames.org/timezone?username=meteoinfo_ru"; // &lat=...&lng...
 
     public static final String STA_LIST_QUERY_PLAIN =	"?p=10"; // plain text list    
     public static final String STA_LIST_QUERY_MD5 = 	"?p=20"; // md5 sum of list
@@ -121,7 +134,7 @@ public class Util {
     private static final int COLOUR_DBG = WeatherActivity.COLOUR_DBG;      
 
     private static void log(int colour, String mesg) {
-	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
+	WeatherActivity.logUI(colour, mesg);
 	if(colour == COLOUR_ERR) Log.e(TAG, mesg);	
 	else Log.d(TAG, mesg);
     }
@@ -156,15 +169,23 @@ public class Util {
 
     private static String getShortStringFromURL(String url_str) {
         URL url;
-        HttpsURLConnection urlConnection = null;
+        HttpsURLConnection sconnection = null;
+        HttpURLConnection connection = null;
         InputStream in = null;
 	final int bufsz = 8*1024, len;
 	byte [] b = new byte[bufsz];
+	boolean use_https = url_str.startsWith("https");
         try {
             url = new URL(url_str);
-            urlConnection = (HttpsURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(SERVER_TIMEOUT);
-            in = new BufferedInputStream(urlConnection.getInputStream());
+	    if(use_https) {
+		sconnection = (HttpsURLConnection) url.openConnection();
+		sconnection.setReadTimeout(SERVER_TIMEOUT);
+		in = new BufferedInputStream(sconnection.getInputStream());
+	    } else {
+		connection = (HttpURLConnection) url.openConnection();
+		connection.setReadTimeout(SERVER_TIMEOUT);
+		in = new BufferedInputStream(connection.getInputStream());
+	    }
 	    len = in.read(b, 0, bufsz);
 	} catch (java.net.ConnectException c) {
 	    log(COLOUR_ERR, R.string.no_server_conn);
@@ -179,7 +200,8 @@ public class Util {
         } finally {
             try {
                 if(in != null) in.close();
-                if(urlConnection != null) urlConnection.disconnect();
+                if(sconnection != null) sconnection.disconnect();
+                if(connection != null) connection.disconnect();
             } catch (Exception e) {}
         }
 	if(len < 1) {
@@ -504,7 +526,7 @@ public class Util {
         JsonReader reader = null;
         String addr = null;
         try {
-	    String url_str = GOOGLE_LL + lat + "," + lon + "&sensor=false&language=ru"; // + (use_russian ? "ru" : "en");
+	    String url_str = GOOGLE_NM + lat + "," + lon + "&sensor=false&language=ru"; // + (use_russian ? "ru" : "en");
 //	    url_str += "&key=" + "AIzaSyAReLe7a8eqNswzVxIaVlj0n-EEYl0PN38";	
 
             URL url = new URL(url_str);
@@ -703,7 +725,7 @@ public class Util {
 	        if(type == WEATHER_REQ_7DAY) {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd", len);
 		    Date _date = in.parse(p[0]);
-		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMMM", loc);
+		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMM", loc);
 		    utc = _date.getTime(); 		    
 		    if(p[1].equals("night")) {
 			p[1] = new String(App.get_string(R.string.night));
@@ -857,25 +879,102 @@ public class Util {
 
     public static class WeatherData {
 	long sta_code = -1;
+	String tz = null;
+	String offset = null;
+	String sunrise = null;
+	String sunset = null;
 	WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
         ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
         ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
     }
 
-    synchronized public static WeatherData getWeather(long station_code) {
+    // Parse xml code in <str> seeking for <tags> and returning array
+    // of tag values at the same positions as in <tags> (all must be present). 
+    // No namespaces, etc. _Very_ rudimentary.
 
-	log(COLOUR_DBG, App.get_string(R.string.query_weather_data) + " " + station_code);
+    private static ArrayList<String> parse_xml_string(String str, ArrayList<String> tags) {	
+	if(str == null || tags == null || tags.size() == 0) return null;
+	try {
+	    ArrayList<String> ret = new ArrayList<String>(tags);
+	    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+	    XmlPullParser xpp = factory.newPullParser();
+	    xpp.setInput(new StringReader(str));
+	    int evt = xpp.getEventType();
+	    String tag_name = null;
+	    while(evt != XmlPullParser.END_DOCUMENT) {
+		switch(evt) {
+		    case XmlPullParser.START_TAG: tag_name = xpp.getName();
+		    case XmlPullParser.TEXT:
+			if(tag_name == null) break;			
+			int idx = tags.indexOf(tag_name);
+			if(idx < 0) break;
+			String s  = xpp.getText();	// fucking crap
+		        if(idx >= 0 && s != null && s.charAt(0) != 0xa) {
+	//		    Log.d(TAG,"idx=" + idx + ", set=" + s);
+			    ret.set(idx, new String(s));
+			}
+			break;
+		}
+		evt = xpp.next();
+	    }
+	    if(ret.size() != tags.size()) {
+		Log.e(TAG, "parse_xml_string: input/output size mismatch");
+		return null;
+	    } 
+	    for(String s : ret) {
+		if(s == null) {
+		    Log.e(TAG, "parse_xml_string: tag values missing");
+		    return null;
+		}
+	    }		
+	    return ret;
+	} catch (Exception e) {
+	    e.printStackTrace();	
+	    return null;
+	}
+    }
 
-	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station_code);
-	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station_code);
-	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station_code);
+    private static final String[] tags_tz = { "rawOffset", "timezoneId", "sunrise", "sunset" } ;
+    private static final ArrayList<String> xml_tags_tz = new ArrayList<String>(Arrays.asList(tags_tz));	
+//  private final String[] tags_name = { "name" };
+//  private final ArrayList<String> xml_tags_name = new ArrayList<String>(Arrays.asList(tags_name));
+
+    synchronized public static WeatherData getWeather(Station station) {
+
+	log(COLOUR_DBG, App.get_string(R.string.query_weather_data) + " " + station.code);
+
+	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station.code);
+	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station.code);
+	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station.code);
 
 	if(so == null /* && s7 == null */ && s3 == null) {
-	    log(COLOUR_ERR, App.get_string(R.string.no_weather_data) + " " + station_code);
+	    log(COLOUR_ERR, App.get_string(R.string.no_weather_data) + " " + station.code);
 	    return null;
 	}
 	WeatherData ret = new WeatherData();
-	ret.sta_code = station_code;
+	ret.sta_code = station.code;
+
+	if(Srv.use_geonames) {
+	    ArrayList<String> al = null;	
+	    String s;	
+	    String timezone_xml = getShortStringFromURL(URL_GEONAMES_TZ + "&lat=" + station.latitude + "&lng=" + station.longitude);
+	    if(timezone_xml != null) {
+		Log.d(TAG, "got timezone from api.geonames.org");
+		al = parse_xml_string(timezone_xml, xml_tags_tz);
+		if(al != null) {
+		   ret.offset = al.get(0);
+		   log(COLOUR_INFO, "офсет=" + ret.offset); 
+		   ret.tz = al.get(1);
+		   log(COLOUR_INFO, "tz=" + ret.tz); 
+		   ret.sunrise= al.get(2);
+		   log(COLOUR_INFO, "восход=" + ret.sunrise); 
+		   ret.sunset = al.get(3);
+		   log(COLOUR_INFO, "закат=" + ret.sunset); 
+		}
+	    }
+	  //  String name_xml = getShortStringFromURL(URL_GEONAMES_NM + "&lat=" + station.latitude + "&lng=" + station.longitude);
+	}
+	
 
 	if(so != null && !so.isEmpty()) {
 	    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_OBSERV, so);
@@ -907,8 +1006,10 @@ public class Util {
 	    }	
 	    if(ret.for3days.size() > 0) {
 		log(COLOUR_DBG, R.string.hourly_data_okay);
-		if(WeatherInfo.interpol(ret.for3days, null)) log(COLOUR_GOOD, R.string.data_obtained_processed);
-		else log(COLOUR_ERR, R.string.data_process_error);  
+		if(Srv.use_interp) {
+		    if(WeatherInfo.interpol(ret.for3days, null)) log(COLOUR_GOOD, R.string.data_obtained_processed);
+		    else log(COLOUR_ERR, R.string.data_process_error);
+		}  
 	    } else log(COLOUR_ERR, R.string.hourly_data_bad);	
 	} else log(COLOUR_ERR, R.string.hourly_data_bad);
 

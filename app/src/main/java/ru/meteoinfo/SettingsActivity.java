@@ -21,6 +21,10 @@ public class SettingsActivity extends PreferenceActivity
     private static SharedPreferences settings;
 
     public static final boolean DFL_USE_GPS = false;
+    public static final boolean DFL_SHOW_STA = true;
+    public static final boolean DFL_USE_INTERP = true;
+    public static final boolean DFL_USE_GEONAMES = true;
+
     public static final int DFL_VERBOSE = 1; 	
     public static final int DFL_ADDR_SRC = 0; 	
     public static final int DFL_LOC_UPDATE_INTERVAL = 60; 	
@@ -118,9 +122,14 @@ public class SettingsActivity extends PreferenceActivity
 //        use_offline_maps.setKey("use_offline_maps");
 //        basePrefCat.addPreference(use_offline_maps);
 
+
+
+
+
         CheckBoxPreference use_gps = new CheckBoxPreference(this);
         use_gps.setTitle(R.string.pref_use_gps);
         use_gps.setKey("use_gps");
+	use_gps.setChecked(settings.getBoolean("use_gps", DFL_USE_GPS));
         basePrefCat.addPreference(use_gps);
 
 	final ListPreference verbose = new ListPreference(this);
@@ -133,6 +142,18 @@ public class SettingsActivity extends PreferenceActivity
 	    R.array.addr_names, R.array.vals123, DFL_ADDR_SRC);
         basePrefCat.addPreference(addr_source);
 
+
+	CheckBoxPreference use_interp = new CheckBoxPreference(this);
+	use_interp.setTitle(R.string.pref_use_interp);
+	use_interp.setKey("use_interp");
+	use_interp.setChecked(settings.getBoolean("use_interp", DFL_USE_INTERP));
+        basePrefCat.addPreference(use_interp);
+
+        CheckBoxPreference use_geonames = new CheckBoxPreference(this);
+        use_geonames.setTitle(R.string.pref_use_geonames);
+        use_geonames.setKey("use_geonames");
+	use_geonames.setChecked(settings.getBoolean("use_geonames", DFL_USE_GEONAMES));
+        basePrefCat.addPreference(use_geonames);
 
 	final ListPreference loc_updates = new ListPreference(this);
 	setupListPreference(loc_updates, R.string.pref_loc_updates, "loc_update_interval", 
@@ -171,6 +192,7 @@ public class SettingsActivity extends PreferenceActivity
         CheckBoxPreference wd_show_sta = new CheckBoxPreference(this);
         wd_show_sta.setTitle(R.string.wd_show_sta);
         wd_show_sta.setKey("wd_show_sta");
+//      wd_show_sta.setDefaultVaule(DFL_SHOW_STA);
         widgetPrefCat.addPreference(wd_show_sta);
 
         return root;

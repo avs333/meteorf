@@ -27,7 +27,7 @@
     <string name="all_data">Подробный прогноз погоды</string>
     <string name="observ_data">Наблюдения за последние 6 часов</string>
     <string name="daily_data">Почасовой прогноз на 3 дня</string>
-    <string name="weekly_data">Прогноз на 7 дней</string>
+    <string name="weekly_data">Недельный прогноз</string>
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
@@ -51,6 +51,8 @@
     <string name="pref_addr_source">Доп. данные о местонахождении</string>
     <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
     <string name="pref_use_gps">Использовать GPS</string>
+    <string name="pref_use_interp">Детализация прогнозов</string>
+    <string name="pref_use_geonames">Доп. данные о временных зонах</string>
     <string name="pref_loc_updates">Интервал обновления координат</string>
     <string name="pref_wth_updates">Интервал обновления погоды</string>
     <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>

@@ -27,7 +27,7 @@
     <string name="all_data">Подробный прогноз погоды</string>
     <string name="observ_data">Наблюдения за последние 6 часов</string>
     <string name="daily_data">Почасовой прогноз на 3 дня</string>
-    <string name="weekly_data">Прогноз на 7 дней</string>
+    <string name="weekly_data">Недельный прогноз</string>
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>

@@ -28,9 +28,6 @@ public class WidgetLarge extends WidgetProvider {
 	return new RemoteViews(context.getPackageName(), R.layout.widget_layout_large);
     }
 
-    private static boolean wd_show_sta = false;
-    protected static SharedPreferences settings = null;
-
     @Override
     public void set_size() {
 	large_widget = false;
@@ -97,38 +94,33 @@ public class WidgetLarge extends WidgetProvider {
 	    return;
 	}
 
-	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(context);
-	String fg_colour = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
-	String bg_colour = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
-	wd_show_sta = settings.getBoolean("wd_show_sta", false);
-
 	views = get_views(context);
 
 	int fg, bg;
 	try {
-	    fg = (int) Long.parseLong(fg_colour, 16);
+	    fg = (int) Long.parseLong(Srv.fg_colour, 16);
 	} catch(Exception e) { 
 	    fg = 0xffffffff;
 	    Log.e(TAG, "fg: NumberFormatException in settings_update()" + fg);
 	}
 
 	try {
-	    bg = (int) Long.parseLong(bg_colour, 16);
+	    bg = (int) Long.parseLong(Srv.bg_colour, 16);
 	} catch(Exception e) { 
 	    bg = 0;
 	    Log.e(TAG, "bg: NumberFormatException in settings_update()" + bg);
 	}
 
-	Log.d(TAG, String.format("settings_update: fg=%08x bg=%08x " + wd_show_sta, fg, bg));
+	Log.d(TAG, String.format("settings_update: fg=%08x bg=%08x " + Srv.wd_show_sta, fg, bg));
 	Station st = Srv.getCurrentStation();
 	String addr = null;
 	String va[] = null;
 	if(st != null) {
-	    if(wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
+	    if(Srv.wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
 	    else addr = st.shortname;
 	}
 
-	Log.d(TAG, "show_sta=" + wd_show_sta + ", addr=" + addr);
+	Log.d(TAG, "show_sta=" + Srv.wd_show_sta + ", addr=" + addr);
 	views.setTextColor(R.id.w_temp, fg);
 	views.setTextColor(R.id.w_addr, fg);
 	views.setTextColor(R.id.w_pressure, fg);
@@ -181,7 +173,7 @@ public class WidgetLarge extends WidgetProvider {
 	Station st = Srv.getCurrentStation();
 	String addr = null;
 	if(st != null) {
-	    if(wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
+	    if(Srv.wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
 	    else addr = st.shortname;
 	} else Log.d(TAG, "weather_update: no current station yet");
 
