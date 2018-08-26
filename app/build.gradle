@@ -8,8 +8,8 @@ android {
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        vectorDrawables.useSupportLibrary = true
+    //    testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    //    vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {
@@ -34,11 +34,12 @@ android {
 
 }
 
-//repositories {
+repositories {
 //    maven {
 //        url "http://maven.google.com/"
 //    }
-//}
+	mavenCentral()
+}
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -66,5 +67,5 @@ dependencies {
 //    implementation 'org.mapsforge:mapsforge-map-android:0.9.1'
 
 //    implementation 'net.sf.kxml:kxml2:2.3.0'
-
+    implementation 'com.luckycatlabs:SunriseSunsetCalculator:1.2'
 }

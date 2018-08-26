@@ -141,7 +141,7 @@ public class DataActivity extends AppCompatActivity {
 	String s = "", st;
 	double val, val2, val3;
 
-	    st = wi.get_date();
+	    st = wi.get_formatted_date();
 	    if(st != null) {
 		if(wi.interpol_data) st += " (***)";
 		s += "<p><h3><i>" + st + "</i></h3>";

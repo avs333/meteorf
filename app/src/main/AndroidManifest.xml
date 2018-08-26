@@ -14,10 +14,10 @@
     <application
 
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/logo_hmc"
         android:label="@string/app_name"
 	android:name=".App"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/logo_hmc"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
@@ -73,17 +73,27 @@
 
 	<!-- widget stuff -->
 
-	<receiver android:name=".WidgetSmall" >
+<!--
+	<receiver android:name=".widgets.WidgetSmall" >
 	    <meta-data android:name="android.appwidget.provider"
 		android:resource="@xml/widget_small" />
 	    <intent-filter>
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 	    </intent-filter>
 	</receiver>
+-->
 
-	<receiver android:name=".WidgetLarge" >
+	<receiver android:name=".widgets.WidgetSmall2" >
 	    <meta-data android:name="android.appwidget.provider"
-		android:resource="@xml/widget_large" />
+		android:resource="@xml/widget_small2" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+	    </intent-filter>
+	</receiver>
+
+	<receiver android:name=".widgets.WidgetLarge2" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/widget_large2" />
 	    <intent-filter>
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 	    </intent-filter>

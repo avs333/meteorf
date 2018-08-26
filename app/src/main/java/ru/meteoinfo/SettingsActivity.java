@@ -21,9 +21,9 @@ public class SettingsActivity extends PreferenceActivity
     private static SharedPreferences settings;
 
     public static final boolean DFL_USE_GPS = false;
-    public static final boolean DFL_SHOW_STA = true;
-    public static final boolean DFL_USE_INTERP = true;
-    public static final boolean DFL_USE_GEONAMES = true;
+    public static final boolean DFL_SHOW_STA = false;
+    public static final boolean DFL_USE_INTERP = false;
+    public static final boolean DFL_USE_GEONAMES = false;
 
     public static final int DFL_VERBOSE = 1; 	
     public static final int DFL_ADDR_SRC = 0; 	
@@ -192,7 +192,7 @@ public class SettingsActivity extends PreferenceActivity
         CheckBoxPreference wd_show_sta = new CheckBoxPreference(this);
         wd_show_sta.setTitle(R.string.wd_show_sta);
         wd_show_sta.setKey("wd_show_sta");
-//      wd_show_sta.setDefaultVaule(DFL_SHOW_STA);
+	wd_show_sta.setChecked(settings.getBoolean("wd_show_sta", DFL_SHOW_STA));
         widgetPrefCat.addPreference(wd_show_sta);
 
         return root;

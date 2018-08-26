@@ -130,7 +130,7 @@
 
     <string name="too_windy">Слишком ветрено: от %.1f до %.1f</string>
 
-    <string name="wd_pressure_short">Давление: %d</string>
+    <string name="wd_md">День/месяц</string>
     <string name="wd_wind_short">Ветер: %s, %.1f м/с</string>
     <string name="wd_precip_short">Осадки: %.1f мм/ч</string>
     <string name="wd_humidity_short">Влажность: %.1f%%</string>
@@ -148,7 +148,11 @@
 
     <string name="wd_font_colour">Цвет текста</string>
     <string name="wd_back_colour">Цвет фона</string>
+    <string name="wd_bfont_colour">Цвет текста кнопок</string>
+    <string name="wd_bback_colour">Цвет фона кнопок</string>
+
     <string name="wd_show_sta">Номер станции</string>
+
     <string name="email_subject">О программе/виджете под Android</string>
 
     <string name="srv_weather_update">Новые данные о погоде</string>

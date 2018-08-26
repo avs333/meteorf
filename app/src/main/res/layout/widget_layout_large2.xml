@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_grid"	
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/w_addr"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+	android:layout_gravity="center_horizontal"
+        android:text="@string/loc_unk_yet"
+        android:textSize="18sp"
+        android:textStyle="italic" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        xmlns:tools="http://schemas.android.com/tools">
+       
+        <Button
+            android:id="@+id/w_left"
+            android:layout_width="20dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="&lt;" />
+    
+        <ImageView
+            android:id="@+id/w_info"
+            tools:scaleType="centerInside"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill"
+            android:layout_weight="1"
+            android:src="@drawable/no_data" />
+    
+        <TextView
+            android:id="@+id/w_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+	    android:text="@string/wd_unk_temp"	
+            android:layout_weight="1"
+            android:textSize="34dp" />
+       
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+	    android:layout_gravity="center_vertical"
+            android:layout_weight="1">
+    
+            <TextView
+                android:id="@+id/w_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/wd_md"
+                android:textSize="13sp" />
+    
+            <TextView
+                android:id="@+id/w_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HH:MM"
+                android:textSize="20sp" />
+        
+        </LinearLayout>
+    
+        <Button
+            android:id="@+id/w_right"
+            android:layout_width="20dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="&gt;" />
+    
+    </LinearLayout>
+
+  <GridLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:useDefaultMargins="false"
+    android:columnCount="2"
+    android:rowCount="2"
+    android:layout_gravity="fill"
+    >
+
+    <TextView
+        android:id="@+id/w_pressure"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dip"
+        android:layout_marginLeft="8dip"
+        android:textSize="14sp" />
+    <TextView
+        android:id="@+id/w_wind"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dip"
+        android:layout_marginLeft="8dip"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/w_humidity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dip"
+        android:layout_marginLeft="8dip"
+        android:textSize="14sp" />
+    <TextView
+        android:id="@+id/w_precip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dip"
+        android:layout_marginLeft="8dip"
+        android:textSize="14sp" />
+  </GridLayout>
+
+</LinearLayout>
+
+
+

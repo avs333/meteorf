@@ -166,7 +166,6 @@ public class WeatherActivity extends AppCompatActivity
     }
 
 
-    private static NavigationView navigationView;
     private static Menu navMenu;
     private static int menu_size;
     private static TextView tview;
@@ -176,13 +175,14 @@ public class WeatherActivity extends AppCompatActivity
 	@Override
 	public void handleMessage(Message msg) {
 	    super.handleMessage(msg);
+	    if(!App.activity_visible) return;	
 	    Bundle bundle = msg.getData();
 	    if(bundle == null) return;
 	    String s = bundle.getString("mesg");
 	    if(s != null) {	
+		if(tview == null) return;
 		int col = bundle.getInt("colour");	
 		String ss = String.format("<font color=#%06X>%s</font><br>", col, s);		
-		if(tview == null) tview = mainAct.findViewById(R.id.text_view_id);
 	 	tview.append(Html.fromHtml(ss));
 		return;
 	    }
@@ -192,7 +192,7 @@ public class WeatherActivity extends AppCompatActivity
 		// MUST restart service!
 		return;
 	    }
-	    if(navMenu == null) navMenu = navigationView.getMenu();
+	    if(navMenu == null) return;
 	    for(int i = 0; i < menu_size; i++) navMenu.getItem(i).setEnabled(true);
 	    if(result == Srv.RES_LIST) {
 		navMenu.getItem(cur_loc_menu_idx).setEnabled(false);	
@@ -226,6 +226,7 @@ public class WeatherActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         mainAct = this;
+	App.activity_visible = false;
 
         ConnectivityManager cman = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         if (cman == null || cman.getActiveNetworkInfo() == null) {
@@ -236,17 +237,7 @@ public class WeatherActivity extends AppCompatActivity
 	    return;
         }
 
-/* 	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-	try {
-	    lm.addTestProvider("fake_provider", true, 
-		false, false, false, false, false, false, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);	
-	} catch(Exception e) { e.printStackTrace(); }
-	List<String> provs = lm.getAllProviders();
-	for(String s: provs) Log.d(TAG, "location provider: " + s); */
-
  	prefs = new Prefs();	// calls prefs.load();
-
-	App.activity_visible = true;
 
         Locale loc = /* use_russian ? new Locale("ru", "RU") : */ new Locale("en", "US");
         Locale.setDefault(loc);
@@ -275,11 +266,13 @@ public class WeatherActivity extends AppCompatActivity
 //	drawer.openDrawer(android.view.Gravity.LEFT, true);
 //	drawer.openDrawer(GravityCompat.START, true);
 
-        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 	navMenu = navigationView.getMenu();
 	menu_size = navMenu.size();
+
+	App.activity_visible = true;
 
 	if(App.service_started) logUI(COLOUR_INFO, R.string.srv_running);
 	

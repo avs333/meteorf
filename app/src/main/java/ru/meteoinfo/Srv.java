@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
+import ru.meteoinfo.widgets.WidgetProvider;
 
 public class Srv extends Service {
 
@@ -55,8 +56,8 @@ public class Srv extends Service {
 
     public static final String WIDGET_RESTART_REQUIRED = "widget_restart_required";
 
-    private static final int init_attempts = 4;
-    private static final long init_attempts_delay = 30 * 1000;
+    private static final int init_attempts = 150;
+    private static final long init_attempts_delay = 5 * 1000;
 
     private static boolean widget_installed = false;    // true if at least one widget instance is installed
     private static boolean widget_updated = false;
@@ -94,8 +95,8 @@ public class Srv extends Service {
     public static WeatherData getLocalWeather() { return localWeather; }
 
     private static void log(int colour, String mesg) {
-	// if(App.activity_visible) 
-	WeatherActivity.logUI(colour, mesg);
+	if(mesg == null) return;
+	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
 	if(colour == COLOUR_ERR) Log.e(TAG, mesg);
 	else Log.d(TAG, mesg);
     }
@@ -113,7 +114,7 @@ public class Srv extends Service {
 	return null;
     }
 
-    /*  Three init stages:
+    /*  Three init stages (should be enum):
 	0: uninitialised
 	1: station list known
 	2: current location known */
@@ -125,22 +126,28 @@ public class Srv extends Service {
 	
     private void send_init_result(int res) {
 	if(App.activity_visible) {
-	    log(COLOUR_DBG, "Activity: stage " + res + " passed");	
-	    Message msg = new Message();
-	    Bundle b = new Bundle();
-	    b.putInt("init_complete", res);
-	    msg.setData(b);
-	    WeatherActivity.ui_update.sendMessage(msg);		
+	    try {	
+		log(COLOUR_DBG, "Activity: stage " + res + " passed");	
+		Message msg = new Message();
+		Bundle b = new Bundle();
+		b.putInt("init_complete", res);
+		msg.setData(b);
+		WeatherActivity.ui_update.sendMessage(msg);
+	    } catch (Exception e){
+		e.printStackTrace();
+	    }		
 	}
     }
 
     static Context context = App.getContext();
+
     private void notify_widgets(String action) {
-	Intent intent1 = new Intent(context, WidgetSmall.class);
+	if(action == null) return;
+	Intent intent1 = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
 	intent1.setAction(action);
-	Intent intent2 = new Intent(context, WidgetLarge.class);
-	intent2.setAction(action);
 	sendBroadcast(intent1);
+	Intent intent2 = new Intent(context, ru.meteoinfo.widgets.WidgetSmall2.class);
+	intent2.setAction(action);
 	sendBroadcast(intent2);
     }
 
@@ -150,12 +157,12 @@ public class Srv extends Service {
     public void onCreate() {
 	super.onCreate();
 
-	ComponentName wc = new ComponentName(this, "ru.meteoinfo.WidgetSmall");
+	ComponentName wc = new ComponentName(this, "ru.meteoinfo.widgets.WidgetLarge2");
 	AppWidgetManager man = AppWidgetManager.getInstance(this);
 	int ids[] = man.getAppWidgetIds(wc);
 	widget_installed = (ids != null && ids.length > 0);
 	if(!widget_installed) {
-	    wc = new ComponentName(this, "ru.meteoinfo.WidgetLarge");
+	    wc = new ComponentName(this, "ru.meteoinfo.widgets.WidgetSmall2");
 	    ids = man.getAppWidgetIds(wc);
 	    widget_installed = (ids != null && ids.length > 0);
 	}
@@ -169,8 +176,8 @@ public class Srv extends Service {
 		int i;
 		synchronized(wt_obj) {
 		    for(i = 0; i < init_attempts; i++) {
-			if(Util.getStations()) break;
 			try {
+			    if(Util.getStations()) break;
 			    log(COLOUR_DBG, "attempt " + i + " failed, retrying after " + init_attempts_delay + "ms");
 			    wt_obj.wait(init_attempts_delay);
 			} catch(Exception e) { Log.e(TAG, "exception in wait()"); }	
@@ -221,18 +228,24 @@ public class Srv extends Service {
 		loc_client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
 		    @Override
 		    public void onComplete(Task<Location> task) {
-			if(!task.isSuccessful() || task.getResult() == null) {
+			if(task == null || !task.isSuccessful() || task.getResult() == null) {
 			    log(COLOUR_ERR, "getLastLocation() failed");
 			    return;
 			}
 			synchronized(lock_loc_update) {
-			    currentLocation = task.getResult();
-			    if(currentLocation == null) return;
-			    currentStation = Util.getNearestStation(currentLocation.getLatitude(), 
+			    try{
+				currentLocation = task.getResult();
+				if(currentLocation == null) return;
+				currentStation = Util.getNearestStation(currentLocation.getLatitude(), 
 				currentLocation.getLongitude());
-			    if(currentStation != lastStation) {
-				lastStation = currentStation;
-				log(COLOUR_INFO, App.get_string(R.string.sta_changed) + " " + currentStation.code);
+				if(currentStation != lastStation) {
+				    lastStation = currentStation;
+				    log(COLOUR_INFO, App.get_string(R.string.sta_changed) + " " + currentStation.code);
+				}
+			    } catch(Exception e) {
+				e.printStackTrace();
+			    	log(COLOUR_ERR, "getLastLocation(): exception");
+				return;
 			    }
 			}
 			if(cur_res_level < RES_LOC) {	// Stage 2
@@ -246,7 +259,7 @@ public class Srv extends Service {
 	    }
 	    loc_fix = false;
 	    wth_fix = false;
-	    start_location_updates(true);
+	    start_location_updates(true);	
 	    if(widget_installed) start_weather_updates(true);
 	}
     }
@@ -260,10 +273,14 @@ public class Srv extends Service {
 	LocationRequest loc_req = new LocationRequest();
 	loc_req.setPriority(loc_priority);
 	loc_req.setInterval(interval);
-//	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
+	loc_req.setFastestInterval(LOC_FASTEST_UPDATE_INTERVAL);
 	loc_req.setFastestInterval(interval/4);	// Samsung Galaxy S9
-	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
+//	loc_req.setSmallestDisplacement(LOC_MIN_DISPLACEMENT);
 	if(loc_client == null) loc_client = LocationServices.getFusedLocationProviderClient(this);
+	if(loc_client == null) {
+	    Log.e(TAG, "getFusedLocationProviderClient returned null");
+	    return;
+	}
 	loc_client.requestLocationUpdates(loc_req, pint_location);
 	log(COLOUR_DBG, "location updates restarted at " + interval/1000 + " sec intervals");
     }
@@ -274,6 +291,10 @@ public class Srv extends Service {
 	intent.setAction(WEATHER_UPDATE);
 	pint_weather = PendingIntent.getService(this, 0, intent, 0);	
 	AlarmManager amgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+	if(amgr == null) {
+	    Log.e(TAG, "start_weather_updates: alarm manager is null");
+	    return;
+	}
 	amgr.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
 	    SystemClock.elapsedRealtime(), interval, pint_weather);
 	log(COLOUR_DBG, "weather updates restarted at " + interval/1000 + " sec intervals");
@@ -317,7 +338,7 @@ public class Srv extends Service {
 
 		if(result != null) loc = result.getLastLocation();
 		if(loc == null) {
-		    log(COLOUR_DBG, "null location received");
+		    log(COLOUR_DBG, "null location received in getLastLocation()");
 		    break;
 		}
 
@@ -328,8 +349,10 @@ public class Srv extends Service {
 		    long tdiff = cur_ltime - last_loc_update_time;	
 		    long delta = loc_fix ? loc_update_interval/4 : init_loc_update_interval/4;
 		    if(tdiff < delta && currentLocation != null) {
-			log(COLOUR_DBG, "too fast location update request after " + tdiff + "ms, ignored");
-			break;
+			if(loc_fix) {
+			    log(COLOUR_DBG, "too fast location update request after " + tdiff + "ms, ignored");
+			    break;
+			}
 		    }
 		    currentLocation = loc;
 		    currentStation = Util.getNearestStation(loc.getLatitude(), loc.getLongitude());
@@ -342,7 +365,7 @@ public class Srv extends Service {
 		}
 
 		if(!loc_fix) {
-		    start_location_updates(false);
+		    start_location_updates(false);	
 		    loc_fix = true;
 		}
 
@@ -363,7 +386,7 @@ public class Srv extends Service {
 		log(COLOUR_DBG, R.string.srv_weather_update);
 		if(!wth_fix) {
 		    start_weather_updates(false);
-		    wth_fix = true;
+		    wth_fix = true;	
 		}
 		break;
 
@@ -372,6 +395,7 @@ public class Srv extends Service {
 		widget_installed = true;
 		widget_updated = false;
 		wth_fix = false;
+		updateLocalWeather(true);
 		start_weather_updates(true);
 		break;		
 
@@ -437,7 +461,13 @@ public class Srv extends Service {
 		    log(COLOUR_DBG, "updating local weather for station " + currentStation.code);
 		    localWeather = Util.getWeather(currentStation);
 		    if(widget_installed && localWeather != null) {
-			notify_widgets(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+			try {
+			    notify_widgets(WidgetProvider.WEATHER_CHANGED_BROADCAST);
+			} catch (Exception e) {
+			    log(COLOUR_DBG, "failed to notify widgets!");
+			    e.printStackTrace();
+			    return;	
+			}
 			widget_updated = true;
 		    } else if(localWeather == null) Log.e(TAG, "getWeather returned null!");
 		}
@@ -449,13 +479,18 @@ public class Srv extends Service {
 
     public static void read_prefs() {
 	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
+	if(settings == null) {
+	    log(COLOUR_DBG, "failed to read prefs");
+	    return;
+	}
 	use_gps = settings.getBoolean("use_gps", SettingsActivity.DFL_USE_GPS);
 	use_geonames = settings.getBoolean("use_geonames", SettingsActivity.DFL_USE_GEONAMES);
         use_interp = settings.getBoolean("use_interp", SettingsActivity.DFL_USE_INTERP);
 
         fg_colour = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
         bg_colour = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
-        wd_show_sta = settings.getBoolean("wd_show_sta", false);
+
+        wd_show_sta = settings.getBoolean("wd_show_sta", SettingsActivity.DFL_SHOW_STA);
 
 	loc_priority = use_gps ? LocationRequest.PRIORITY_HIGH_ACCURACY : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
 	loc_update_interval = settings.getInt("loc_update_interval", SettingsActivity.DFL_LOC_UPDATE_INTERVAL) * 1000;

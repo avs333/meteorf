@@ -18,6 +18,7 @@ import java.util.Locale;
 import java.util.List;
 import java.util.Set;
 import java.util.Date;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.TimeZone; 
 import android.annotation.SuppressLint;
@@ -44,6 +45,9 @@ import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
+
+import com.luckycatlabs.sunrisesunset.*;
+
 
 
 public class Util {
@@ -92,6 +96,7 @@ public class Util {
     public static final int GOOGLE_TIMEOUT = 60000;	// let's take a minute for RKN	
     public static final int OMS_TIMEOUT = 20000;	// on very slow connections
     public static final int SERVER_TIMEOUT = 20000;	// on very slow connections
+    public static final int SERVER_CONN_TIMEOUT = 2000;	// for geonames
 
 
 /*  No class declarations in java, here's what we define:
@@ -102,14 +107,14 @@ public class Util {
     private static ArrayList<Station> fullStationList = null;
 
     public static class Station {
-        String name = null;
-        String country = null;
-        String name_p = null;
-	String shortname = null;
-        long code = -1;
-	long wmo = -1;	
-        double latitude  = inval_coord;
-        double longitude = inval_coord;
+        public String name = null;
+        public String country = null;
+        public String name_p = null;
+	public String shortname = null;
+        public long code = -1;
+	public long wmo = -1;	
+        public double latitude  = inval_coord;
+        public double longitude = inval_coord;
         @Override
         public String toString() {	// override for ListAdapter
             return name_p;
@@ -134,7 +139,7 @@ public class Util {
     private static final int COLOUR_DBG = WeatherActivity.COLOUR_DBG;      
 
     private static void log(int colour, String mesg) {
-	WeatherActivity.logUI(colour, mesg);
+	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
 	if(colour == COLOUR_ERR) Log.e(TAG, mesg);	
 	else Log.d(TAG, mesg);
     }
@@ -175,6 +180,8 @@ public class Util {
 	final int bufsz = 8*1024, len;
 	byte [] b = new byte[bufsz];
 	boolean use_https = url_str.startsWith("https");
+	if(url_str == null) return null;
+	long start = System.currentTimeMillis(); 
         try {
             url = new URL(url_str);
 	    if(use_https) {
@@ -184,17 +191,18 @@ public class Util {
 	    } else {
 		connection = (HttpURLConnection) url.openConnection();
 		connection.setReadTimeout(SERVER_TIMEOUT);
+		connection.setConnectTimeout(SERVER_CONN_TIMEOUT);
 		in = new BufferedInputStream(connection.getInputStream());
 	    }
 	    len = in.read(b, 0, bufsz);
 	} catch (java.net.ConnectException c) {
-	    log(COLOUR_ERR, R.string.no_server_conn);
+	    log(COLOUR_ERR, url_str + ": " + App.get_string(R.string.no_server_conn));
 	    return null;	
 	} catch(java.net.SocketTimeoutException je) {
-	    log(COLOUR_ERR, URL_STA_LIST + ": " + App.get_string(R.string.read_timeout));
+	    log(COLOUR_ERR, url_str + ": " + App.get_string(R.string.read_timeout));
 	    return null;		
         } catch (Exception e) {
-	    log(COLOUR_ERR, R.string.err_exception);	
+	    log(COLOUR_ERR, url_str + ": " + App.get_string(R.string.err_exception));
             e.printStackTrace();
 	    return null;	
         } finally {
@@ -202,12 +210,18 @@ public class Util {
                 if(in != null) in.close();
                 if(sconnection != null) sconnection.disconnect();
                 if(connection != null) connection.disconnect();
-            } catch (Exception e) {}
+            } catch (Exception e) {
+	        e.printStackTrace();
+		log(COLOUR_ERR, "getShortStringFromURL: exception in final block");
+		return null;	
+	    }
         }
 	if(len < 1) {
-	//  log(COLOUR_ERR, R.string.empty_string);	
+	    log(COLOUR_ERR, R.string.empty_string);	
 	    return null;
 	}	
+	long end = System.currentTimeMillis();
+	Log.d(TAG, "url: " + url_str + " received in " + (end - start) + "ms");
 	String ret = new String(b);
 	ret = ret.substring(0, len);
 	return ret;
@@ -442,7 +456,7 @@ public class Util {
     }	
 
     public static ArrayList<Station> getMatchingStationsList(String pattern) {
-	if(fullStationList == null) return null;	
+	if(fullStationList == null || pattern == null) return null;	
         ArrayList<Station> stations = new ArrayList<>();
 	int i;
 	String pat = pattern.toLowerCase(java.util.Locale.US);
@@ -458,7 +472,7 @@ public class Util {
 
     public static Station getFavStation(String fav) {
         try {
-	    if(fullStationList == null) return null;	
+	    if(fullStationList == null || fav == null) return null;	
             long k = Long.parseLong(fav);
             for(int i = 0; i < Util.fullStationList.size(); i++) {
                 Station st = Util.fullStationList.get(i);
@@ -597,53 +611,85 @@ public class Util {
 
 	private int type = -1;
 	private long utc = 0;
+	private long start_utc = 0;	// corresponds to 00:00 of utc above
+
         public boolean valid = false;
 
 	// debug only: interpolated weather
 	public boolean interpol_data = false;
 
 	private String date = null;
+	private String time = null;
+
 	private double pressure = -1, temperature = inval_temp, 
 		wind_dir = -1, wind_speed = -1, precip = -1, 
 		precip3h = -1, precip6h = -1, precip12h = -1, 
 		humidity = -1, visibility = -1, clouds = -1, gusts = -1;
 	private int info = -1;
 
-	// for WEATHER_REQ_7DAY only so far.
+	public int gettype() { return type; }
+
+	// for WEATHER_REQ_7DAY and WEATHER_REQ_3DAY only
 	private boolean night = true;
+	public boolean is_night() { return night; }	
 
 	// "yyyy-MM-dd HH:mm UTC"
-	public int gettype() { return type; }
 	public String get_date() { return date; } 
+	public String get_time() { return time; } 
+	public String get_formatted_date() {
+	    if(type == WEATHER_REQ_7DAY) return date + ", " + time;
+	    return time + " " + date;	
+	}	
+
 	public long get_utc() { return utc; } 
+	public long get_start_utc() { return start_utc; }
 	public double get_pressure() { return pressure; }
 	public double get_temperature() { return temperature; }
 	public double get_wind_dir() { return wind_dir; }
 	public double get_wind_speed() { return wind_speed; }
 	public int get_info() { return info; }
-	public String get_info_string() { 
+
+	public String get_info_string() {
 	    if(info == -1) return null;	
 	    String ret = null;
 	    try {
 	 	switch(type) {
 		    case WEATHER_REQ_OBSERV: ret = new String(weatherCodesObserv[info]); break;
 		    case WEATHER_REQ_7DAY: ret = new String(weatherCodes7day[info]); break;
-		    case WEATHER_REQ_3DAY: break; // ?????
+		    case WEATHER_REQ_3DAY: ret = new String(Integer.toString(info)); break;
 		}
 	    } catch (Exception e) { Log.e(TAG, "exception in get_info_string()"); }
 	    return ret; 
 	} 
+
 	public String get_icon_name() {
-	    if(info == -1 || type != WEATHER_REQ_7DAY) return null;
-	    String resname = null;	
+	    if(info == -1) return null;
+	    String resname = null;
+	    int ret = -1;		
 	    try {
-		int ret = forecast_code2pic[info];
-		if(ret == -1) return null;
+		switch(type) {
+		    case WEATHER_REQ_7DAY:
+			ret = forecast7day_code2pic[info];
+			break;
+		    case WEATHER_REQ_3DAY:
+		        if(info > 0 && info <= 17) ret = info;
+			break;
+		    case WEATHER_REQ_OBSERV:
+			ret = observ_code2pic[info];
+			break;
+		}
+		if(ret == -1) {
+		    Log.e(TAG, "get_icon_name(): invalid info=" + info + " for type=" + type); 
+		    return null;
+		}
 		resname = "ru.meteoinfo:drawable/wi" + ret + (night ? "n" : "d") + "_s";
-		
-	    } catch (Exception e) { Log.e(TAG, "exception in get_icon_name()"); }
+	    } catch (Exception e) { 
+		Log.e(TAG, "exception in get_icon_name(): info=" + info + ", type=" + type); 
+		return null;
+	    }
 	    return resname;		
 	}
+
 	public double get_precip() { return precip; }
 	public double get_precip3h() { return precip3h; }
 	public double get_precip6h() { return precip6h; }
@@ -653,7 +699,7 @@ public class Util {
 	public double get_clouds() { return clouds; }
 	public double get_gusts() { return gusts; }
 
-	public WeatherInfo(int type, String s) {
+	public WeatherInfo(int type, String s, long utc_sunrise, long utc_sunset) {
 	    int i, params_sz;
 	    if(s == null) return;  	
 
@@ -676,6 +722,11 @@ public class Util {
 
 	    String p[] = s.split(";", params_sz + 1);	
 
+	    if(p == null) {
+		Log.e(TAG, "java sucks in String.split");
+		return;
+	    }
+
 	    if(p.length < params_sz) {
 		Log.e(TAG, "invalid weatherinfo string: " + p.length + "<" + params_sz);
 		Log.e(TAG, "string was <" + s + ">, of type " + type);
@@ -684,7 +735,7 @@ public class Util {
 
 	    this.type = type;	
 
-	    for(i = 0; i < params_sz; i++) {
+	    for(i = 2; i < params_sz; i++) {
 		try {
 		  if(p[i] == null || p[i].isEmpty()) {
 		      p[i] = null; 
@@ -692,7 +743,7 @@ public class Util {
 		  }
 		  switch(i) {
 		    case 2: pressure = Double.parseDouble(p[i]); break;
-		    case 3: temperature = Double.parseDouble(p[i]); break;
+		    case 3: temperature = Double.parseDouble(p[i]); break; 
 		    case 4: wind_dir = Double.parseDouble(p[i]); break;
 		    case 5: wind_speed = Double.parseDouble(p[i]); break;
 		    case 6: info = Integer.parseInt(p[i]); break;
@@ -708,12 +759,17 @@ public class Util {
 		    case 14: if((type == WEATHER_REQ_OBSERV)) gusts = Double.parseDouble(p[i]); break;
 		  }
 		} catch(Exception e) {
-		    log(COLOUR_ERR, "error parsing " + p[i] + ", index=" + i);
+		    Log.d(TAG, "error parsing p[" + i + "]");
 		}
 	    }
 
 	    if(p[0] == null || p[1] == null) {
 		log(COLOUR_ERR, "missing date in weatherinfo");
+		return;
+	    }
+
+	    if(!Srv.use_interp && pressure < 0 && type != WEATHER_REQ_OBSERV) {
+//		log(COLOUR_ERR, "no presure for " + p[0] + " " + p[1]);	
 		return;
 	    }
 
@@ -724,28 +780,53 @@ public class Util {
 		Locale len = new Locale("en", "US");
 	        if(type == WEATHER_REQ_7DAY) {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd", len);
+		    in.setTimeZone(TimeZone.getTimeZone("UTC"));
 		    Date _date = in.parse(p[0]);
 		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMM", loc);
 		    utc = _date.getTime(); 		    
+		    start_utc = utc;
 		    if(p[1].equals("night")) {
-			p[1] = new String(App.get_string(R.string.night));
+			time = new String(App.get_string(R.string.night));
+			night = true;
 		    } else if(p[1].equals("day")) {
-			p[1] = new String(App.get_string(R.string.day));
-			utc += 1000 * 60 * 60 * 12;
+			time = new String(App.get_string(R.string.day));
 			night = false;
 		    }	
-		    date = new String(out.format(_date) + ", " + p[1]);
+		    date = new String(out.format(_date));
 		} else {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", len);
+		    SimpleDateFormat in0 = new SimpleDateFormat("yyyy-MM-dd", len);
 		    in.setTimeZone(TimeZone.getTimeZone("UTC"));
+		    in0.setTimeZone(TimeZone.getTimeZone("UTC"));
+		    Date _date0 = in0.parse(p[0]);
+		    start_utc = _date0.getTime();
 		    Date _date = in.parse(p[0] + " " + p[1]);
 		    utc = _date.getTime();
-		    SimpleDateFormat out = new SimpleDateFormat("HH:mm EEEE, d MMMM", loc);
-		    out.setTimeZone(TimeZone.getDefault());	// convert UTC -> device timezone
-		    date = new String(out.format(_date));    
+		//  SimpleDateFormat out_date = new SimpleDateFormat("EEEE, d MMMM", loc);
+		    SimpleDateFormat out_date = new SimpleDateFormat("d MMMM", loc);
+		    SimpleDateFormat out_time = new SimpleDateFormat("HH:mm", loc);
+		    out_date.setTimeZone(TimeZone.getDefault());	// convert UTC -> device timezone
+		    out_time.setTimeZone(TimeZone.getDefault());	// convert UTC -> device timezone
+		    date = new String(out_date.format(_date)); 
+		    time = new String(out_time.format(_date)); 
+		    if(type == WEATHER_REQ_3DAY) {
+			final long ms_per_hour = 3600*1000;
+			final long ms_per_day = 24*ms_per_hour;
+			if(utc_sunrise == 0) utc_sunrise = start_utc + 4*ms_per_hour;
+			if(utc_sunset == 0) utc_sunset = start_utc + 17*ms_per_hour;
+			long diff_days = (start_utc/ms_per_day - utc_sunrise/ms_per_day);
+//			Log.d(TAG, "diff_days=" + diff_days + " for start/sunrise=" + start_utc + "/" + utc_sunrise);
+			long corrected_utc = utc - diff_days * ms_per_day;
+			if(corrected_utc < utc_sunrise) night = true;
+			else if(corrected_utc >= utc_sunrise && corrected_utc <= utc_sunset) night = false;
+			else night = true;
+//			Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
+		    }	
 		}
 	    } catch(Exception e) {
+		e.printStackTrace();
 		Log.e(TAG, "error parsing date");
+		return;
 	    }
 
 	    valid = true; 	
@@ -771,6 +852,7 @@ public class Util {
 
 	    for(i = 1; i < wl.size(); i++) {
 		WeatherInfo wn = wl.get(i);
+		if(!wn.valid) continue;
 		if(wn.get_pressure() != -1) {		// must be valid
 		    if(i - i_first == 1) {		// no need to interpolate
 			i_first = i;
@@ -779,6 +861,7 @@ public class Util {
 		    if(i_first == -1) {			// no previous weather data, set to current
 			for(k = 0; k < i; k++) {
 			    WeatherInfo wi = wl.get(k);
+			    if(!wi.valid) continue;
 			    wi.type = WEATHER_REQ_3DAY; // just for clarity
 			    wi.pressure = wn.get_pressure();
 			    wi.wind_dir = wn.get_wind_dir();
@@ -793,6 +876,7 @@ public class Util {
 		    }
 		    for(k = i_first + 1; k < i; k++) {
 			WeatherInfo wi = wl.get(k);
+			if(!wi.valid) continue;
 			if(wi.get_pressure() != -1) {
 			    log(COLOUR_ERR, "Internal error: interpolation for known WeatherInfo");
 			    return false;
@@ -829,7 +913,6 @@ public class Util {
 	    if(f1 == -1) return (f0 == -1) ? -1 : f0;
 	    return f0 + alpha * (f1 - f0);
 	}
-
 
 	private static double mean_wind(double f0, double f1, double alpha) {
 	    try {
@@ -878,14 +961,10 @@ public class Util {
     // All weather data for a particular station
 
     public static class WeatherData {
-	long sta_code = -1;
-	String tz = null;
-	String offset = null;
-	String sunrise = null;
-	String sunset = null;
-	WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
-        ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
-        ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
+	public long sta_code = -1;
+	public WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
+        public ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
+        public ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
     }
 
     // Parse xml code in <str> seeking for <tags> and returning array
@@ -934,73 +1013,111 @@ public class Util {
 	}
     }
 
-    private static final String[] tags_tz = { "rawOffset", "timezoneId", "sunrise", "sunset" } ;
+    private static final String[] tags_tz = { /* "rawOffset", */  "timezoneId", "sunrise", "sunset" } ;
     private static final ArrayList<String> xml_tags_tz = new ArrayList<String>(Arrays.asList(tags_tz));	
 //  private final String[] tags_name = { "name" };
 //  private final ArrayList<String> xml_tags_name = new ArrayList<String>(Arrays.asList(tags_name));
 
     synchronized public static WeatherData getWeather(Station station) {
 
+	if(station == null) {
+	    log(COLOUR_ERR, "getWeather called for null station");
+	    return null;	
+	}
 	log(COLOUR_DBG, App.get_string(R.string.query_weather_data) + " " + station.code);
 
-	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station.code);
-	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station.code);
-	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station.code);
-
-	if(so == null /* && s7 == null */ && s3 == null) {
-	    log(COLOUR_ERR, App.get_string(R.string.no_weather_data) + " " + station.code);
-	    return null;
-	}
 	WeatherData ret = new WeatherData();
 	ret.sta_code = station.code;
 
-	if(Srv.use_geonames) {
-	    ArrayList<String> al = null;	
-	    String s;	
-	    String timezone_xml = getShortStringFromURL(URL_GEONAMES_TZ + "&lat=" + station.latitude + "&lng=" + station.longitude);
-	    if(timezone_xml != null) {
-		Log.d(TAG, "got timezone from api.geonames.org");
-		al = parse_xml_string(timezone_xml, xml_tags_tz);
-		if(al != null) {
-		   ret.offset = al.get(0);
-		   log(COLOUR_INFO, "офсет=" + ret.offset); 
-		   ret.tz = al.get(1);
-		   log(COLOUR_INFO, "tz=" + ret.tz); 
-		   ret.sunrise= al.get(2);
-		   log(COLOUR_INFO, "восход=" + ret.sunrise); 
-		   ret.sunset = al.get(3);
-		   log(COLOUR_INFO, "закат=" + ret.sunset); 
-		}
-	    }
-	  //  String name_xml = getShortStringFromURL(URL_GEONAMES_NM + "&lat=" + station.latitude + "&lng=" + station.longitude);
-	}
-	
+	long utc_sunrise = 0;
+	long utc_sunset = 0;	
 
+	Locale loc = new Locale("en", "US");
+	Date date;
+	
+	try {	
+	    String s_tz, s_sr, s_ss;
+	    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", loc);	
+	    if(Srv.use_geonames) {
+		int retries = 3;
+		String timezone_xml = null;
+		while(retries > 0) {		
+		     timezone_xml = getShortStringFromURL(URL_GEONAMES_TZ + "&lat=" + station.latitude + "&lng=" + station.longitude);
+		     if(timezone_xml != null) break;
+		     retries--;		
+		     Log.d(TAG, "retrying...");	
+		}
+		if(timezone_xml != null) {
+		    ArrayList<String> al = parse_xml_string(timezone_xml, xml_tags_tz);
+		    if(al != null) {
+			s_tz = al.get(0);	// timezone
+			s_sr = al.get(1);	// sunrise
+			s_ss = al.get(2);	// sunset
+			Log.d(TAG, "geonames: tz=" + s_tz + ", sunrise=" + s_sr + ", sunset=" + s_ss);
+			TimeZone tz = TimeZone.getTimeZone(s_tz);
+			in.setTimeZone(tz);
+			date = in.parse(s_sr);
+			utc_sunrise = date.getTime();
+			date = in.parse(s_ss);
+			utc_sunset = date.getTime();
+			Log.d(TAG, "geonames: utc_sunrise=" + utc_sunrise + ", utc_sunset=" + utc_sunset);
+		    }
+	   	} else log(COLOUR_ERR, "failed to obtain timezone info from api.geonames.org");
+	    } else {
+		com.luckycatlabs.sunrisesunset.dto.Location location = 
+			new com.luckycatlabs.sunrisesunset.dto.Location(station.latitude, station.longitude);
+		SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(location, TimeZone.getDefault());
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", loc);
+		sdf.setTimeZone(TimeZone.getDefault());
+		String dstr = sdf.format(cal.getTime()) + " "; 	 
+		s_sr = dstr + calculator.getOfficialSunriseForDate(Calendar.getInstance()); 	
+		s_ss = dstr + calculator.getOfficialSunsetForDate(Calendar.getInstance()); 	
+		Log.d(TAG, "SunriseSunsetCalculator: sunrise=" + s_sr + ", sunset=" + s_ss);
+		in.setTimeZone(TimeZone.getDefault());
+		date = in.parse(s_sr);
+		utc_sunrise = date.getTime();
+		date = in.parse(s_ss);
+		utc_sunset = date.getTime();
+		Log.d(TAG, "SunriseSunsetCalculator: utc_sunrise=" + utc_sunrise + ", utc_sunset=" + utc_sunset);
+	    }
+	} catch (Exception e) {
+	    log(COLOUR_ERR, "exception: failed to obtain timezone info");
+	    e.printStackTrace();
+	    utc_sunrise = 0;
+	    utc_sunset  = 0;
+	}
+
+	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station.code);
 	if(so != null && !so.isEmpty()) {
-	    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_OBSERV, so);
+	    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_OBSERV, so, 0, 0);
 	    if(wi != null && wi.valid) {
 		ret.observ = wi;
 		log(COLOUR_DBG, R.string.observed_data_okay);
 	    } else log(COLOUR_ERR, R.string.observed_data_bad);	
 	} else log(COLOUR_ERR, R.string.observed_data_bad);
+
+	String s7 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_7DAY + "&st=" + station.code);
 	if(s7 != null && !s7.isEmpty()) {
 	    String[] ws = s7.split(" \n");
 	    ret.for7days = new ArrayList<>();	    		     
 	    for(int i = 0; i < ws.length; i++) {		
 		if(ws[i] != null) {
-		    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_7DAY, ws[i]);
+		    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_7DAY, ws[i], 0, 0);
 		    if(wi != null && wi.valid) ret.for7days.add(wi);
 		}	
 	    }	
 	    if(ret.for7days.size() > 0) log(COLOUR_DBG, R.string.weekly_data_okay);
 	    else log(COLOUR_ERR, R.string.weekly_data_bad);	
 	} else log(COLOUR_ERR, R.string.weekly_data_bad);
+
+	String s3 = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_3DAY + "&st=" + station.code);
 	if(s3 != null && !s3.isEmpty()) {
 	    String[] ws = s3.split(" \n");
 	    ret.for3days = new ArrayList<>();	    		     
 	    for(int i = 0; i < ws.length; i++) {		
 		if(ws[i] != null) {
-		    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_3DAY, ws[i]);
+		    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_3DAY, ws[i], utc_sunrise, utc_sunset);
 		    if(wi != null && wi.valid) ret.for3days.add(wi);
 		}	
 	    }	
@@ -1012,6 +1129,13 @@ public class Util {
 		}  
 	    } else log(COLOUR_ERR, R.string.hourly_data_bad);	
 	} else log(COLOUR_ERR, R.string.hourly_data_bad);
+
+	if((so == null || so.isEmpty()) && 
+	   (s7 == null || s7.isEmpty()) && 
+	   (s3 == null || s3.isEmpty())) {
+	    log(COLOUR_ERR, App.get_string(R.string.no_weather_data) + " " + station.code);
+	    return null;
+	}
 
 	return ret;
     }
@@ -1207,7 +1331,9 @@ public class Util {
         "Облачно, временами сильный дождь",     //84
         "Облачно, сильный дождь",       //85
     };		
-    
+
+    // 3-day info code -> array of 7-day info codes
+    // need an extra step to select unique value from arrays
     public static final int convTbl3to7[][] = {
 	null,
         {33, 34, 70, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, },     //1
@@ -1229,8 +1355,8 @@ public class Util {
         {19, 20, 21, 22, 23, 24, 35, 36, 37, 38, 39, 40, },     //17
     };
 
-    // forecast code -> picture number
-    public static final int forecast_code2pic[] = { 
+    // forecast code -> picture number (for 7day forecasts)
+    public static final int forecast7day_code2pic[] = { 
 	-1, 7, 6, 6, 5, 12, 12, 55, 56, 12, 12, 12, 12, 55, 55, 
 	56, 56, 56, 56, 57, 58, 59, 59, 59, 59, 
 	13, 13, 13, 13, 13, 2, 50, 50, 50, 50, 51, 52, 52, 53, 53, 53, 
