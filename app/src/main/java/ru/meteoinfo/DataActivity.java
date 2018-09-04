@@ -196,8 +196,8 @@ public class DataActivity extends AppCompatActivity {
 	    val = wi.get_visibility();
 	    if(val != -1) s += String.format(getString(R.string.wd_visibility), val) + "<br>";
 
-	    val = wi.get_clouds();
-	    if(val != -1) s += String.format(getString(R.string.wd_clouds), val) + "<br>";
+	    int clouds = wi.get_clouds();
+	    if(val != -1) s += String.format(getString(R.string.wd_clouds), clouds) + "<br>";
 
 	return s;
 	     	

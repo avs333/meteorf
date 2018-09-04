@@ -45,7 +45,7 @@
             android:layout_gravity="center_vertical"
 	    android:text="@string/wd_unk_temp"	
             android:layout_weight="1"
-            android:textSize="34dp" />
+            android:textSize="34sp" />
        
         <LinearLayout
             android:orientation="vertical"

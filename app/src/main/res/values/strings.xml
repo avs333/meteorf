@@ -116,6 +116,7 @@
     <string name="weekly_data_bad">Нет данных недельного прогноза</string>               
     <string name="empty_elem_skiped">пустой элемент списка пропущен</string>               
     <string name="wd_temperature">Температура: %.1f°C</string>
+    <string name="wd_celsius">°C</string>
     <string name="wd_pressure">Давление: %.1f мм рт.ст.</string>
     <string name="wd_wind_nogusts">Ветер: %s [%.1f°] %.1f м/с</string>
     <string name="wd_wind_gusts">Ветер: %s [%.1f°] %.1f м/с, порывы до %.1f м/с</string>
@@ -126,7 +127,7 @@
     <string name="wd_precip12h">Осадки за 12 часов: %.1f мм</string>
     <string name="wd_humidity">Относительная влажность: %.1f%%</string>
     <string name="wd_visibility">Видимость: %.1f м</string>
-    <string name="wd_clouds">Балл общей облачности (0&#8211;10): %.1f</string>
+    <string name="wd_clouds">Балл общей облачности (0&#8211;10): %d</string>
 
     <string name="too_windy">Слишком ветрено: от %.1f до %.1f</string>
 
@@ -160,6 +161,7 @@
 
     <string name="srv_created">Сервис запущен, виджет=</string>
     <string name="srv_sta_list_recv">Список станций получен</string>
+    <string name="weather_code">Код погоды:</string>
 
     <string-array name="verb_names">
 	<item>Ошибки</item>

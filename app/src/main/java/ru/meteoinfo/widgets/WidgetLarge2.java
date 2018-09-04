@@ -20,77 +20,22 @@ import ru.meteoinfo.R;
 	
 public class WidgetLarge2 extends WidgetProvider {
 
-    protected static long last_sta_code = -1;	
-    protected static PendingIntent pint_show_webpage = null;
-    protected static PendingIntent pint_start_activity = null;
-    protected static PendingIntent pint_left = null;
-    protected static PendingIntent pint_right = null;
+    private static final String TAG = "ru.meteoinfo:WLarge2";
+    RemoteViews views = null;
 
-    protected static RemoteViews views = null;	
+    @Override
     protected RemoteViews get_views(Context context) {
 	if(views != null) return views;
 	return new RemoteViews(context.getPackageName(), R.layout.widget_layout_large2);
     }
 
     @Override
-    public void set_size() {
-	large_widget = true;
-    }	
-
-    @Override
-    public String get_class_name() {
-	return "ru.meteoinfo.widgets.WidgetLarge2";
-    }		
-
-    @Override
-    protected void set_click_handlers(Context context) {
-
-	Station st = Srv.getCurrentStation();
-	views = get_views(context);
-	Intent intent;
-
-	if(st != null && st.code != last_sta_code) {
-	    Log.d(TAG, "pint to display webpage");	
-	    last_sta_code = st.code;
-	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
-	    intent = new Intent(context, ru.meteoinfo.WebActivity.class);
-	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    intent.putExtra("action", url);
-	    intent.putExtra("show_ui", false);
-	    if(st.name_p != null) intent.putExtra("title", st.name_p);
-	    pint_show_webpage = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT); 	
-	    views.setOnClickPendingIntent(R.id.w_info, pint_show_webpage);
-	}
-	if(pint_start_activity == null) {
-	    Log.d(TAG, "pint to start activity");	
-	    intent = new Intent(context, ru.meteoinfo.WeatherActivity.class);
-	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    pint_start_activity = PendingIntent.getActivity(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_temp, pint_start_activity);
-	}
-	if(pint_left == null) {
-	    Log.d(TAG, "pint to scroll left");	
-	    intent = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
-	    intent.setAction(ACTION_LEFT_BROADCAST);	
-	    pint_left = PendingIntent.getBroadcast(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_left, pint_left);
-	}
-	if(pint_right == null) {
-	    Log.d(TAG, "pint to scroll right");	
-	    intent = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
-	    intent.setAction(ACTION_RIGHT_BROADCAST);	
-	    pint_right = PendingIntent.getBroadcast(context,0,intent,0);	
-	    views.setOnClickPendingIntent(R.id.w_right, pint_right);
-	}
-    }
-    
-    @Override
     protected void settings_update(Context context) {	
 
 	if(gm == null) gm = AppWidgetManager.getInstance(context);
-	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, get_class_name()));
+	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, classname));
 	if(bound_widgets == null || bound_widgets.length == 0) {
-	    Log.d(TAG, "no bound widgets of class " + get_class_name());	
+	    Log.d(TAG, "no bound widgets of class " + classname);	
 	    return;
 	}
 
@@ -129,7 +74,7 @@ public class WidgetLarge2 extends WidgetProvider {
 
 	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
 
-	Log.d(TAG, "settings_update: updating " + bound_widgets.length + " " + get_class_name());
+	Log.d(TAG, "settings_update: updating " + bound_widgets.length + " " + classname);
 	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
     }
 
@@ -145,6 +90,7 @@ public class WidgetLarge2 extends WidgetProvider {
 
     protected static int widx = 0;
     protected final int max_widx = 12;
+    private int max;
 
     @Override
     protected void weather_update(String action, Context context) {
@@ -156,9 +102,9 @@ public class WidgetLarge2 extends WidgetProvider {
 
 	if(gm == null) gm = AppWidgetManager.getInstance(context);
 	if(gm == null) return;
-	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, get_class_name()));
+	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, classname));
 	if(bound_widgets == null || bound_widgets.length == 0) {
-	    Log.d(TAG, "no bound widgets of class " + get_class_name());	
+	    Log.d(TAG, "no bound widgets of class " + classname);	
 	    return;
 	}
 	views = get_views(context);
@@ -170,10 +116,6 @@ public class WidgetLarge2 extends WidgetProvider {
 
 	if(wd == null) {
 	    Log.e(TAG, "weather_update: localWeather unknown");
-	    return;
-	}
- 	if(wd.for3days == null) {
-	    Log.e(TAG, "weather_update: invalid weather for 3 days");
 	    return;
 	}
 
@@ -193,7 +135,10 @@ public class WidgetLarge2 extends WidgetProvider {
 
 	WeatherInfo wi = null;
 
+/*
 	while((wi = wd.for3days.get(0)) != null) {
+	    wi = wd.for3days.get(0);
+	    if(wi == null) break;	
 	    if(!wi.valid) {
 	        wd.for3days.remove(0);
 	        if(wd.for3days.size() == 0) break;
@@ -238,6 +183,67 @@ public class WidgetLarge2 extends WidgetProvider {
 	    Log.e(TAG, "null WeatherInfo at index " + widx);
 	    return;
 	}
+
+*/
+	if(wd.for3days == null || wd.for3days.size() == 0) {
+	    wi = wd.observ;
+	    Log.d(TAG, "no forecasts");
+	    if(!action.equals(WEATHER_CHANGED_BROADCAST)) {
+		Log.d(TAG, "action " + action + " ignored");
+		return;
+	    }	
+	} else {
+	    while((wi = wd.for3days.get(0)) != null) {
+		if(!wi.valid) {
+		    wd.for3days.remove(0);
+		    if(wd.for3days.size() == 0) break;
+		    if(widx > 0) widx--;
+		    continue;
+		}
+		if(now <= wi.get_utc()) break;
+		Log.d(TAG, "weather_update: removing stale data for " + wi.get_date());
+		wd.for3days.remove(0);
+		if(wd.for3days.size() == 0) break;
+		if(widx > 0) widx--;
+	    }
+
+	    max = wd.for3days.size() - 1;
+	    if(max > max_widx) max = max_widx;
+
+	    if(max < 0) {
+		wi = wd.observ;
+		widx = -1;
+	    } else switch(action) {
+		case WEATHER_CHANGED_BROADCAST:
+		    if(wd.observ != null) {
+			widx = -1;
+			wi = wd.observ;
+		    } else {	
+			widx = 0;
+			wi = wd.for3days.get(widx);
+		    }
+		    break; 
+		case ACTION_LEFT_BROADCAST:	
+		    widx--;
+		    if(widx < -1 || (widx < 0 && wd.observ == null)) widx = max;
+		    wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
+		    break;
+		case ACTION_RIGHT_BROADCAST:	
+		    widx++;
+		    if(widx > max) widx = (wd.observ != null) ? -1 : 0;
+		    wi = (widx < 0) ? wd.observ : wd.for3days.get(widx);
+		    break;
+		default:
+		    wi = null;
+		    break;
+	    }
+	}
+
+	if(wi == null) {
+	    Log.e(TAG, "no weather to display");
+	    return;
+	}
+
 
 	Log.d(TAG, "weather_update: " + action + " addr=" + addr + ", widx=" + widx + ", max=" + max);
 
@@ -333,7 +339,7 @@ public class WidgetLarge2 extends WidgetProvider {
 	if(hum != null) views.setTextViewText(R.id.w_humidity, hum);
 
 
-	Log.d(TAG, "weather_update: updating " + bound_widgets.length + " " + get_class_name());
+	Log.d(TAG, "weather_update: updating " + bound_widgets.length + " " + classname);
 	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
     }
 

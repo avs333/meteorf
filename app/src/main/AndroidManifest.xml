@@ -9,7 +9,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
+<!--
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" /> -->
 
     <application
 
@@ -98,6 +99,18 @@
 	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 	    </intent-filter>
 	</receiver>
+
+	<receiver android:name=".widgets.CollectionWidgetProvider" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/cwidget" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+	    </intent-filter>
+	</receiver>
+
+	<service android:name=".widgets.CollectionWidgetService"
+            android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS">
+        </service>
 
 	<!--
         <receiver android:name=".WidgetBroadcastReceiver" android:enabled="false">

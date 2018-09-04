@@ -263,8 +263,13 @@ public class WeatherActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-//	drawer.openDrawer(android.view.Gravity.LEFT, true);
-//	drawer.openDrawer(GravityCompat.START, true);
+	Intent intent = getIntent();
+        boolean open_drawer = intent.getBooleanExtra("open_drawer", false);
+
+	if(open_drawer) {
+	    drawer.openDrawer(android.view.Gravity.LEFT, true);
+	    drawer.openDrawer(GravityCompat.START, true);
+	}
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);

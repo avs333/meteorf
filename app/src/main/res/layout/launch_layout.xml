@@ -8,38 +8,32 @@
         android:id="@+id/launch_msg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:inputType="textMultiLine" />
 <!--    android:ems="10" -->
     <Button
         android:id="@+id/act_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="@string/act_data" />
     <Button
         android:id="@+id/data_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="@string/all_data" />
     <Button
         android:id="@+id/add_to_fav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="@string/add_to_fav" />
     <Button
         android:id="@+id/view_google"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="@string/map_google" />
     <Button
         android:id="@+id/view_osm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:text="@string/map_osm" />
 
 </LinearLayout>

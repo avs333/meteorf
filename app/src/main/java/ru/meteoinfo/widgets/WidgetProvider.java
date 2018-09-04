@@ -13,16 +13,20 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.GridLayout;
 import android.widget.RemoteViews;
+import android.app.PendingIntent;
 
 import java.util.Date;
 import java.util.List;
 
-import ru.meteoinfo.*;
-//import ru.meteoinfo.R;
+import ru.meteoinfo.App;
+import ru.meteoinfo.Util;
+import ru.meteoinfo.Srv;
+import ru.meteoinfo.Util.Station;
+import ru.meteoinfo.Util.WeatherData;
+import ru.meteoinfo.Util.WeatherInfo;
+import ru.meteoinfo.R;
 
-// import android.graphics.Rect;
 		
 public abstract class WidgetProvider extends AppWidgetProvider {
 
@@ -31,32 +35,32 @@ public abstract class WidgetProvider extends AppWidgetProvider {
     public static final String ACTION_LEFT_BROADCAST  = "action_left";
     public static final String ACTION_RIGHT_BROADCAST  = "action_right";
     public static final String ACTION_RESTART = "action_restart";
-
-    public static final String TAG = "ru.meteoinfo:Widget";
+    private static final String TAG = "ru.meteoinfo:Widget";
 
     protected static AppWidgetManager gm = null;
 
     // handler for enqueuing update requests to avoid race conditions 	
     private final Handler hdl = new Handler();
 
-    protected static boolean large_widget;
+    protected final Class<?> clz = this.getClass();
+    protected final String classname = clz.getName();
 
-    public abstract void set_size();
-    public abstract String get_class_name();
-    protected abstract void set_click_handlers(Context context);
     protected abstract void weather_update(String action, Context context);
     protected abstract void settings_update(Context context);
+    protected abstract RemoteViews get_views(Context context);
+   
+    int layout_id = 7890;
 
     @Override
     public void onEnabled(Context context) {
 	super.onEnabled(context);
-	set_size();
-        Log.d(TAG, "onEnabled, large=" + large_widget);
+        Log.d(TAG, "onEnabled");
+	this.layout_id = 123456;
+	Log.d(TAG, "layout_id=" + layout_id + ", classname=" + classname);
 	startup(context);
     }
 
     private void startup(Context context) {
-	Log.d(TAG, "startup entry");
 	App.widget_visible = true;
 	if(context == null) return;
 	gm = AppWidgetManager.getInstance(context);
@@ -64,13 +68,13 @@ public abstract class WidgetProvider extends AppWidgetProvider {
 	if(i == null) return;
 	i.setAction(Srv.WIDGET_STARTED);
 	context.startService(i);
-	Log.d(TAG, "startup complete");
     }
  
     @Override
     public void onUpdate(Context context, AppWidgetManager man, int[] wids) {
 	super.onUpdate(context, man, wids);
         Log.d(TAG, "onUpdate");
+	Log.d(TAG, "layout_id=" + layout_id + ", classname=" + classname);
 	set_click_handlers(context);
 	weather_update(WEATHER_CHANGED_BROADCAST, context);
 	settings_update(context);
@@ -152,6 +156,40 @@ public abstract class WidgetProvider extends AppWidgetProvider {
 	startup(context);
 	set_click_handlers(context);
 	settings_update(context);
+    }
+
+    protected void set_click_handlers(Context context) {
+
+	Station st = Srv.getCurrentStation();
+	RemoteViews views = get_views(context);
+	Intent intent;
+	PendingIntent pint;
+
+	if(st != null) {
+	    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
+	    intent = new Intent(context, ru.meteoinfo.WebActivity.class);
+	    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    intent.putExtra("action", url);
+	    intent.putExtra("show_ui", false);
+	    if(st.name_p != null) intent.putExtra("title", st.name_p);
+	    pint = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT); 	
+	    views.setOnClickPendingIntent(R.id.w_info, pint);
+	}
+
+	intent = new Intent(context, ru.meteoinfo.WeatherActivity.class);
+	intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	pint = PendingIntent.getActivity(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_temp, pint);
+
+	intent = new Intent(context, clz);
+	intent.setAction(ACTION_LEFT_BROADCAST);	
+	pint = PendingIntent.getBroadcast(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_left, pint);
+
+	intent = new Intent(context, clz);
+	intent.setAction(ACTION_RIGHT_BROADCAST);	
+	pint = PendingIntent.getBroadcast(context,0,intent,0);	
+	views.setOnClickPendingIntent(R.id.w_right, pint);
     }
 
 }

@@ -360,7 +360,7 @@ public class Util {
 	    // Split the string into lines
 
 	    String[] std, stans;
- 	    stans = s.split("\n");
+ 	    stans = s.split(" \n");
 	    if(stans.length < 1) {
 		log(COLOUR_ERR, R.string.empty_sta_list);
 		return false;
@@ -381,6 +381,9 @@ public class Util {
 //	    	    log(COLOUR_DBG, R.string.skip_kiev);
 		    continue;
 	        }
+
+//		if(stans[i].endsWith(" ")) stans[i] = stans[i].substring(0, stans[i].lastIndexOf(" "));
+
 		std = stans[i].split(";");
 		if(std.length < 5) {
 		    log(COLOUR_DBG, App.get_string(R.string.inv_sta_data) + i);
@@ -396,6 +399,7 @@ public class Util {
 		    log(COLOUR_DBG, App.get_string(R.string.inv_sta_data) + i);
 		    continue;
 		}		
+
 		sta.name = std[4];
 		sta.name_p = std[4];
 		if(std.length > 5 && !std[5].equals(" ") && !std[5].equals("")) {
@@ -407,7 +411,7 @@ public class Util {
 		}		
 		switch(std.length) {
 		    case 7: sta.shortname = std[6]; break;
-		    case 6: sta.shortname = std[4] + " " + std[5]; break;
+		    case 6: sta.shortname = std[4] + ", " + std[5]; break;
 		    default: sta.shortname = std[4]; break;
 		}
 		if(sta.shortname == null) sta.shortname = std[4];
@@ -611,7 +615,6 @@ public class Util {
 
 	private int type = -1;
 	private long utc = 0;
-	private long start_utc = 0;	// corresponds to 00:00 of utc above
 
         public boolean valid = false;
 
@@ -624,13 +627,13 @@ public class Util {
 	private double pressure = -1, temperature = inval_temp, 
 		wind_dir = -1, wind_speed = -1, precip = -1, 
 		precip3h = -1, precip6h = -1, precip12h = -1, 
-		humidity = -1, visibility = -1, clouds = -1, gusts = -1;
-	private int info = -1;
+		humidity = -1, visibility = -1, gusts = -1;
+	private int info = -1, clouds = -1;
 
 	public int gettype() { return type; }
 
 	// for WEATHER_REQ_7DAY and WEATHER_REQ_3DAY only
-	private boolean night = true;
+	private boolean night = false;
 	public boolean is_night() { return night; }	
 
 	// "yyyy-MM-dd HH:mm UTC"
@@ -642,12 +645,19 @@ public class Util {
 	}	
 
 	public long get_utc() { return utc; } 
-	public long get_start_utc() { return start_utc; }
 	public double get_pressure() { return pressure; }
 	public double get_temperature() { return temperature; }
 	public double get_wind_dir() { return wind_dir; }
 	public double get_wind_speed() { return wind_speed; }
 	public int get_info() { return info; }
+	public double get_precip() { return precip; }
+	public double get_precip3h() { return precip3h; }
+	public double get_precip6h() { return precip6h; }
+	public double get_precip12h() { return precip12h; }
+	public double get_humidity() { return humidity; }
+	public double get_visibility() { return visibility; }
+	public int    get_clouds() { return clouds; }
+	public double get_gusts() { return gusts; }
 
 	public String get_info_string() {
 	    if(info == -1) return null;	
@@ -656,26 +666,38 @@ public class Util {
 	 	switch(type) {
 		    case WEATHER_REQ_OBSERV: ret = new String(weatherCodesObserv[info]); break;
 		    case WEATHER_REQ_7DAY: ret = new String(weatherCodes7day[info]); break;
-		    case WEATHER_REQ_3DAY: ret = new String(Integer.toString(info)); break;
+		    case WEATHER_REQ_3DAY: ret = new String(App.get_string(R.string.weather_code) +
+				" " + Integer.toString(info)); break;
 		}
 	    } catch (Exception e) { Log.e(TAG, "exception in get_info_string()"); }
 	    return ret; 
 	} 
 
 	public String get_icon_name() {
-	    if(info == -1) return null;
 	    String resname = null;
 	    int ret = -1;		
 	    try {
 		switch(type) {
 		    case WEATHER_REQ_7DAY:
-			ret = forecast7day_code2pic[info];
+			if(info > 0 && info <= 85) ret = forecast7day_code2pic[info];
 			break;
 		    case WEATHER_REQ_3DAY:
 		        if(info > 0 && info <= 17) ret = info;
 			break;
 		    case WEATHER_REQ_OBSERV:
-			ret = observ_code2pic[info];
+			if(info > 0 && info <= 99) ret = observ_code2pic[info];
+			if(ret == -1 && clouds == -1) break;
+			switch(clouds) {
+			    case 0: case 1: case 2: case 3: 
+				ret = 0; break;
+			    case 4: case 5: case 6: case 7: 
+				ret = 5; break;
+			    case 8: case 9: case 10:
+				ret = 8; break;
+			    default:
+ 				Log.e(TAG, "get_icon_name(): invalid clouds=" + clouds + " for observables"); 
+				return null;
+			}
 			break;
 		}
 		if(ret == -1) {
@@ -690,20 +712,12 @@ public class Util {
 	    return resname;		
 	}
 
-	public double get_precip() { return precip; }
-	public double get_precip3h() { return precip3h; }
-	public double get_precip6h() { return precip6h; }
-	public double get_precip12h() { return precip12h; }
-	public double get_humidity() { return humidity; }
-	public double get_visibility() { return visibility; }
-	public double get_clouds() { return clouds; }
-	public double get_gusts() { return gusts; }
 
 	public WeatherInfo(int type, String s, long utc_sunrise, long utc_sunset) {
 	    int i, params_sz;
 	    if(s == null) return;  	
 
-	    //Log.i(TAG, "string=<" + s + ">"); 	
+	    //Log.d(TAG, "string=<" + s + ">"); 	
 	   	
 	    switch(type) {	
 		case WEATHER_REQ_OBSERV:
@@ -749,13 +763,13 @@ public class Util {
 		    case 6: info = Integer.parseInt(p[i]); break;
 		    case 7: precip  = Double.parseDouble(p[i]); break;
 		    case 8: if(type == WEATHER_REQ_OBSERV) precip3h = Double.parseDouble(p[i]);
-			    else humidity = Double.parseDouble(p[i]); 
+			    else if(type == WEATHER_REQ_3DAY) humidity = Double.parseDouble(p[i]); 
 			    break;
 		    case 9: if((type == WEATHER_REQ_OBSERV)) precip6h = Double.parseDouble(p[i]); break;
 		    case 10: if((type == WEATHER_REQ_OBSERV)) precip12h = Double.parseDouble(p[i]); break;
 		    case 11: if((type == WEATHER_REQ_OBSERV)) humidity = Double.parseDouble(p[i]); break;
 		    case 12: if((type == WEATHER_REQ_OBSERV)) visibility = Double.parseDouble(p[i]); break;
-		    case 13: if((type == WEATHER_REQ_OBSERV)) clouds = Double.parseDouble(p[i]); break;
+		    case 13: if((type == WEATHER_REQ_OBSERV)) clouds = Integer.parseInt(p[i]); break;
 		    case 14: if((type == WEATHER_REQ_OBSERV)) gusts = Double.parseDouble(p[i]); break;
 		  }
 		} catch(Exception e) {
@@ -769,11 +783,10 @@ public class Util {
 	    }
 
 	    if(!Srv.use_interp && pressure < 0 && type != WEATHER_REQ_OBSERV) {
-//		log(COLOUR_ERR, "no presure for " + p[0] + " " + p[1]);	
+		// log(COLOUR_ERR, "no pressure for " + p[0] + " " + p[1]);	
 		return;
 	    }
 
-	    // rewrite a bit to speedup future access
 	    try {
 //		Locale loc = use_russian ? new Locale("ru", "RU") : new Locale("en", "US");
 		Locale loc = new Locale("ru", "RU");
@@ -784,7 +797,6 @@ public class Util {
 		    Date _date = in.parse(p[0]);
 		    SimpleDateFormat out = new SimpleDateFormat("EEEE, d MMMM", loc);
 		    utc = _date.getTime(); 		    
-		    start_utc = utc;
 		    if(p[1].equals("night")) {
 			time = new String(App.get_string(R.string.night));
 			night = true;
@@ -795,11 +807,7 @@ public class Util {
 		    date = new String(out.format(_date));
 		} else {
 		    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", len);
-		    SimpleDateFormat in0 = new SimpleDateFormat("yyyy-MM-dd", len);
 		    in.setTimeZone(TimeZone.getTimeZone("UTC"));
-		    in0.setTimeZone(TimeZone.getTimeZone("UTC"));
-		    Date _date0 = in0.parse(p[0]);
-		    start_utc = _date0.getTime();
 		    Date _date = in.parse(p[0] + " " + p[1]);
 		    utc = _date.getTime();
 		//  SimpleDateFormat out_date = new SimpleDateFormat("EEEE, d MMMM", loc);
@@ -809,19 +817,26 @@ public class Util {
 		    out_time.setTimeZone(TimeZone.getDefault());	// convert UTC -> device timezone
 		    date = new String(out_date.format(_date)); 
 		    time = new String(out_time.format(_date)); 
-		    if(type == WEATHER_REQ_3DAY) {
-			final long ms_per_hour = 3600*1000;
-			final long ms_per_day = 24*ms_per_hour;
-			if(utc_sunrise == 0) utc_sunrise = start_utc + 4*ms_per_hour;
-			if(utc_sunset == 0) utc_sunset = start_utc + 17*ms_per_hour;
-			long diff_days = (start_utc/ms_per_day - utc_sunrise/ms_per_day);
-//			Log.d(TAG, "diff_days=" + diff_days + " for start/sunrise=" + start_utc + "/" + utc_sunrise);
-			long corrected_utc = utc - diff_days * ms_per_day;
-			if(corrected_utc < utc_sunrise) night = true;
-			else if(corrected_utc >= utc_sunrise && corrected_utc <= utc_sunset) night = false;
-			else night = true;
-//			Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
-		    }	
+
+		    if(utc_sunrise != 0 && utc_sunset != 0) {
+			final long day = 24 * 60 * 60 * 1000;
+			long cs = utc_sunset - utc_sunrise;
+			long c_utc = utc - utc_sunrise;
+			night = true;
+
+			while(c_utc < cs - day) c_utc += day;			
+
+			while(c_utc >= 0) {
+			    if(c_utc < cs) {
+				night = false;
+				break;
+			    } 
+			    if(c_utc <= day) break;
+			    c_utc -= day;  	
+			}
+			// Log.d(TAG, "sunrise/utc/sunset=" + utc_sunrise + "/" + c_utc + "/" +utc_sunset);
+			Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
+		    }
 		}
 	    } catch(Exception e) {
 		e.printStackTrace();
@@ -962,7 +977,7 @@ public class Util {
 
     public static class WeatherData {
 	public long sta_code = -1;
-	public WeatherInfo observ = null;	// of type WEATHER_REQ_OBSERV
+	public WeatherInfo observ = null;		// of type WEATHER_REQ_OBSERV
         public ArrayList<WeatherInfo> for7days = null;	// of type WEATHER_REQ_7DAY 
         public ArrayList<WeatherInfo> for3days = null;	// of type WEATHER_REQ_7DAY
     }
@@ -1013,7 +1028,7 @@ public class Util {
 	}
     }
 
-    private static final String[] tags_tz = { /* "rawOffset", */  "timezoneId", "sunrise", "sunset" } ;
+    private static final String[] tags_tz = { "rawOffset", "timezoneId", "sunrise", "sunset" } ;
     private static final ArrayList<String> xml_tags_tz = new ArrayList<String>(Arrays.asList(tags_tz));	
 //  private final String[] tags_name = { "name" };
 //  private final ArrayList<String> xml_tags_name = new ArrayList<String>(Arrays.asList(tags_name));
@@ -1036,7 +1051,7 @@ public class Util {
 	Date date;
 	
 	try {	
-	    String s_tz, s_sr, s_ss;
+	    String s_off, s_tz, s_sr, s_ss;
 	    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", loc);	
 	    if(Srv.use_geonames) {
 		int retries = 3;
@@ -1050,10 +1065,11 @@ public class Util {
 		if(timezone_xml != null) {
 		    ArrayList<String> al = parse_xml_string(timezone_xml, xml_tags_tz);
 		    if(al != null) {
-			s_tz = al.get(0);	// timezone
-			s_sr = al.get(1);	// sunrise
-			s_ss = al.get(2);	// sunset
-			Log.d(TAG, "geonames: tz=" + s_tz + ", sunrise=" + s_sr + ", sunset=" + s_ss);
+			s_off = al.get(0);
+			s_tz = al.get(1);	// timezone
+			s_sr = al.get(2);	// sunrise
+			s_ss = al.get(3);	// sunset
+			Log.d(TAG, "geonames: utc_offs=" + s_off + " tz=" + s_tz + ", sunrise=" + s_sr + ", sunset=" + s_ss);
 			TimeZone tz = TimeZone.getTimeZone(s_tz);
 			in.setTimeZone(tz);
 			date = in.parse(s_sr);
@@ -1090,7 +1106,7 @@ public class Util {
 
 	String so = getShortStringFromURL(URL_WEATHER_DATA + WEATHER_QUERY_OBSERV + "&st=" + station.code);
 	if(so != null && !so.isEmpty()) {
-	    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_OBSERV, so, 0, 0);
+	    WeatherInfo wi = new WeatherInfo(WEATHER_REQ_OBSERV, so, utc_sunrise, utc_sunset);
 	    if(wi != null && wi.valid) {
 		ret.observ = wi;
 		log(COLOUR_DBG, R.string.observed_data_okay);

@@ -29,8 +29,6 @@ import ru.meteoinfo.widgets.WidgetProvider;
 
 public class Srv extends Service {
 
-    private static   Handler hdl = WeatherActivity.ui_update;
-
     // called by GoogleLocation
     public static final String LOCATION_UPDATE = "location_update";
 
@@ -143,12 +141,16 @@ public class Srv extends Service {
 
     private void notify_widgets(String action) {
 	if(action == null) return;
-	Intent intent1 = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
-	intent1.setAction(action);
-	sendBroadcast(intent1);
-	Intent intent2 = new Intent(context, ru.meteoinfo.widgets.WidgetSmall2.class);
-	intent2.setAction(action);
-	sendBroadcast(intent2);
+	Intent intent;
+	intent = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
+	intent.setAction(action);
+	sendBroadcast(intent);
+	intent = new Intent(context, ru.meteoinfo.widgets.WidgetSmall2.class);
+	intent.setAction(action);
+	sendBroadcast(intent);
+	intent = new Intent(context, ru.meteoinfo.widgets.CollectionWidgetProvider.class);
+	intent.setAction(action);
+	sendBroadcast(intent);
     }
 
     private static final Object wt_obj = new Object();
@@ -163,6 +165,11 @@ public class Srv extends Service {
 	widget_installed = (ids != null && ids.length > 0);
 	if(!widget_installed) {
 	    wc = new ComponentName(this, "ru.meteoinfo.widgets.WidgetSmall2");
+	    ids = man.getAppWidgetIds(wc);
+	    widget_installed = (ids != null && ids.length > 0);
+	}
+	if(!widget_installed) {
+	    wc = new ComponentName(this, "ru.meteoinfo.widgets.CollectionWidgetProvider");
 	    ids = man.getAppWidgetIds(wc);
 	    widget_installed = (ids != null && ids.length > 0);
 	}
