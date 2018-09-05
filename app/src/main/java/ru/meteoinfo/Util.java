@@ -217,11 +217,11 @@ public class Util {
 	    }
         }
 	if(len < 1) {
-	    log(COLOUR_ERR, R.string.empty_string);	
+	    Log.e(TAG, App.get_string(R.string.empty_string));	
 	    return null;
 	}	
 	long end = System.currentTimeMillis();
-	Log.d(TAG, "url: " + url_str + " received in " + (end - start) + "ms");
+	log(COLOUR_DBG, "url: " + url_str + " " + App.get_string(R.string.received_in) + " " + (end - start) + "ms");
 	String ret = new String(b);
 	ret = ret.substring(0, len);
 	return ret;
@@ -383,7 +383,7 @@ public class Util {
 		    continue;
 	        }
 
-		stans[i].trim();
+		stans[i] = stans[i].trim();
 
 		std = stans[i].split(";");
 		if(std.length < 5) {
@@ -667,8 +667,11 @@ public class Util {
 	 	switch(type) {
 		    case WEATHER_REQ_OBSERV: ret = new String(weatherCodesObserv[info]); break;
 		    case WEATHER_REQ_7DAY: ret = new String(weatherCodes7day[info]); break;
-		    case WEATHER_REQ_3DAY: ret = new String(App.get_string(R.string.weather_code) +
-				" " + Integer.toString(info)); break;
+		    case WEATHER_REQ_3DAY: 
+			int i = hint_convTbl3to7[info];
+			if(i > 0 && i < weatherCodes7day.length) ret = new String(weatherCodes7day[i]);
+			else ret = new String(App.get_string(R.string.weather_code) + " " + Integer.toString(info)); 
+			break;
 		}
 	    } catch (Exception e) { Log.e(TAG, "exception in get_info_string()"); }
 	    return ret; 
@@ -835,8 +838,8 @@ public class Util {
 			    if(c_utc <= day) break;
 			    c_utc -= day;  	
 			}
-			// Log.d(TAG, "sunrise/utc/sunset=" + utc_sunrise + "/" + c_utc + "/" +utc_sunset);
-			// Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
+		//	Log.d(TAG, "sunrise/utc/sunset=" + utc_sunrise + "/" + c_utc + "/" +utc_sunset);
+		//	Log.d(TAG, "night=" + night + " for UTC=" + p[1] + " local=" + time);
 		    }
 		}
 	    } catch(Exception e) {
@@ -1054,7 +1057,7 @@ public class Util {
 	try {	
 	    String s_off, s_tz, s_sr, s_ss;
 	    SimpleDateFormat in = new SimpleDateFormat("yyyy-MM-dd HH:mm", loc);	
-	    if(Srv.use_geonames) {
+	    if(Srv.use_geonames) { 
 		int retries = 3;
 		String timezone_xml = null;
 		while(retries > 0) {		
@@ -1080,7 +1083,7 @@ public class Util {
 			Log.d(TAG, "geonames: utc_sunrise=" + utc_sunrise + ", utc_sunset=" + utc_sunset);
 		    }
 	   	} else log(COLOUR_ERR, "failed to obtain timezone info from api.geonames.org");
-	    } else {
+	    } else { 
 		com.luckycatlabs.sunrisesunset.dto.Location location = 
 			new com.luckycatlabs.sunrisesunset.dto.Location(station.latitude, station.longitude);
 		SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(location, TimeZone.getDefault());
@@ -1097,7 +1100,7 @@ public class Util {
 		date = in.parse(s_ss);
 		utc_sunset = date.getTime();
 		Log.d(TAG, "SunriseSunsetCalculator: utc_sunrise=" + utc_sunrise + ", utc_sunset=" + utc_sunset);
-	    }
+	    } 
 	} catch (Exception e) {
 	    log(COLOUR_ERR, "exception: failed to obtain timezone info");
 	    e.printStackTrace();
@@ -1371,6 +1374,28 @@ public class Util {
         null,     //16
         {19, 20, 21, 22, 23, 24, 35, 36, 37, 38, 39, 40, },     //17
     };
+
+    public static final int hint_convTbl3to7[] = {
+	-1,
+	58,	//1
+        58,	//2
+        -1,	//3
+        58,	//4
+        4,	//5
+        2,	//6
+        1,	//7
+        -1,	//8
+        65,	//9
+        63,	//10
+        78,	//11
+        6,	//12
+        27,	//13
+        42,	//14
+        47,	//15
+        -1,	//16
+        37,	//17
+    };
+
 
     // forecast code -> picture number (for 7day forecasts)
     public static final int forecast7day_code2pic[] = { 

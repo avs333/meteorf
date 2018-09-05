@@ -1,4 +1,4 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/collection_widget_item"
     android:orientation="horizontal"
@@ -44,17 +44,10 @@
 	    android:layout_width="wrap_content"
 	    android:layout_height="wrap_content"
 	    android:text="HH:MM"
+	    android:textStyle="bold"
 	    android:textSize="14sp" />
         
     </LinearLayout>
 
 </LinearLayout>
-
-
-<!--
-	android:layout_height="wrap_content"
-	android:layout_width="wrap_content"
-	android:layout_gravity="fill"
-
--->
 

@@ -336,7 +336,7 @@ public class WeatherActivity extends AppCompatActivity
 			    return;
 			} 	
 			cur_sta_local = true;
-			logUI(COLOUR_DBG, getString(R.string.sta_loc) + ": " + curStation.name_p + " #" + curStation.code);
+			logUI(COLOUR_DBG, getString(R.string.sta_loc) + " " + curStation.code + ": " + curStation.name_p);
 			removeDialog(ST_LAUNCH_DLG);
 			showDialog(ST_LAUNCH_DLG);
 		    } 	
@@ -665,14 +665,14 @@ public class WeatherActivity extends AppCompatActivity
     public Dialog do_launch() {
 
 	if(curStation == null) {
-	    logUI(COLOUR_ERR, "do_launch -> null");
+	    logUI(COLOUR_ERR, getString(R.string.err_in) + "do_launch");
 	    return null;
 	}
         final Dialog dialog = new Dialog(this);
 
 	dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.launch_layout);
-	logUI(COLOUR_DBG, "do_launch()");
+//	logUI(COLOUR_DBG, "do_launch()");
         Window wnd = dialog.getWindow();
         if(wnd != null) wnd.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
 
@@ -730,7 +730,7 @@ public class WeatherActivity extends AppCompatActivity
  		logUI(COLOUR_DBG, getString(R.string.add_new_fav) + ": " + s);
  		favs.add(s);
 		String[] f = favs.toArray(new String[0]);
-		for(int i = 0; i < f.length; i++) logUI(COLOUR_DBG, "fav[" + i + "]=" + f[i]);
+		for(int i = 0; i < f.length; i++) Log.d(TAG, "fav[" + i + "]=" + f[i]);
 		prefs.save();
 		if(fav_menu_idx != -1) navMenu.getItem(fav_menu_idx).setEnabled(true);  	
 		ab.setEnabled(false);

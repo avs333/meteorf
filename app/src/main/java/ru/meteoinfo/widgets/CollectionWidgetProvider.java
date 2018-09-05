@@ -53,29 +53,12 @@ public class CollectionWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager man,	int[] wids) {
         Log.d(TAG, "onUpdate");
-/*	
-	for(int id : wids) {
-	    RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.collection_widget);
-	    // Specify the service to provide data for the collection widget.
-	    // Note that we need to
-	    // embed the appWidgetId via the data otherwise it will be ignored.
-	    final Intent intent = new Intent(context, CollectionWidgetService.class);
-	    intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
-	    intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
-	    rv.setRemoteAdapter(R.id.page_flipper, intent);
-	    man.updateAppWidget(id, rv);
-	} */
-
 	RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.collection_widget);
 	final Intent intent = new Intent(context, CollectionWidgetService.class);
 	intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
 	rv.setRemoteAdapter(R.id.page_flipper, intent);
 	settings_changed(wids, rv);
 	man.updateAppWidget(wids, rv);
-
-	// set_click_handlers(context, rv, id);
-	// weather_update(WEATHER_CHANGED_BROADCAST, context);
-	// settings_update(context);
 	super.onUpdate(context, man, wids);
     }
 
@@ -120,7 +103,7 @@ public class CollectionWidgetProvider extends AppWidgetProvider {
 		try {
 		    Station st = Srv.getCurrentStation();
 		    if(st != null && !st.shortname.equals(last_sta_name)) {
-			Log.d(TAG, "station changed, updating widget and PendingIntentTemplate");
+			Log.d(TAG, "station changed, updating widget and PendingIntentTemplate shortname " + st.shortname + ", name=" + st + ", name_p=" + st.name_p);
 			last_sta_name = st.shortname;
 			rv.setTextViewText(R.id.w_addr, last_sta_name);
 			//  rv.setScrollPosition(R.id.page_flipper, 0);

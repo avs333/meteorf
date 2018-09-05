@@ -103,6 +103,7 @@
     <string name="conn_slow">Слишком медленное соединение</string>               
     <string name="loc_unk_yet">Поиск координат&#8230;</string>               
     <string name="init_already">Список станций получен.</string>               
+    <string name="received_in">получено за</string>               
     <string name="night">ночью</string>               
     <string name="day">днем</string>               
     <string name="empty_string">Пустая строка</string>               
@@ -127,7 +128,8 @@
     <string name="wd_precip6h">Осадки за 6 часов: %.1f мм</string>
     <string name="wd_precip12h">Осадки за 12 часов: %.1f мм</string>
     <string name="wd_humidity">Относительная влажность: %.1f%%</string>
-    <string name="wd_visibility">Видимость: %.1f м</string>
+    <string name="wd_visibility_km">Видимость: %d км</string>
+    <string name="wd_visibility_m">Видимость: %d м</string>
     <string name="wd_clouds">Балл общей облачности (0&#8211;10): %d</string>
 
     <string name="too_windy">Слишком ветрено: от %.1f до %.1f</string>

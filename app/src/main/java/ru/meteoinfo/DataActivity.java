@@ -93,6 +93,7 @@ public class DataActivity extends AppCompatActivity {
         });
 
         etext = findViewById(R.id.etext);
+	etext.setTextIsSelectable(true);
 
         Runnable bgr = new Runnable() {
             @Override
@@ -136,7 +137,7 @@ public class DataActivity extends AppCompatActivity {
 	}
     }
 
-    public static String parseWeatherInfo(WeatherInfo wi) {
+    public static String parseWeatherInfo(WeatherInfo wi, boolean show_temp) {
 
 	String s = "", st;
 	double val, val2, val3;
@@ -147,8 +148,13 @@ public class DataActivity extends AppCompatActivity {
 		s += "<p><h3><i>" + st + "</i></h3>";
 	    } 
 
-	    val = wi.get_temperature();	
-	    if(val != Util.inval_temp) s += String.format(App.get_string(R.string.wd_temperature), val) + "<br>";
+	    st = wi.get_info_string();
+	    if(st != null) s += st + "<br>";
+
+	    if(show_temp) {	
+		val = wi.get_temperature();	
+		if(val != Util.inval_temp) s += String.format(App.get_string(R.string.wd_temperature), val) + "<br>";
+	    }	
 
 	    val = wi.get_pressure();
 	    if(val != -1) s += String.format(App.get_string(R.string.wd_pressure), val) + "<br>";
@@ -163,9 +169,6 @@ public class DataActivity extends AppCompatActivity {
 		else s += String.format(App.get_string(R.string.wd_wind_nogusts), st, val, val2);
 		s += "<br>";
 	    }
-
-	    st = wi.get_info_string();
-	    if(st != null) s += st + "<br>";
 
 	    val = wi.get_precip();  		    
 	    if(val != -1) {
@@ -194,8 +197,15 @@ public class DataActivity extends AppCompatActivity {
 	    if(val != -1) s += String.format(App.get_string(R.string.wd_humidity), val) + "<br>";
 
 	    val = wi.get_visibility();
-	    if(val != -1) s += String.format(App.get_string(R.string.wd_visibility), val) + "<br>";
-
+	    if(val != -1) {
+		if(val >= 1000) {
+		    int vis = (int) val/1000;
+		    s += String.format(App.get_string(R.string.wd_visibility_km), vis) + "<br>";
+		} else {
+		    s += String.format(App.get_string(R.string.wd_visibility_m), (int) val) + "<br>";
+		}
+	    }
+ 
 	    int clouds = wi.get_clouds();
 	    if(val != -1) s += String.format(App.get_string(R.string.wd_clouds), clouds) + "<br>";
 
@@ -210,7 +220,7 @@ public class DataActivity extends AppCompatActivity {
 
 	if(wd.observ != null && wd.observ.valid) { 
 	    s += "<br><h2><i><font color=#0000C0>" + App.get_string(R.string.observ_data) + "</font></i></h2>";	
-	    st = parseWeatherInfo(wd.observ);
+	    st = parseWeatherInfo(wd.observ, true);
 	    if(st != null) {
 		s += st; s += "<p>";
 	    } 		
@@ -221,7 +231,7 @@ public class DataActivity extends AppCompatActivity {
 	    for(int i = 0; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
 		if(wi == null || !wi.valid) continue;
-		st = parseWeatherInfo(wi);
+		st = parseWeatherInfo(wi, true);
 		if(st != null) {
 		    s += st; s += "<p>";
 		} 		
@@ -233,7 +243,7 @@ public class DataActivity extends AppCompatActivity {
 	    for(int i = 0; i < wd.for7days.size(); i++) {
 		wi = wd.for7days.get(i);
 		if(wi == null || !wi.valid) continue;
-		st = parseWeatherInfo(wi);
+		st = parseWeatherInfo(wi, true);
 		if(st != null) {
 		    s += st; s += "<p>";
 		} 		

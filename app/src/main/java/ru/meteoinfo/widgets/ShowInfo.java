@@ -82,7 +82,7 @@ public class ShowInfo extends AppCompatActivity {
 
             if(CollectionWidgetService.view_factory.wi_list != null) {
                 WeatherInfo wi = CollectionWidgetService.view_factory.wi_list.get(position);
-                if(wi != null) s = DataActivity.parseWeatherInfo(wi);
+                if(wi != null) s = DataActivity.parseWeatherInfo(wi, false);  // false = skip temperature
             }
 
             if(s != null && s.length() != 0) tview.setText(Html.fromHtml(s));

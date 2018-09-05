@@ -97,7 +97,7 @@ public class CollectionWidgetService extends RemoteViewsService {
 	@Override
 	public RemoteViews getViewAt(int position) {
 	    if(count == 0 || position >= count || wi_list == null) return null;
-	    RemoteViews views = new RemoteViews(getPackageName(), R.layout.collection_widget_item);
+	    RemoteViews views = new RemoteViews(getPackageName(), R.layout.collection_widget_item_new);
 	    WeatherInfo wi = wi_list.get(position);
 
 	    String icon_nm = wi.get_icon_name();
@@ -131,7 +131,7 @@ public class CollectionWidgetService extends RemoteViewsService {
 	    extras.putInt(CUR_POS, position);
 	    Intent fill_in  = new Intent(context, ru.meteoinfo.widgets.ShowInfo.class);
 	    fill_in.putExtras(extras);
-	    views.setOnClickFillInIntent(R.id.collection_widget_item, fill_in);
+	    views.setOnClickFillInIntent(R.id.collection_widget_item_new, fill_in);
   		
 	    return views;
 	}

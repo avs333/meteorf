@@ -35,6 +35,7 @@
             android:layout_height="wrap_content"
             android:textColor="?android:attr/textColorPrimaryNoDisable" 
 	    android:textSize="14sp"	
+	    android:textIsSelectable="true"	
 	/>
     </ScrollView>
 
