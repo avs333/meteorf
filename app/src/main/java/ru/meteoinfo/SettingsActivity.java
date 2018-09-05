@@ -30,7 +30,7 @@ public class SettingsActivity extends PreferenceActivity
     public static final int DFL_LOC_UPDATE_INTERVAL = 60; 	
     public static final int DFL_WTH_UPDATE_INTERVAL = 1200; 	
     public static final String DFL_WDT_FONT_COLOUR = "FFFFFF00";
-    public static final String DFL_WDT_BACK_COLOUR = "80000000";
+    public static final String DFL_WDT_BACK_COLOUR = "80000080";
     private int prefs_changed = 0;
     public static final int PCHG_SRV_MASK = 1;
     public static final int PCHG_WID_MASK = 2;

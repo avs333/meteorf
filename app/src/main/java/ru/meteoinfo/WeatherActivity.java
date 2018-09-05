@@ -129,7 +129,7 @@ public class WeatherActivity extends AppCompatActivity
 	if(req == PREF_ACT_REQ) {
 	    if(prefs == null) prefs = new Prefs();
 	    else prefs.load(); 	
-	    logUI(COLOUR_DBG, "settings result=" + res);	
+	    Log.d(TAG, "settings result=" + res);	
  	    Intent intent = new Intent(this, Srv.class);
 	    intent.setAction(Srv.UPDATE_REQUIRED);
 	    intent.putExtra("res", res);
@@ -461,6 +461,7 @@ public class WeatherActivity extends AppCompatActivity
         }
     }
 
+    @Override	
     public Dialog onCreateDialog(int id) {
         try {
             switch (id) {

@@ -1,19 +1,29 @@
 package ru.meteoinfo.widgets;
 
-//import me.sunphiz.adapterviewflipperwidget.R;
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
-
 import java.util.ArrayList;
+import android.app.Dialog;
+import android.content.Intent;
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.TextView;
 
 import ru.meteoinfo.App;
 import ru.meteoinfo.Util;
 import ru.meteoinfo.Srv;
+import ru.meteoinfo.DataActivity;
+import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
 import ru.meteoinfo.R;
@@ -21,19 +31,22 @@ import ru.meteoinfo.R;
 public class CollectionWidgetService extends RemoteViewsService {
 
     private static final String TAG = "ru.meteoinfo:CWService";
+    public static final String CUR_POS = "current_position";
+    public static ViewFactory view_factory = null;
 
-   @Override
+    @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
 	Log.d(TAG, "onGetViewFactory()");
-	return new ViewFactory(this.getApplicationContext(), intent);
+	view_factory = new ViewFactory(this.getApplicationContext(), intent);
+	return view_factory;
     }
 
-    private class ViewFactory implements RemoteViewsService.RemoteViewsFactory {
+    class ViewFactory implements RemoteViewsService.RemoteViewsFactory {
 		
         private Context context;
-        private static final int max_widx = 12;
-	private int count = 0;
-	private ArrayList <WeatherInfo> wi_list = null;
+        public static final int max_widx = 12;
+	int count = 0;
+	ArrayList <WeatherInfo> wi_list = null;
 	
 	public ViewFactory(Context ctx, Intent intent) {
 	    context = ctx;
@@ -42,11 +55,10 @@ public class CollectionWidgetService extends RemoteViewsService {
 	@Override
 	public void onDataSetChanged() {
 
-	    Log.i(TAG, "onDataSetChanged()");
 	    WeatherData wd = Srv.getLocalWeather();
 
 	    if(wd == null) {
-		Log.e(TAG, "localWeather unknown or invalid weather for 3 days");
+		Log.e(TAG, "onDataSetChanged: local weather unknown");
 		count = 0;
 		return;
 	    }	
@@ -79,7 +91,6 @@ public class CollectionWidgetService extends RemoteViewsService {
 
 	@Override
 	public int getCount() {
-	    Log.i(TAG, "getCount() return " + count);
 	    return count;
 	}
 
@@ -96,8 +107,8 @@ public class CollectionWidgetService extends RemoteViewsService {
 	
 	    String temp = null;
 	    double val = wi.get_temperature();
-	    if(val == Util.inval_temp) temp = "????";
-	    else temp = String.format(java.util.Locale.US, "+%.1f°C", val);
+	    if(val == Util.inval_temp) temp = "?????";
+	    else temp = String.format(java.util.Locale.US, "+%.1f °C", val);
 	    views.setTextViewText(R.id.w_temp, temp);
 
 	    String date = wi.get_date();
@@ -116,18 +127,10 @@ public class CollectionWidgetService extends RemoteViewsService {
 	    views.setTextColor(R.id.w_date, fg);
 	    views.setTextColor(R.id.w_time, fg);
 
-	    Intent fill_in = new Intent();
-/*
-	    Bundle extras = new Bundle();	
-	    extras.putInt("ru.meteoinfo.EXTRA_ITEM", position);
-	    fill_in = new Intent();
-	    views.setOnClickFillInIntent(R.id.collection_widget_item, fill_in);
-Replaced by:
-*/
-//	    fill_in  = new Intent(context,  ru.meteoinfo.WebActivity.class);
-//	    views.setOnClickFillInIntent(R.id.w_info, fill_in);
-	    fill_in  = new Intent(context,  ru.meteoinfo.WeatherActivity.class);
-//	    views.setOnClickFillInIntent(R.id.w_temp, fill_in);
+	    Bundle extras = new Bundle();
+	    extras.putInt(CUR_POS, position);
+	    Intent fill_in  = new Intent(context, ru.meteoinfo.widgets.ShowInfo.class);
+	    fill_in.putExtras(extras);
 	    views.setOnClickFillInIntent(R.id.collection_widget_item, fill_in);
   		
 	    return views;
@@ -161,8 +164,5 @@ Replaced by:
 	public RemoteViews getLoadingView() {
 	    return null;
 	}
-
-
     }
-
 }

@@ -360,12 +360,14 @@ public class Util {
 	    // Split the string into lines
 
 	    String[] std, stans;
- 	    stans = s.split(" \n");
+
+ 	    stans = s.split("\n");
+
 	    if(stans.length < 1) {
 		log(COLOUR_ERR, R.string.empty_sta_list);
 		return false;
 	    }
-
+		
 	    // Parse and add each station to fullStationList
 
 	    log(COLOUR_DBG, R.string.parse_list);
@@ -378,11 +380,10 @@ public class Util {
 		    continue;
 		}
 		if(stans[i].startsWith("16169")) {  // known dead station next to Kievsky vokzal
-//	    	    log(COLOUR_DBG, R.string.skip_kiev);
 		    continue;
 	        }
 
-//		if(stans[i].endsWith(" ")) stans[i] = stans[i].substring(0, stans[i].lastIndexOf(" "));
+		stans[i].trim();
 
 		std = stans[i].split(";");
 		if(std.length < 5) {
@@ -835,7 +836,7 @@ public class Util {
 			    c_utc -= day;  	
 			}
 			// Log.d(TAG, "sunrise/utc/sunset=" + utc_sunrise + "/" + c_utc + "/" +utc_sunset);
-			Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
+			// Log.d(TAG, "night=" + night + " for UTC=" + p[1]);
 		    }
 		}
 	    } catch(Exception e) {

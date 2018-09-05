@@ -28,6 +28,7 @@ public class CollectionWidgetProvider extends AppWidgetProvider {
     public static final String ACTION_LEFT_BROADCAST  = "action_left";
     public static final String ACTION_RIGHT_BROADCAST  = "action_right";
     public static final String ACTION_RESTART = "action_restart";
+    public static final String ACTION_SHOW_INFO = "show_info";	
 
     private static final String TAG = "ru.meteoinfo:CWProvider";
     private static final Object restart_lock = new Object();
@@ -117,39 +118,22 @@ public class CollectionWidgetProvider extends AppWidgetProvider {
 	    case WEATHER_CHANGED_BROADCAST:
 	    case ACTION_RESTART: 
 		try {
-		Station st = Srv.getCurrentStation();
-		if(st != null && !st.shortname.equals(last_sta_name)) {
-		    Log.d(TAG, "station changed, updating widget and PendingIntentTemplate");
-		    last_sta_name = st.shortname;
-		    rv.setTextViewText(R.id.w_addr, last_sta_name);
-		//  rv.setScrollPosition(R.id.page_flipper, 0);		/* listview only? */
-		
-		    Intent sintent;
-		    PendingIntent ptt;	
-/*
-		    String url =  Util.URL_STA_DATA + "?p=" + st.code;	
-		    sintent = new Intent(context, ru.meteoinfo.WebActivity.class);
-		    sintent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		    sintent.putExtra("action", url);
-		    sintent.putExtra("show_ui", false);
-		    sintent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));	
-		    if(st.name_p != null) sintent.putExtra("title", st.name_p);
-		    ptt =  PendingIntent.getActivity(context, 0, sintent, PendingIntent.FLAG_UPDATE_CURRENT);
-		    rv.setPendingIntentTemplate(R.id.page_flipper, ptt);
-*/
-		    sintent = new Intent(context, ru.meteoinfo.WeatherActivity.class);
-		    sintent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		    sintent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));	
-		    sintent.putExtra("open_drawer", true);
-		    ptt = PendingIntent.getActivity(context, 0, sintent, 0);
-		    rv.setPendingIntentTemplate(R.id.page_flipper, ptt);
+		    Station st = Srv.getCurrentStation();
+		    if(st != null && !st.shortname.equals(last_sta_name)) {
+			Log.d(TAG, "station changed, updating widget and PendingIntentTemplate");
+			last_sta_name = st.shortname;
+			rv.setTextViewText(R.id.w_addr, last_sta_name);
+			//  rv.setScrollPosition(R.id.page_flipper, 0);
+			Intent sintent;
+			PendingIntent ptt;	
 
-		    man.partiallyUpdateAppWidget(wids, rv);
-		} else {
-		    Log.d(TAG, "station is " + st);
-		    if(st != null) Log.d(TAG, "shortname is " + st.shortname);
-		    break;	
-		}
+			sintent = new Intent(context, ru.meteoinfo.widgets.ShowInfo.class);
+			sintent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			sintent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));	
+			ptt = PendingIntent.getActivity(context, 0, sintent, 0);
+			rv.setPendingIntentTemplate(R.id.page_flipper, ptt);
+			man.partiallyUpdateAppWidget(wids, rv);
+		    }
 		} catch (Exception e) {
 		    Log.d(TAG, "Exception while processing");	
 		    e.printStackTrace();	

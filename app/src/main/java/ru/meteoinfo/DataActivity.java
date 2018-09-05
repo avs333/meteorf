@@ -48,7 +48,7 @@ public class DataActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         if(curStation == null) {
-            Toast.makeText(this, getString(R.string.no_station), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, App.get_string(R.string.no_station), Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -118,10 +118,10 @@ public class DataActivity extends AppCompatActivity {
                 if(meteodata != null && meteodata.length() != 0) 
                     etext.setText(Html.fromHtml(meteodata));
 		else etext.setText(Html.fromHtml("<p><br><br>&emsp;<h1><font color=#C00000>" + 
-			getString(R.string.no_data_avail) + "</font></h1>"));
+			App.get_string(R.string.no_data_avail) + "</font></h1>"));
             }
         };
-        AsyncTaskWithProgress atp = new AsyncTaskWithProgress(this, getString(R.string.receiving_data), bgr, fgr);
+        AsyncTaskWithProgress atp = new AsyncTaskWithProgress(this, App.get_string(R.string.receiving_data), bgr, fgr);
         atp.execute();
 
     }
@@ -136,7 +136,7 @@ public class DataActivity extends AppCompatActivity {
 	}
     }
 
-    private String parseWeatherInfo(WeatherInfo wi) {
+    public static String parseWeatherInfo(WeatherInfo wi) {
 
 	String s = "", st;
 	double val, val2, val3;
@@ -148,10 +148,10 @@ public class DataActivity extends AppCompatActivity {
 	    } 
 
 	    val = wi.get_temperature();	
-	    if(val != Util.inval_temp) s += String.format(getString(R.string.wd_temperature), val) + "<br>";
+	    if(val != Util.inval_temp) s += String.format(App.get_string(R.string.wd_temperature), val) + "<br>";
 
 	    val = wi.get_pressure();
-	    if(val != -1) s += String.format(getString(R.string.wd_pressure), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_pressure), val) + "<br>";
 
 	    val = wi.get_wind_dir();
 	    val2 = wi.get_wind_speed();
@@ -159,8 +159,8 @@ public class DataActivity extends AppCompatActivity {
 
 	    if(val != -1 && val2 != -1) {
 	        st = windDir(val);
-		if(val3 != -1) s += String.format(getString(R.string.wd_wind_gusts), st, val, val2, val3);
-		else s += String.format(getString(R.string.wd_wind_nogusts), st, val, val2);
+		if(val3 != -1) s += String.format(App.get_string(R.string.wd_wind_gusts), st, val, val2, val3);
+		else s += String.format(App.get_string(R.string.wd_wind_nogusts), st, val, val2);
 		s += "<br>";
 	    }
 
@@ -169,8 +169,8 @@ public class DataActivity extends AppCompatActivity {
 
 	    val = wi.get_precip();  		    
 	    if(val != -1) {
-		if(wi.gettype() == Util.WEATHER_REQ_7DAY) st = getString(R.string.wd_precip_nd);
-		else st = getString(R.string.wd_precip1h);		
+		if(wi.gettype() == Util.WEATHER_REQ_7DAY) st = App.get_string(R.string.wd_precip_nd);
+		else st = App.get_string(R.string.wd_precip1h);		
 		s += String.format(st, val) + "<br>";
 	    }	
 
@@ -178,38 +178,38 @@ public class DataActivity extends AppCompatActivity {
 	    if(wi.gettype() == Util.WEATHER_REQ_7DAY) return s;	// no more data for 7-day forecast
 	    else if(wi.gettype() == Util.WEATHER_REQ_3DAY) {
 		val = wi.get_humidity();
-		if(val != -1) s += String.format(getString(R.string.wd_humidity), val) + "<br>";
+		if(val != -1) s += String.format(App.get_string(R.string.wd_humidity), val) + "<br>";
 		return s;				// no more data for 3-day forecast
 	    }	
 	    val = wi.get_precip3h();  		    
-	    if(val != -1) s += String.format(getString(R.string.wd_precip3h), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_precip3h), val) + "<br>";
 
 	    val = wi.get_precip6h();  		    
-	    if(val != -1) s += String.format(getString(R.string.wd_precip6h), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_precip6h), val) + "<br>";
 
 	    val = wi.get_precip12h();  		    
-	    if(val != -1) s += String.format(getString(R.string.wd_precip12h), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_precip12h), val) + "<br>";
 
 	    val = wi.get_humidity();
-	    if(val != -1) s += String.format(getString(R.string.wd_humidity), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_humidity), val) + "<br>";
 
 	    val = wi.get_visibility();
-	    if(val != -1) s += String.format(getString(R.string.wd_visibility), val) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_visibility), val) + "<br>";
 
 	    int clouds = wi.get_clouds();
-	    if(val != -1) s += String.format(getString(R.string.wd_clouds), clouds) + "<br>";
+	    if(val != -1) s += String.format(App.get_string(R.string.wd_clouds), clouds) + "<br>";
 
 	return s;
 	     	
     }
 
-    private String parseWeatherData(WeatherData wd) {
+    public static String parseWeatherData(WeatherData wd) {
 
         WeatherInfo wi;
         String s = "", st;
 
 	if(wd.observ != null && wd.observ.valid) { 
-	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.observ_data) + "</font></i></h2>";	
+	    s += "<br><h2><i><font color=#0000C0>" + App.get_string(R.string.observ_data) + "</font></i></h2>";	
 	    st = parseWeatherInfo(wd.observ);
 	    if(st != null) {
 		s += st; s += "<p>";
@@ -217,7 +217,7 @@ public class DataActivity extends AppCompatActivity {
 	}
 
 	if(wd.for3days != null) {
-	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.daily_data) + "</font></i></h2>";	
+	    s += "<br><h2><i><font color=#0000C0>" + App.get_string(R.string.daily_data) + "</font></i></h2>";	
 	    for(int i = 0; i < wd.for3days.size(); i++) {
 		wi = wd.for3days.get(i);
 		if(wi == null || !wi.valid) continue;
@@ -229,7 +229,7 @@ public class DataActivity extends AppCompatActivity {
 	}
 
 	if(wd.for7days != null) {
-	    s += "<br><h2><i><font color=#0000C0>" + getString(R.string.weekly_data) + "</font></i></h2>";	
+	    s += "<br><h2><i><font color=#0000C0>" + App.get_string(R.string.weekly_data) + "</font></i></h2>";	
 	    for(int i = 0; i < wd.for7days.size(); i++) {
 		wi = wd.for7days.get(i);
 		if(wi == null || !wi.valid) continue;

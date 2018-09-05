@@ -125,7 +125,7 @@ public class Srv extends Service {
     private void send_init_result(int res) {
 	if(App.activity_visible) {
 	    try {	
-		log(COLOUR_DBG, "Activity: stage " + res + " passed");	
+		Log.d(TAG, "Activity: stage " + res + " passed");	
 		Message msg = new Message();
 		Bundle b = new Bundle();
 		b.putInt("init_complete", res);
@@ -218,7 +218,7 @@ public class Srv extends Service {
 		Log.d(TAG, "internal error: station list unknown on entry to restart_updates()");
 		return;
 	    }
-	    log(COLOUR_DBG, "restarting updates");
+	    Log.d(TAG, "restarting updates");
 
 	    if(cur_res_level < RES_LIST) {
 		send_init_result(RES_LIST);
@@ -226,17 +226,17 @@ public class Srv extends Service {
 	    }
 	    // Start location updates
 	
-	    log(COLOUR_DBG, "starting updates, priority=" + loc_priority + ", updates: location=" 
+	    Log.d(TAG, "starting updates, priority=" + loc_priority + ", updates: location=" 
 		+ loc_update_interval + ", weather=" + wth_update_interval);
 
 	    if(loc_client == null || App.activity_visible) {
 		loc_client = LocationServices.getFusedLocationProviderClient(this);
-		log(COLOUR_DBG, "trying getLastLocation()");
+		Log.d(TAG, "trying getLastLocation()");
 		loc_client.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
 		    @Override
 		    public void onComplete(Task<Location> task) {
 			if(task == null || !task.isSuccessful() || task.getResult() == null) {
-			    log(COLOUR_ERR, "getLastLocation() failed");
+			    Log.e(TAG, "getLastLocation() failed");
 			    return;
 			}
 			synchronized(lock_loc_update) {
@@ -251,7 +251,7 @@ public class Srv extends Service {
 				}
 			    } catch(Exception e) {
 				e.printStackTrace();
-			    	log(COLOUR_ERR, "getLastLocation(): exception");
+			    	Log.e(TAG, "getLastLocation(): exception");
 				return;
 			    }
 			}
@@ -259,7 +259,7 @@ public class Srv extends Service {
 			    send_init_result(RES_LOC);
 			    cur_res_level = RES_LOC;
 			}
-			log(COLOUR_DBG, "getLastLocation.onComplete: station=" + currentStation.code);
+			Log.d(TAG, "getLastLocation.onComplete: station=" + currentStation.code);
 			updateLocalWeather(true);
 		    }
 		});
@@ -289,7 +289,7 @@ public class Srv extends Service {
 	    return;
 	}
 	loc_client.requestLocationUpdates(loc_req, pint_location);
-	log(COLOUR_DBG, "location updates restarted at " + interval/1000 + " sec intervals");
+	Log.d(TAG, "location updates restarted at " + interval/1000 + " sec intervals");
     }
 
     synchronized void start_weather_updates(boolean init) {
@@ -304,12 +304,12 @@ public class Srv extends Service {
 	}
 	amgr.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
 	    SystemClock.elapsedRealtime(), interval, pint_weather);
-	log(COLOUR_DBG, "weather updates restarted at " + interval/1000 + " sec intervals");
+	Log.d(TAG, "weather updates restarted at " + interval/1000 + " sec intervals");
     }
 
     @Override
     public void onDestroy() {
-	log(COLOUR_DBG, "destroying service");
+	Log.d(TAG, "destroying service");
 	App.service_started = false;
 	if(pint_location != null) 
 	    LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(pint_location);
@@ -345,7 +345,7 @@ public class Srv extends Service {
 
 		if(result != null) loc = result.getLastLocation();
 		if(loc == null) {
-		    log(COLOUR_DBG, "null location received in getLastLocation()");
+		    Log.d(TAG, "null location received in getLastLocation()");
 		    break;
 		}
 
@@ -357,7 +357,7 @@ public class Srv extends Service {
 		    long delta = loc_fix ? loc_update_interval/4 : init_loc_update_interval/4;
 		    if(tdiff < delta && currentLocation != null) {
 			if(loc_fix) {
-			    log(COLOUR_DBG, "too fast location update request after " + tdiff + "ms, ignored");
+			    Log.d(TAG, "too fast location update request after " + tdiff + "ms, ignored");
 			    break;
 			}
 		    }
@@ -398,7 +398,7 @@ public class Srv extends Service {
 		break;
 
 	    case WIDGET_STARTED:
-		log(COLOUR_DBG, "widget started");
+		Log.d(TAG, "widget started");
 		widget_installed = true;
 		widget_updated = false;
 		wth_fix = false;
@@ -412,7 +412,7 @@ public class Srv extends Service {
 		    AlarmManager amgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 		    amgr.cancel(pint_weather);
 		    pint_weather = null;
-		    log(COLOUR_DBG, "weather updates stopped");	
+		    Log.d(TAG, "weather updates stopped");	
 		}
 		break;
 
@@ -426,7 +426,7 @@ public class Srv extends Service {
 		break;
 
 	    case UPDATE_REQUIRED:	// settings changed
-		log(COLOUR_DBG, "restarting updates with new settings");
+		Log.d(TAG, "restarting updates with new settings");
 		if(intent == null) return START_STICKY;
 		int res = intent.getIntExtra("res", 0);
 		read_prefs();
@@ -449,7 +449,7 @@ public class Srv extends Service {
 
     private void updateLocalWeather(boolean forced) {
 	if(currentStation == null) {
-	    log(COLOUR_ERR, "updateLocalWeather: local station unknown yet");
+	    Log.e(TAG, "updateLocalWeather: local station unknown yet");
 	    return;	
 	}
 	final boolean force_update = forced;
@@ -461,17 +461,17 @@ public class Srv extends Service {
 		    long tdiff = cur_wtime - last_wth_update_time;	
 		    long delta = wth_fix ? wth_update_interval/4 : init_wth_update_interval/4;
 		    if(tdiff < delta && localWeather != null && !force_update) {
-			log(COLOUR_DBG, "too fast weather update request after " + tdiff + "ms, ignored");
+			Log.d(TAG, "too fast weather update request after " + tdiff + "ms, ignored");
 			return;
 		    }
 	    	    last_wth_update_time = cur_wtime;
-		    log(COLOUR_DBG, "updating local weather for station " + currentStation.code);
+		    Log.d(TAG, "updating local weather for station " + currentStation.code);
 		    localWeather = Util.getWeather(currentStation);
 		    if(widget_installed && localWeather != null) {
 			try {
 			    notify_widgets(WidgetProvider.WEATHER_CHANGED_BROADCAST);
 			} catch (Exception e) {
-			    log(COLOUR_DBG, "failed to notify widgets!");
+			    Log.e(TAG, "failed to notify widgets!");
 			    e.printStackTrace();
 			    return;	
 			}
@@ -487,7 +487,7 @@ public class Srv extends Service {
     public static void read_prefs() {
 	if(settings == null) settings = PreferenceManager.getDefaultSharedPreferences(App.getContext());
 	if(settings == null) {
-	    log(COLOUR_DBG, "failed to read prefs");
+	    Log.e(TAG, "failed to read prefs");
 	    return;
 	}
 	use_gps = settings.getBoolean("use_gps", SettingsActivity.DFL_USE_GPS);

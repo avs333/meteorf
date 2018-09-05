@@ -68,6 +68,7 @@
             android:label="@string/title_activity_maps">
 	</activity>
 
+
 	<service android:name=".Srv"
 	    android:permission="android.permission.BIND_JOB_SERVICE">
 	</service>
@@ -112,20 +113,18 @@
             android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS">
         </service>
 
-	<!--
-        <receiver android:name=".WidgetBroadcastReceiver" android:enabled="false">
-            <intent-filter>
-       		<action android:name="ru.meteoinfo.WidgetProvider.SETTINGS_CHANGED_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.WEATHER_CHANGED_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_LEFT_BROADCAST" /> 
-		<action android:name="ru.meteoinfo.WidgetProvider.ACTION_RIGHT_BROADCAST" /> 
-		<action android:name="android.intent.action.BOOT_COMPLETED" /> 
-	    </intent-filter>
-        </receiver> -->
-
+	<activity android:name=".widgets.ShowInfo"
+	    android:theme="@style/Theme.Custom">
+	</activity>
 
     </application>
 
+<!-- 
+	<activity android:name=".widgets.ShowInfo"
+	    android:theme="@style/Theme.AppCompat.Dialog">
+	</activity>
 
+Theme.Holo.NoActionBar
+-->
 
 </manifest>

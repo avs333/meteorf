@@ -28,6 +28,7 @@
     <string name="observ_data">Наблюдения за последние 6 часов</string>
     <string name="daily_data">Почасовой прогноз на 3 дня</string>
     <string name="weekly_data">Недельный прогноз</string>
+    <string name="weekly_data2">Общий прогноз</string>
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
@@ -162,6 +163,9 @@
     <string name="srv_created">Сервис запущен, виджет=</string>
     <string name="srv_sta_list_recv">Список станций получен</string>
     <string name="weather_code">Код погоды:</string>
+
+    <string name="go_back">Назад</string>
+    <string name="to_app">В программу</string>
 
     <string-array name="verb_names">
 	<item>Ошибки</item>
