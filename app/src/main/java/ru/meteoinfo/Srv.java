@@ -92,6 +92,14 @@ public class Srv extends Service {
     private static WeatherData localWeather = null;
     public static WeatherData getLocalWeather() { return localWeather; }
 
+    /* Widget classes we handle */
+
+    private final Class<?> [] widget_classes = {
+	ru.meteoinfo.widgets.WidgetLarge2.class,
+	ru.meteoinfo.widgets.WidgetSmall2.class,
+	ru.meteoinfo.widgets.CollectionWidgetProvider.class,
+    };	
+
     private static void log(int colour, String mesg) {
 	if(mesg == null) return;
 	if(App.activity_visible) WeatherActivity.logUI(colour, mesg);
@@ -142,15 +150,11 @@ public class Srv extends Service {
     private void notify_widgets(String action) {
 	if(action == null) return;
 	Intent intent;
-	intent = new Intent(context, ru.meteoinfo.widgets.WidgetLarge2.class);
-	intent.setAction(action);
-	sendBroadcast(intent);
-	intent = new Intent(context, ru.meteoinfo.widgets.WidgetSmall2.class);
-	intent.setAction(action);
-	sendBroadcast(intent);
-	intent = new Intent(context, ru.meteoinfo.widgets.CollectionWidgetProvider.class);
-	intent.setAction(action);
-	sendBroadcast(intent);
+	for(Class<?> cls : widget_classes) {
+	    intent = new Intent(context, cls);
+	    intent.setAction(action);
+	    sendBroadcast(intent);	
+	}
     }
 
     private static final Object wt_obj = new Object();
@@ -159,20 +163,16 @@ public class Srv extends Service {
     public void onCreate() {
 	super.onCreate();
 
-	ComponentName wc = new ComponentName(this, "ru.meteoinfo.widgets.WidgetLarge2");
 	AppWidgetManager man = AppWidgetManager.getInstance(this);
-	int ids[] = man.getAppWidgetIds(wc);
-	widget_installed = (ids != null && ids.length > 0);
-	if(!widget_installed) {
-	    wc = new ComponentName(this, "ru.meteoinfo.widgets.WidgetSmall2");
-	    ids = man.getAppWidgetIds(wc);
-	    widget_installed = (ids != null && ids.length > 0);
-	}
-	if(!widget_installed) {
-	    wc = new ComponentName(this, "ru.meteoinfo.widgets.CollectionWidgetProvider");
-	    ids = man.getAppWidgetIds(wc);
-	    widget_installed = (ids != null && ids.length > 0);
-	}
+
+        for(Class<?> cls : widget_classes) {
+	    ComponentName wc = new ComponentName(this, cls.getName());
+	    int ids[] = man.getAppWidgetIds(wc);
+	    if(ids != null && ids.length > 0) {
+		widget_installed = true;
+		break;
+	    }
+        }
 	read_prefs();
 
 	log(COLOUR_INFO, App.get_string(R.string.srv_created) + widget_installed);

@@ -42,7 +42,8 @@ public abstract class WidgetProvider extends AppWidgetProvider {
     // handler for enqueuing update requests to avoid race conditions 	
     private final Handler hdl = new Handler();
 
-    protected final Class<?> clz = this.getClass();
+    // you can't create abstact class instances, so "this" should be real
+    protected final Class<?> clz = this.getClass();	
     protected final String classname = clz.getName();
 
     protected abstract void weather_update(String action, Context context);
