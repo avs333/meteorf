@@ -1,2 +1,3 @@
-# meteorf
-A frontend for Sasha's meteoinfo.ru scripts
+Official program and widgets from the Hydrometeorological Centre of Russia
+
+
