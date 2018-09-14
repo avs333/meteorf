@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              tools:context=".ColorPicker">
+
+
+    <View
+        android:id="@+id/colorView"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+              android:orientation="vertical"
+        android:background="@android:color/white">
+
+    <TextView 	
+	android:layout_marginTop="18dp"
+	android:id="@+id/w_transp"
+	android:text="@string/w_transp"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"/>
+
+    <SeekBar
+            android:id="@+id/alphaSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="255"
+            android:maxHeight="3dip"
+            android:minHeight="3dip" />
+
+    <TextView 	
+	android:layout_marginTop="18dp"
+	android:id="@+id/w_red"
+	android:text="@string/w_red"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"/>
+
+     <SeekBar
+            android:id="@+id/redSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/alphaSeekBar"
+            android:max="255"
+            android:maxHeight="3dip"
+            android:minHeight="3dip"
+            android:textColor="@android:color/holo_red_light"/>
+
+    <TextView 	
+	android:layout_marginTop="18dp"
+	android:id="@+id/w_green"
+	android:text="@string/w_green"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"/>
+
+    <SeekBar
+            android:id="@+id/greenSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/redSeekBar"
+            android:max="255"
+            android:maxHeight="3dip"
+            android:minHeight="3dip"
+            android:textColor="@android:color/holo_green_light"/>
+
+    <TextView 	
+	android:layout_marginTop="18dp"
+	android:id="@+id/w_blue"
+	android:text="@string/w_blue"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"/>
+
+        <SeekBar
+            android:id="@+id/blueSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/greenSeekBar"
+            android:max="255"
+            android:maxHeight="3dip"
+            android:minHeight="3dip"
+            android:textColor="@android:color/holo_blue_light"/>
+
+    </LinearLayout>
+
+</LinearLayout>

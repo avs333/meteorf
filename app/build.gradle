@@ -73,5 +73,4 @@ dependencies {
 
 //    implementation 'net.sf.kxml:kxml2:2.3.0'
     implementation 'com.luckycatlabs:SunriseSunsetCalculator:1.2'
-    implementation project(':colorpicker')
 }

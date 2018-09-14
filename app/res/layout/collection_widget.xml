@@ -17,6 +17,14 @@
         android:textSize="18sp"
         android:textStyle="italic" />
 
+    <ImageView
+	android:layout_width="match_parent"
+	android:layout_height="2dp"
+	android:background="@android:color/white"/>
+
+
+
+
 <!--
     <AdapterViewFlipper
         android:id="@+id/page_flipper"

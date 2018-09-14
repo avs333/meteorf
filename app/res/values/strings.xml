@@ -148,6 +148,11 @@
 
     <string name="wd_unk_temp">T,°C</string>               
 
+    <string name="w_transp">Прозрачность</string>               
+    <string name="w_red">Красный</string>               
+    <string name="w_green">Зеленый</string>               
+    <string name="w_blue">Синий</string>               
+
     <string name="wd_forecast">[П]</string>               
     <string name="wd_observ">[Н]</string>               
     <string name="wd_precip_3h">[3ч]</string>               

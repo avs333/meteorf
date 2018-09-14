@@ -18,10 +18,7 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.util.Log;
 import android.widget.EditText;
 import android.view.ViewGroup;
-
-import com.pes.androidmaterialcolorpickerdialog.ColorPicker;
-import com.pes.androidmaterialcolorpickerdialog.ColorPickerCallback;
-
+import ru.meteoinfo.ColorPicker;
 
 public class SettingsActivity extends PreferenceActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -44,7 +41,8 @@ public class SettingsActivity extends PreferenceActivity
     public static final int PCHG_SRV_MASK = 1;
     public static final int PCHG_WID_MASK = 2;
 
-    class ColorPickerPreference extends DialogPreference implements ColorPickerCallback {
+    class ColorPickerPreference extends DialogPreference 
+	implements ColorPickerCallback {
 	private ColorPicker cp = null;
 	private String colour = null;
 
@@ -77,10 +75,11 @@ public class SettingsActivity extends PreferenceActivity
 	@Override
 	protected View onCreateDialogView() {
 	    cp.show();
-	    View v = cp.get_view();	
-	    ViewGroup vp = (ViewGroup) v.getParent();
-	    if(vp != null) vp.removeView(v);
-	    return v;	
+	    View vl = (View) cp.colorView.getParent();
+	    ViewGroup vp = (ViewGroup) vl.getParent();
+	    if(vp != null) vp.removeView(vl);
+	    return vl;
+
 	}
 	@Override
 	protected void onBindDialogView(View view) {
@@ -90,6 +89,7 @@ public class SettingsActivity extends PreferenceActivity
 	protected void onDialogClosed(boolean positiveResult) {
 	    super.onDialogClosed(positiveResult);
 	    if(positiveResult) {
+	        colour = String.format("%08X", (0xFFFFFFFF & cp.getColor()));
 		Log.d(TAG, "positive result=" + colour + " for " + getKey());
 		
 	    	persistString(colour);
