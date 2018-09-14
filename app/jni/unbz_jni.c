@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <jni.h>
 #include <errno.h>
+#include <syscall.h>
 #include <android/log.h>
 #include "bzlib.h"
 
@@ -113,6 +114,9 @@ JNIEXPORT jint Java_ru_meteoinfo_Util_unBzip2(JNIEnv *env, jobject obj, jbyteArr
 
 }
 
+JNIEXPORT jint Java_ru_meteoinfo_Util_gettid(JNIEnv *env, jobject obj) {
+    return syscall(__NR_gettid);
+}
 
 
 

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_grid"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/w_addr"
+	android:layout_marginTop="8dp"
+	android:layout_marginBottom="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+	android:layout_gravity="center_horizontal"
+        android:text="@string/loc_unk_yet"
+        android:textSize="18sp"
+        android:textStyle="italic" />
+
+<!--
+    <AdapterViewFlipper
+        android:id="@+id/page_flipper"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:autoStart="false"
+        android:loopViews="true" />
+-->
+
+        <ListView
+            android:id="@+id/page_flipper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:dividerHeight="1dp"
+            android:divider="#eeeeee"
+            tools:listitem="@layout/collection_widget_item">
+	</ListView>
+
+</LinearLayout>
+
+<!--
+            android:background="@color/colorWhite"
+    android:background="#99ffffff"
+        android:autoStart="true"
+        android:flipInterval="5000"
+-->
+
+

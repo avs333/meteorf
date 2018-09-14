@@ -31,13 +31,18 @@ android {
             path "jni/Android.mk"
         }
     }
-
+    sourceSets {
+	main.manifest.srcFile 'AndroidManifest.xml'
+	main.java.srcDirs = ['java_main', 'java_widgets']
+	main.res.srcDirs = ['res']
+	main.assets.srcDirs = ['assets']
+    }
 }
 
+
+
+
 repositories {
-//    maven {
-//        url "http://maven.google.com/"
-//    }
 	mavenCentral()
 }
 
@@ -68,4 +73,5 @@ dependencies {
 
 //    implementation 'net.sf.kxml:kxml2:2.3.0'
     implementation 'com.luckycatlabs:SunriseSunsetCalculator:1.2'
+    implementation project(':colorpicker')
 }

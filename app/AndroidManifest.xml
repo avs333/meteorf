@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ru.meteoinfo">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<!--
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" /> 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+-->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/logo_hmc"
+        android:label="@string/app_name"
+	android:name=".App"
+        android:roundIcon="@drawable/logo_hmc"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".WeatherActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".DataActivity"
+            android:label="@string/title_data_activity"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings" />
+
+        <activity android:name=".WebActivity" />
+        <!--
+             The API key for Google Maps-based APIs is defined as a string resource.
+             (See the file "res/values/google_maps_api.xml").
+             Note that the API key is linked to the encryption key used to sign the APK.
+             You need a different API key for each encryption key, including the release key that is used to
+             sign the APK for publishing.
+             You can define the keys for the debug and release targets in src/debug/ and src/release/. 
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+	<meta-data
+	    android:name="android.max_aspect"
+	    android:value="2.1" />
+
+        <activity
+            android:name=".MapsActivity"
+            android:label="@string/title_activity_maps">
+	</activity>
+
+        <activity
+            android:name=".OpenmapsActivity"
+            android:label="@string/title_activity_maps">
+	</activity>
+
+	<service android:name=".Srv"
+	    android:permission="android.permission.BIND_JOB_SERVICE">
+	</service>
+
+	<!-- widget stuff -->
+
+	<receiver android:name=".WidgetSmall2" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/widget_small2" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+	    </intent-filter>
+	</receiver>
+
+	<receiver android:name=".WidgetLarge2" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/widget_large2" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+	    </intent-filter>
+	</receiver>
+
+	<receiver android:name=".CollectionWidgetProvider" >
+	    <meta-data android:name="android.appwidget.provider"
+		android:resource="@xml/cwidget" />
+	    <intent-filter>
+	        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+	    </intent-filter>
+	</receiver>
+
+	<service android:name=".CollectionWidgetService"
+            android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS">
+        </service>
+
+	<activity android:name=".ShowInfo"
+	    android:theme="@style/Theme.Custom">
+	</activity>
+
+    </application>
+
+</manifest>

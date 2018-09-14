@@ -1,3 +1,3 @@
-Official program and widgets from the Hydrometeorological Centre of Russia
+Android program and widgets from the Hydrometeorological Centre of Russia
 
 
