@@ -355,7 +355,7 @@ public class Srv extends Service {
 	String action = intent.getAction();
 
 	if(action == null) return START_STICKY;
-	Log.d(TAG, "onStartCommand() entry, action=" + action);
+//	Log.d(TAG, "onStartCommand() entry, action=" + action);
 
 	switch(action) {
 
@@ -371,6 +371,7 @@ public class Srv extends Service {
 		}
 
 		boolean station_changed = false;
+
 		
 		synchronized(lock_loc_update) {
 		    long tdiff = cur_ltime - last_loc_update_time;	
@@ -381,6 +382,7 @@ public class Srv extends Service {
 			    break;
 			}
 		    }
+		    log(COLOUR_DBG, R.string.srv_loc_update);
 		    currentLocation = loc;
 		    currentStation = Util.getNearestStation(loc.getLatitude(), loc.getLongitude());
 		    last_loc_update_time = cur_ltime;
@@ -401,10 +403,6 @@ public class Srv extends Service {
                     cur_res_level = RES_LOC;
 		}
 		if(widget_installed && (localWeather == null || !widget_updated || station_changed)) updateLocalWeather(true);
-
-	//	log(COLOUR_INFO, R.string.srv_loc_update);
-		log(COLOUR_DBG, R.string.srv_loc_update);
-
 		break;
 
 	    case WEATHER_UPDATE:
@@ -487,7 +485,7 @@ public class Srv extends Service {
 		Log.e(TAG, "unknown action");
 		break;
 	}
-	Log.d(TAG, "onStartCommand() exit, action=" + action);
+//	Log.d(TAG, "onStartCommand() exit, action=" + action);
 	return START_STICKY;
     }
 

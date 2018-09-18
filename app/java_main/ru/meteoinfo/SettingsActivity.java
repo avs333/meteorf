@@ -275,11 +275,13 @@ public class SettingsActivity extends PreferenceActivity
 	wd_back_colour.setColour(col);
         widgetPrefCat.addPreference(wd_back_colour);
 
+/*
         CheckBoxPreference wd_show_sta = new CheckBoxPreference(this);
         wd_show_sta.setTitle(R.string.wd_show_sta);
         wd_show_sta.setKey("wd_show_sta");
 	wd_show_sta.setChecked(settings.getBoolean("wd_show_sta", DFL_SHOW_STA));
         widgetPrefCat.addPreference(wd_show_sta);
+*/
 
         return root;
     }

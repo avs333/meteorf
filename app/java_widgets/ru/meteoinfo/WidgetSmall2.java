@@ -1,16 +1,10 @@
 package ru.meteoinfo;
 
-import android.app.PendingIntent;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.RemoteViews;
 
-import ru.meteoinfo.App;
 import ru.meteoinfo.Util;
 import ru.meteoinfo.Srv;
 import ru.meteoinfo.Util.Station;
@@ -20,61 +14,10 @@ import ru.meteoinfo.Util.WeatherInfo;
 public class WidgetSmall2 extends WidgetProvider {
 
     private static final String TAG = "ru.meteoinfo:WSmall2";
-    RemoteViews views = null;
 
     @Override
-    protected RemoteViews get_views(Context context) {
-	if(views != null) return views;
-	return new RemoteViews(context.getPackageName(), R.layout.widget_layout_small2);
-    }
-
-    @Override
-    protected void settings_update(Context context) {	
-
-	if(gm == null) gm = AppWidgetManager.getInstance(context);
-	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, classname));
-	if(bound_widgets == null || bound_widgets.length == 0) {
-	    Log.d(TAG, "no bound widgets of class " + classname);	
-	    return;
-	}
-
-	views = get_views(context);
-
-	int fg, bg;
-	try {
-	    fg = (int) Long.parseLong(Srv.fg_colour, 16);
-	} catch(Exception e) { 
-	    fg = 0xffffffff;
-	    Log.e(TAG, "fg: NumberFormatException in settings_update()" + fg);
-	}
-
-	try {
-	    bg = (int) Long.parseLong(Srv.bg_colour, 16);
-	} catch(Exception e) { 
-	    bg = 0;
-	    Log.e(TAG, "bg: NumberFormatException in settings_update()" + bg);
-	}
-
-	Log.d(TAG, String.format("settings_update: fg=%08x bg=%08x sta=" + Srv.wd_show_sta, fg, bg));
-	Station st = Srv.getCurrentStation();
-	String addr = null;
-	String va[] = null;
-	if(st != null) {
-	    if(Srv.wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
-	    else addr = st.shortname;
-	}
-
-	Log.d(TAG, "show_sta=" + Srv.wd_show_sta + ", addr=" + addr);
-	views.setTextColor(R.id.w_temp, fg);
-	views.setTextColor(R.id.w_addr, fg);
-	views.setTextColor(R.id.w_date, fg);
-	views.setTextColor(R.id.w_time, fg);
-	views.setInt(R.id.w_grid, "setBackgroundColor", bg);
-
-	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
-
-	Log.d(TAG, "settings_update: updating " + bound_widgets.length + " " + classname);
-	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
+    protected int getLayout() {
+	return R.layout.widget_layout_small2;
     }
 
     protected static int widx = 0;
@@ -82,25 +25,8 @@ public class WidgetSmall2 extends WidgetProvider {
     private int max;
 
     @Override
-    protected void weather_update(String action, Context context) {
+    protected void weather_update(Context context, String action, RemoteViews rv) {
 
-	if(context == null) { 
-	    Log.e(TAG, "weather_update: no context");
-	    return;
-	}
-
-	if(gm == null) gm = AppWidgetManager.getInstance(context);
-	if(gm == null) return;
-	int [] bound_widgets = gm.getAppWidgetIds(new ComponentName(context, classname));
-	if(bound_widgets == null || bound_widgets.length == 0) {
-	    Log.d(TAG, "no bound widgets of class " + classname);	
-	    return;
-	}
-	views = get_views(context);
-	if(views == null) { 
-	    Log.e(TAG, "weather_update: no views");
-	    return;
-	}
 	WeatherData wd = Srv.getLocalWeather();
 
 	if(wd == null) {
@@ -111,14 +37,7 @@ public class WidgetSmall2 extends WidgetProvider {
 	Station st = Srv.getCurrentStation();
 	String addr = null;
 
-/*	if(st != null) {
-	    if(Srv.wd_show_sta) addr = String.format(App.get_string(R.string.wd_sta_short), st.code);
-	    else addr = st.shortname;
-	} else Log.d(TAG, "weather_update: no current station yet");
-*/
 	if(st != null) addr = st.shortname;
-
-	set_click_handlers(context);
 
 	long now = System.currentTimeMillis();
 
@@ -190,9 +109,10 @@ public class WidgetSmall2 extends WidgetProvider {
 	    Log.e(TAG, "icon not found");
 	    icon_nm = "ru.meteoinfo:drawable/no_data";	
 	}
+
 	int id = context.getResources().getIdentifier(icon_nm, null, null);	
 	Log.d(TAG, "icon_name=" + icon_nm + ", id=" + id);
-	views.setImageViewResource(R.id.w_info, id);	
+	rv.setImageViewResource(R.id.w_info, id);	
 
 	String time = wi.get_time();
 	if(time != null && widx >= 0) time = "[" + time + "]";
@@ -212,13 +132,12 @@ public class WidgetSmall2 extends WidgetProvider {
 //	Log.d(TAG, "weather_update: temp=" + temp);
 
 
-	if(addr != null) views.setTextViewText(R.id.w_addr, addr);
-	if(temp != null) views.setTextViewText(R.id.w_temp, temp);
-	if(date != null) views.setTextViewText(R.id.w_date, date);
-	if(time != null) views.setTextViewText(R.id.w_time, time);
+	if(addr != null) rv.setTextViewText(R.id.w_addr, addr);
+	if(temp != null) rv.setTextViewText(R.id.w_temp, temp);
+	if(date != null) rv.setTextViewText(R.id.w_date, date);
+	if(time != null) rv.setTextViewText(R.id.w_time, time);
 
-	Log.d(TAG, "weather_update: updating " + bound_widgets.length + " " + classname);
-	for(int i = 0; i < bound_widgets.length; i++) gm.updateAppWidget(bound_widgets[i], views);
+	Log.d(TAG, "weather_update: updating weather for " + classname);
     }
 
 }

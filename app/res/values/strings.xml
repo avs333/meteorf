@@ -53,7 +53,7 @@
     <string name="pref_use_offline_maps">Офлайн-карты, если есть</string>
     <string name="pref_use_gps">Использовать GPS</string>
     <string name="pref_use_interp">Детализация прогнозов</string>
-    <string name="pref_use_geonames">Доп. данные о временных зонах</string>
+    <string name="pref_use_geonames">Точные данные о временных зонах</string>
     <string name="pref_loc_updates">Интервал обновления координат</string>
     <string name="pref_wth_updates">Интервал обновления погоды</string>
     <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>

@@ -81,7 +81,7 @@ public class CollectionWidgetService extends RemoteViewsService {
 	    int k = (wd.for3days != null) ? wd.for3days.size() : 0;
 
 	    if(k > 0) {
-		if(k > max_widx) k = max_widx;
+//		if(k > max_widx) k = max_widx;
 		for(int i = 0; i < k; i++) wi_list.add(wd.for3days.get(i));
 		count += k;
 	    }			

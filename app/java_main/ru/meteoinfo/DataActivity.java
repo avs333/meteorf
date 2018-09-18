@@ -221,7 +221,7 @@ public class DataActivity extends AppCompatActivity {
 	    }
  
 	    int clouds = wi.get_clouds();
-	    if(val != -1) s += String.format(App.get_string(R.string.wd_clouds), clouds) + "<br>";
+	    if(clouds != -1) s += String.format(App.get_string(R.string.wd_clouds), clouds) + "<br>";
 
 	return s;
 	     	
