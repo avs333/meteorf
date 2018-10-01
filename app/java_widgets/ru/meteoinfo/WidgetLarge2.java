@@ -138,7 +138,7 @@ public class WidgetLarge2 extends WidgetProvider {
 	    return;
 	}
 
-	temp = String.format(java.util.Locale.US, "+%.1f", val);
+	temp = String.format(java.util.Locale.US, "%+.1f", val);
 //	Log.d(TAG, "weather_update: temp=" + temp);
 
 	String press = null;

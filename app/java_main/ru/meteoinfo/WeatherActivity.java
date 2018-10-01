@@ -82,12 +82,11 @@ public class WeatherActivity extends AppCompatActivity
     // 0 -> only COLOUR_ERR
     // 1 -> all excluding COLOUR_DBG
     // 2 -> all
-    // all means all, not only the four defined above.
     private static int verbose;
 
     // 0 -> none
     // 1 -> google
-    // 2 -> OSM (always used by widget)
+    // 2 -> OSM
     private static int addr_source;
  
     private final long LOC_UPDATE_INTERVAL = 20 * 1000;
@@ -115,10 +114,15 @@ public class WeatherActivity extends AppCompatActivity
 
     private static boolean cur_sta_local = false;
 
-    private String get_formatted_address(double lat, double lon) {
-	if(addr_source == 0) return null;
-	else if(addr_source == 1) return Util.getAddressFromGoogle(lat, lon);
-	return Util.getAddressFromOSM(lat, lon);
+    // mustn't be called from ui thread if source > 0	
+    private String get_formatted_address(int source, double lat, double lon) {
+	String ret, addinfo = null;
+	ret = getString(R.string.latitude) + " " + lat;
+	ret += "\n" + getString(R.string.longitude) + " " + lon;
+	if(source == 1) addinfo = Util.getAddressFromGoogle(lat, lon);
+	if(source == 2) addinfo = Util.getAddressFromOSM(lat, lon);
+	if(addinfo != null) ret += "\n" + addinfo;
+	return ret;
     }
 
     boolean maps_avail = false;
@@ -345,7 +349,7 @@ public class WeatherActivity extends AppCompatActivity
 			if(Srv.getCurrentLocation() == null) return;
 			requestedLat = Srv.getCurrentLocation().getLatitude();
 			requestedLon = Srv.getCurrentLocation().getLongitude();
-			formattedLocString = get_formatted_address(requestedLat, requestedLon);
+			formattedLocString = get_formatted_address(addr_source, requestedLat, requestedLon);
 		    }
 		};
 		AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, getString(R.string.receiving_data), bgr, fgr);
@@ -570,12 +574,16 @@ public class WeatherActivity extends AppCompatActivity
 		    final Runnable bgr = new Runnable() {
        		        @Override
 			public void run() {
-			    if(curStation != null) formattedLocString = get_formatted_address(curStation.latitude, curStation.longitude);
+			    if(curStation != null) formattedLocString = get_formatted_address(addr_source, curStation.latitude, curStation.longitude);
 		        }
 		    };
-		    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, getString(R.string.try_google), bgr, fgr);
+		    String s = (addr_source == 1) ? getString(R.string.try_google) : getString(R.string.try_osm);
+		    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, s, bgr, fgr);
 		    atp.execute();
-		} else fgr.run();
+		} else {
+		    formattedLocString = get_formatted_address(0, curStation.latitude, curStation.longitude);
+		    fgr.run();
+		}
             }
         });
 
@@ -630,12 +638,16 @@ public class WeatherActivity extends AppCompatActivity
 		    final Runnable bgr = new Runnable() {
        		        @Override
 			public void run() {
-			    if(curStation != null) formattedLocString = get_formatted_address(curStation.latitude, curStation.longitude);
+			    if(curStation != null) formattedLocString = get_formatted_address(addr_source, curStation.latitude, curStation.longitude);
 		        }
 		    };
-		    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, getString(R.string.try_google), bgr, fgr);
+		    String s = (addr_source == 1) ? getString(R.string.try_google) : getString(R.string.try_osm);
+		    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, s, bgr, fgr);
 		    atp.execute();
-		} else fgr.run();
+		} else {
+		    formattedLocString = get_formatted_address(0, curStation.latitude, curStation.longitude);
+		    fgr.run();
+		}
             }
         });
         st_list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -678,11 +690,13 @@ public class WeatherActivity extends AppCompatActivity
         Button act_btn = dialog.findViewById(R.id.act_btn);
         Button add_btn = dialog.findViewById(R.id.add_to_fav);
         Button view_google = dialog.findViewById(R.id.view_google);
-        Button view_osm = dialog.findViewById(R.id.view_osm);
+//        Button view_osm = dialog.findViewById(R.id.view_osm);
+//        Button view_yandex = dialog.findViewById(R.id.view_yandex);
 
         launch_msg.setKeyListener(null);
         String s = curStation.getInfo();
-        if(formattedLocString != null) s += "\n" + formattedLocString;
+//      if(formattedLocString != null) s += "\n" + formattedLocString;
+        if(formattedLocString != null) s = formattedLocString + "\n" + s;
 	
         launch_msg.setText(s);
 
@@ -754,6 +768,7 @@ public class WeatherActivity extends AppCompatActivity
             });
         } else view_google.setEnabled(false);
 
+/*
 	if(true) {
             view_osm.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View arg0) {
@@ -766,7 +781,19 @@ public class WeatherActivity extends AppCompatActivity
                     startActivity(i);
                 }
             });
+            view_yandex.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View arg0) {
+                    Intent i = new Intent(getApplicationContext(), YMapsActivity.class);
+                    logUI(COLOUR_DBG, R.string.launch_ymaps);
+                    i.putExtra("lat", lat);
+                    i.putExtra("lon", lon);
+                    i.putExtra("sta_lat", sta_lat);
+                    i.putExtra("sta_lon", sta_lon);
+                    startActivity(i);
+                }
+            });
 	}
+*/
 
         return dialog;
     }
@@ -807,12 +834,16 @@ public class WeatherActivity extends AppCompatActivity
 			    final Runnable bgr = new Runnable() {
                         	@Override
 				public void run() {
-				    formattedLocString = get_formatted_address(curStation.latitude, curStation.longitude);
+				    formattedLocString = get_formatted_address(addr_source, requestedLat, requestedLon);
                             	}
 			    };
-			    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, getString(R.string.try_google), bgr, fgr);
+		    	    String s = (addr_source == 1) ? getString(R.string.try_google) : getString(R.string.try_osm);
+			    AsyncTaskWithProgress atp = new AsyncTaskWithProgress(mainAct, s, bgr, fgr);
 			    atp.execute();
-			} else fgr.run();
+			} else {
+			    formattedLocString = get_formatted_address(0, requestedLat, requestedLon);
+			    fgr.run();
+			}
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {

@@ -106,8 +106,9 @@ public class CollectionWidgetService extends RemoteViewsService {
 	
 	    String temp = null;
 	    double val = wi.get_temperature();
+
 	    if(val == Util.inval_temp) temp = "?????";
-	    else temp = String.format(java.util.Locale.US, "+%.1f °C", val);
+	    else temp = String.format(java.util.Locale.US, "%+.1f °C", val);
 	    views.setTextViewText(R.id.w_temp, temp);
 
 	    String date = wi.get_date();

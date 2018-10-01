@@ -45,7 +45,7 @@ public class ShowInfo extends AppCompatActivity {
                 Log.e(TAG, "position=" + position + " out of range (count=" + CollectionWidgetService.view_factory.count + ")");
                 return;
             }
-            Log.d(TAG, "position=" + position);
+      //    Log.d(TAG, "position=" + position);
 
             TextView tview = findViewById(R.id.etext);
             Button act_btn = findViewById(R.id.act_btn);

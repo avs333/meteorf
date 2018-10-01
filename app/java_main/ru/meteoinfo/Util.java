@@ -123,7 +123,7 @@ class Util {
         public String toString() {	// override for ListAdapter
             return name_p;
         }
-        public String getInfo() {
+/*      public String getInfo() {
             String info = App.get_string(R.string.station) + ": " + code;
             if(wmo != -1) info += "\n" + "WMO id: " + wmo;
             if(name != null) info += "\n" + App.get_string(R.string.name) + ": " + name;
@@ -131,6 +131,13 @@ class Util {
             if(name_p != null) info += "\n[" + name_p + "]";
             if(latitude != inval_coord) info += "\n" + App.get_string(R.string.latitude) + " " + latitude;
             if(longitude != inval_coord) info += "\n" + App.get_string(R.string.longitude) + " " + longitude;
+            return info;
+        } */
+        public String getInfo() {
+	    if(name == null || country == null || latitude == inval_coord 
+		|| longitude == inval_coord) return null;
+            String info = App.get_string(R.string.station) + ": " + name; 
+	    info += "\n" + String.format(App.get_string(R.string.sta_ll_fmt), latitude, longitude, country);
             return info;
         }
     }
@@ -517,7 +524,7 @@ class Util {
 	    urlConnection.setRequestProperty("User-Agent", "android/ru.meteoinfo");	
 	    urlConnection.connect();
 	    int response = urlConnection.getResponseCode();
-	//  Log.d("meteoinfo.ru", url.toString() + " response=" + response);	
+	//  Log.d(TAG, url.toString() + " response=" + response);	
 	    if (response != HttpsURLConnection.HTTP_OK) return null;
             in = new BufferedInputStream(urlConnection.getInputStream());
             reader = new JsonReader(new InputStreamReader(in, "UTF-8"));
@@ -531,7 +538,7 @@ class Util {
                 } else reader.skipValue();
             }
         } catch (Exception e) {
-            Log.e("meteoinfo.ru", "exception in getAdderss()");
+            Log.e(TAG, "exception in getAdderss()");
 //            e.printStackTrace();
 	    return null;	
         } finally {
@@ -540,7 +547,7 @@ class Util {
                 if(in != null) in.close();
                 if(urlConnection != null) urlConnection.disconnect();
             } catch (Exception e) {
-                Log.e("meteoinfo.ru", "exception on exit from getAdderss()");
+                Log.e(TAG, "exception on exit from getAdderss()");
 	    }
         }
         return addr;
@@ -1245,13 +1252,13 @@ class Util {
 	"Снег (возможно с туманом). Снежные зерна",	//77
 	"Снег (возможно с туманом). Отдельные снежные кристаллы в виде звездочек",	//78
 	"Ледяной дождь",	//79
-	"Ливневой дождь слабый",	//80
-	"Ливневой дождь умеренный или сильный",	//81
-	"Ливневой дождь очень сильный",	//82
-	"Ливневой дождь со снегом слабый",	//83
-	"Ливневой дождь со снегом умеренный или сильный",	//84
-	"Ливневой снег слабый",	//85
-	"Ливневой снег умеренный или сильный",	//86
+	"Ливневый дождь слабый",	//80
+	"Ливневый дождь умеренный или сильный",	//81
+	"Ливневый дождь очень сильный",	//82
+	"Ливневый дождь со снегом слабый",	//83
+	"Ливневый дождь со снегом умеренный или сильный",	//84
+	"Ливневый снег слабый",	//85
+	"Ливневый снег умеренный или сильный",	//86
 	"Снежная крупа (возможно с дождем) слабая",	//87
 	"Снежная крупа (возможно с дождем) умеренная или сильная",	//88
 	"Град (возможно с дождем) слабый",	//89

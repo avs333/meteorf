@@ -89,7 +89,11 @@ public class WebActivity extends AppCompatActivity {
 		    ResolveInfo info = packageManager.resolveActivity(mail, PackageManager.MATCH_DEFAULT_ONLY);
 		    if(info != null) context.startActivity(mail);
 		    return true;   	
-		} else view.loadUrl(u);
+		} else // view.loadUrl(u);
+/* 	Note: Do not call WebView.loadUrl(String) with the same URL and then return true. 
+	This unnecessarily cancels the current load and starts a new load with the same URL. 
+	The correct way to continue loading a given URL is to simply return false, 
+	without calling WebView.loadUrl(String). */
 	        return false;
 	    }
 	    @Override 

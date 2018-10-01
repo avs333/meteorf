@@ -33,10 +33,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/map_google" />
+<!--
     <Button
         android:id="@+id/view_osm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/map_osm" />
+    <Button
+        android:id="@+id/view_yandex"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/map_yandex" />
+-->
 
 </LinearLayout>

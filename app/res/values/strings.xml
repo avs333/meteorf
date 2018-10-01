@@ -32,11 +32,14 @@
     <string name="no_data_avail">Нет данных</string>
     <string name="latitude">Широта:</string>
     <string name="longitude">Долгота:</string>
+    <string name="sta_ll_fmt">[ш/д=%.4f/%.4f, %s]</string>
     <string name="map_google">Посмотреть на картах Google</string>
     <string name="map_osm">Посмотреть на картах OSM</string>
+    <string name="map_yandex">Посмотреть на картах Yandex</string>
     <string name="inv_coords">Недопустимые координаты</string>
     <string name="try_find_coords">Поиск ближайшей станции&#8230;</string>
     <string name="try_google">Дополнительные данные от Google&#8230;</string>
+    <string name="try_osm">Дополнительные данные OSM&#8230;</string>
     <string name="station">Станция</string>
     <string name="sta_changed">Станция изменилась на</string>
     <string name="country">Страна</string>
@@ -61,7 +64,7 @@
     <string name="no_station">Ошибка: станция не найдена</string>
     <string name="using_cached">Данные о ближайшей станции взяты из кеша</string>
     <string name="select_fav">Для сохраненных станций</string>
-    <string name="add_to_fav">Сохранить</string>
+    <string name="add_to_fav">Сохранить станцию</string>
     <string name="title_activity_maps">Карта</string>	
     <string name="added">Сохранено.</string>
     <string name="sta_loc">Станция</string>         
@@ -98,6 +101,7 @@
     <string name="add_new_fav">Сохранение в избранное</string>               
     <string name="launch_gmaps">Запуск Google Maps</string>               
     <string name="launch_osmaps">Запуск OSM</string>               
+    <string name="launch_ymaps">Запуск Yandex Maps</string>               
     <string name="read_timeout">время ожидания истекло</string>               
     <string name="no_cur_sta">Станция неизвестна</string>               
     <string name="conn_slow">Слишком медленное соединение</string>               

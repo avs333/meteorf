@@ -14,6 +14,7 @@
 -->
 
     <application
+	android:hardwareAccelerated="true"
         android:allowBackup="true"
         android:icon="@drawable/logo_hmc"
         android:label="@string/app_name"
@@ -63,10 +64,17 @@
             android:label="@string/title_activity_maps">
 	</activity>
 
+<!--
         <activity
             android:name=".OpenmapsActivity"
             android:label="@string/title_activity_maps">
 	</activity>
+
+        <activity
+            android:name=".YMapsActivity"
+            android:label="@string/title_activity_maps">
+	</activity>
+-->
 
 	<service android:name=".Srv"
 	    android:permission="android.permission.BIND_JOB_SERVICE">

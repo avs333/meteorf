@@ -13,7 +13,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -30,7 +29,7 @@ class ColorPicker extends Dialog implements SeekBar.OnSeekBarChangeListener {
 
     public View colorView;
     private SeekBar alphaSeekBar, redSeekBar, greenSeekBar, blueSeekBar;
-//    private EditText hexCode;
+    private TextView hexCode;
     private int alpha = 255, red = 0, green = 0, blue = 0;
     private ColorPickerCallback callback;
 
@@ -68,7 +67,7 @@ class ColorPicker extends Dialog implements SeekBar.OnSeekBarChangeListener {
 
         colorView = findViewById(R.id.colorView);
 
-//        hexCode = (EditText) findViewById(R.id.hexCode);
+        hexCode = (TextView) findViewById(R.id.hexCode);
 
         alphaSeekBar = (SeekBar) findViewById(R.id.alphaSeekBar);
         redSeekBar = (SeekBar) findViewById(R.id.redSeekBar);
@@ -175,7 +174,7 @@ class ColorPicker extends Dialog implements SeekBar.OnSeekBarChangeListener {
         colorView.setBackgroundColor(getColor());
 
         //Setting the inputText hex color
-  //      hexCode.setText(formatColorValues(alpha, red, green, blue));
+ 	hexCode.setText(formatColorValues(alpha, red, green, blue));
 
     }
     @Override

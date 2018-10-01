@@ -142,6 +142,7 @@ public abstract class WidgetProvider extends AppWidgetProvider {
 		    public void run() { 
 			set_click_handlers(ctx, rv);
 			weather_update(ctx, action, rv); 
+			settings_update(ctx, rv); 
 			update(ctx, man, rv);
 		    }
 		});	
