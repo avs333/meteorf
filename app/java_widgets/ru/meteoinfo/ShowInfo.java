@@ -14,6 +14,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import ru.meteoinfo.App;
 import ru.meteoinfo.Util;
@@ -30,22 +31,35 @@ public class ShowInfo extends AppCompatActivity {
     private int position;
     private static String TAG = "ru.meteoinfo:ShowInfo";
 
+    private void restart_provider(Context context) {
+	Toast.makeText(context, getString(R.string.restart_on_kill), Toast.LENGTH_SHORT).show();
+	Intent intent = new Intent(context, CollectionWidgetProvider.class);
+	intent.setAction(CollectionWidgetProvider.ACTION_RESTART);
+	sendBroadcast(intent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.show_info_layout);
         try {
+	    Context context = App.getContext();	
             if(CollectionWidgetService.view_factory == null) {
-                Log.e(TAG, "no view factory, exiting");
+                Log.e(TAG, "no view factory, restarting widget");
+		restart_provider(context);
+		finish();
                 return;
             }
             Intent intent = getIntent();
             position = intent.getIntExtra(CollectionWidgetService.CUR_POS, 0);
             if(position < 0 || position >= CollectionWidgetService.view_factory.count) {
                 Log.e(TAG, "position=" + position + " out of range (count=" + CollectionWidgetService.view_factory.count + ")");
+		restart_provider(context);
+		finish();
                 return;
             }
       //    Log.d(TAG, "position=" + position);
+
+	    setContentView(R.layout.show_info_layout);
 
             TextView tview = findViewById(R.id.etext);
             Button act_btn = findViewById(R.id.act_btn);
