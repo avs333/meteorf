@@ -30,6 +30,7 @@ public class SettingsActivity extends PreferenceActivity
     public static final boolean DFL_SHOW_STA = false;
     public static final boolean DFL_USE_INTERP = false;
     public static final boolean DFL_USE_GEONAMES = false;
+    public static final boolean DFL_BGR_SERVICE = false;
 
     public static final int DFL_VERBOSE = 1; 	
     public static final int DFL_ADDR_SRC = 0; 	
@@ -48,18 +49,14 @@ public class SettingsActivity extends PreferenceActivity
 
 	ColorPickerPreference(Context context) {
 	    super(context, null);
-	    Log.d(TAG, "constructor entry");	
 	    cp = new ColorPicker(context);
 	    cp.setCallback(this);
-	    Log.d(TAG, "constructor exit");	
 	}
 
 	public String getColour() {
-	    Log.d(TAG, "in getColour()");	
 	    return colour;
 	}
 	public void setColour(String colour) {
-	    Log.d(TAG, "in setColour()" + colour);	
 	    try {	
 		int col = (int) Long.parseLong(colour, 16);
 	        cp.setColor(col);
@@ -91,7 +88,6 @@ public class SettingsActivity extends PreferenceActivity
 	    if(positiveResult) {
 	        colour = String.format("%08X", (0xFFFFFFFF & cp.getColor()));
 		Log.d(TAG, "positive result=" + colour + " for " + getKey());
-		
 	    	persistString(colour);
 	    }
 	    cp.dismiss();	
@@ -200,6 +196,12 @@ public class SettingsActivity extends PreferenceActivity
 	use_gps.setChecked(settings.getBoolean("use_gps", DFL_USE_GPS));
         basePrefCat.addPreference(use_gps);
 
+        CheckBoxPreference bgr_service = new CheckBoxPreference(this);
+        bgr_service.setTitle(R.string.pref_bgr_service);
+        bgr_service.setKey("bgr_service");
+	bgr_service.setChecked(settings.getBoolean("bgr_service", DFL_BGR_SERVICE));
+        basePrefCat.addPreference(bgr_service);
+
 	final ListPreference verbose = new ListPreference(this);
 	setupListPreference(verbose, R.string.pref_verbose, "verbose", 
 	    R.array.verb_names, R.array.vals123, DFL_VERBOSE);
@@ -266,14 +268,18 @@ public class SettingsActivity extends PreferenceActivity
 	wd_font_colour.setKey("wd_font_colour");
 	col = settings.getString("wd_font_colour", SettingsActivity.DFL_WDT_FONT_COLOUR);
 	wd_font_colour.setColour(col);
-        widgetPrefCat.addPreference(wd_font_colour);
+       	wd_font_colour.setNegativeButtonText(R.string.cancel);
+	wd_font_colour.setPositiveButtonText(R.string.okay);
+	widgetPrefCat.addPreference(wd_font_colour);
 
 	final ColorPickerPreference wd_back_colour = new ColorPickerPreference(this);
 	wd_back_colour.setTitle(R.string.wd_back_colour);
 	wd_back_colour.setKey("wd_back_colour");
 	col = settings.getString("wd_back_colour", SettingsActivity.DFL_WDT_BACK_COLOUR);
 	wd_back_colour.setColour(col);
-        widgetPrefCat.addPreference(wd_back_colour);
+       	wd_back_colour.setNegativeButtonText(R.string.cancel);
+	wd_back_colour.setPositiveButtonText(R.string.okay);
+	widgetPrefCat.addPreference(wd_back_colour);
 
 /*
         CheckBoxPreference wd_show_sta = new CheckBoxPreference(this);

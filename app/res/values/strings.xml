@@ -59,6 +59,7 @@
     <string name="pref_use_geonames">Точные данные о временных зонах</string>
     <string name="pref_loc_updates">Интервал обновления координат</string>
     <string name="pref_wth_updates">Интервал обновления погоды</string>
+    <string name="pref_bgr_service">Фоновый сервис</string>
     <string name="no_offline_maps">Нужные офлайн-карты не найдены</string>
     <string name="using_offline_maps">Переключение на офлайн-карты</string>
     <string name="no_station">Ошибка: станция не найдена</string>
@@ -182,6 +183,7 @@
     <string name="go_back">Назад</string>
     <string name="to_app">В программу</string>
     <string name="restart_on_kill">Сервис был остановлен, перезапускаю&#8230;</string>
+    <string name="okay">OK</string>
 
     <string-array name="verb_names">
 	<item>Ошибки</item>

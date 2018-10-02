@@ -23,10 +23,14 @@ import com.google.android.gms.location.*;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.Notification.Builder;
+
 import ru.meteoinfo.Util.Station;
 import ru.meteoinfo.Util.WeatherData;
 import ru.meteoinfo.Util.WeatherInfo;
-import ru.meteoinfo.WidgetProvider;
+//import ru.meteoinfo.WidgetProvider;
 
 public class Srv extends Service {
 
@@ -50,6 +54,7 @@ public class Srv extends Service {
     public static boolean use_gps;
     public static boolean use_interp;
     public static boolean wd_show_sta;
+    public static boolean bgr_service;
     public static String bg_colour;
     public static String fg_colour;
 
@@ -130,6 +135,9 @@ public class Srv extends Service {
     public static final int RES_LIST = 1;
     public static final int RES_LOC = 2;
     public static int cur_res_level;
+
+    private static final int NOTIFICATION_ID = 277;
+    private Notification noti;	
 	
     private void send_init_result(int res) {
 	if(App.activity_visible) {
@@ -330,6 +338,21 @@ public class Srv extends Service {
 	cur_res_level = RES_ERR;
 
 	if(!init()) Log.e(TAG, "internal error in onCreate(): init() returned false");
+	
+	String url = "file:///android_asset/about.html";
+	Intent intent = new Intent(this, WebActivity.class);
+	intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	intent.putExtra("action", url);
+	intent.putExtra("show_ui", false);
+	intent.putExtra("title", getString(R.string.action_about));
+	PendingIntent pendingIntent=PendingIntent.getActivity(this, 0, intent, Intent.FLAG_ACTIVITY_NEW_TASK);
+	noti =  new Notification.Builder(this)
+		.setSmallIcon(R.drawable.logo_small)
+		.setContentText(getString(R.string.action_about))
+		.setContentTitle(getString(R.string.app_name))
+		.setContentIntent(pendingIntent).build();
+	if(!bgr_service) startForeground(NOTIFICATION_ID, noti);
+
 	App.service_started = true;
 	Log.d(TAG, "onCreate(): exiting");
     }
@@ -419,10 +442,16 @@ public class Srv extends Service {
 		widget_installed = true;
 		widget_updated = false;
 		wth_fix = false;
+		if(!App.service_started) {
+		    init();
+		    break;
+		}
 		switch(cur_res_level) {
 		    case RES_LOC:
-			updateLocalWeather(true);
-			start_weather_updates(true);
+			if(currentLocation != null) {
+			    updateLocalWeather(true);
+			    start_weather_updates(true);
+		        } else init();	
 			break;
 		    case RES_LIST:
 			if(!init_in_progress.get()) restart_updates();
@@ -473,6 +502,8 @@ public class Srv extends Service {
 		if((res & SettingsActivity.PCHG_SRV_MASK) != 0) {
 		    if(!init_in_progress.get()) restart_updates();
 		    else Log.d(TAG, "init() in progress");
+		    if(!bgr_service) startForeground(NOTIFICATION_ID, noti);
+		    else stopForeground(true);	
 		}
 		if((res & SettingsActivity.PCHG_WID_MASK) != 0) notify_widgets(WidgetProvider.SETTINGS_CHANGED_BROADCAST);
 		break;
@@ -543,6 +574,7 @@ public class Srv extends Service {
 
         wd_show_sta = settings.getBoolean("wd_show_sta", SettingsActivity.DFL_SHOW_STA);
 
+	bgr_service = settings.getBoolean("bgr_service", SettingsActivity.DFL_BGR_SERVICE);
 	loc_priority = use_gps ? LocationRequest.PRIORITY_HIGH_ACCURACY : LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
 	loc_update_interval = settings.getInt("loc_update_interval", SettingsActivity.DFL_LOC_UPDATE_INTERVAL) * 1000;
 	wth_update_interval = settings.getInt("wth_update_interval", SettingsActivity.DFL_WTH_UPDATE_INTERVAL) * 1000;
